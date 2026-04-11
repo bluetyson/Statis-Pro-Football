@@ -7,6 +7,14 @@ from .team import Team, Roster
 from .play_resolver import PlayResolver, PlayResult
 from .game import Game, GameState, DriveResult
 from .solitaire import SolitaireAI
+from .fac_distributions import (
+    ZCardTrigger,
+    lookup_z_card_event,
+    FORMATION_MODIFIERS,
+    effective_pass_rush,
+    effective_coverage,
+    effective_run_stop,
+)
 
 __all__ = [
     "FastActionDice", "DiceResult", "PlayTendency", "roll",
@@ -17,4 +25,7 @@ __all__ = [
     "PlayResolver", "PlayResult",
     "Game", "GameState", "DriveResult",
     "SolitaireAI",
+    "ZCardTrigger", "lookup_z_card_event",
+    "FORMATION_MODIFIERS",
+    "effective_pass_rush", "effective_coverage", "effective_run_stop",
 ]

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from enum import Enum
 
-from .fast_action_dice import FastActionDice, DiceResult
+from .fast_action_dice import FastActionDice, DiceResult, PlayTendency
 from .player_card import PlayerCard
 from .team import Team
 from .play_resolver import PlayResolver, PlayResult
@@ -269,9 +269,18 @@ class Game:
         rb = self.get_rb()
         defense = self.get_defense_team()
         def_run_stop = defense.defense_rating
+        # Get defensive formation
+        situation = self.state.to_situation()
+        def_formation = self.ai.call_defense(situation, dice)
 
         if rb:
-            return self.resolver.resolve_run(dice, rb, play_call.direction, def_run_stop)
+            return self.resolver.resolve_run(
+                dice, rb, play_call.direction, def_run_stop,
+                defense_formation=def_formation,
+                down=self.state.down, distance=self.state.distance,
+                yard_line=self.state.yard_line, quarter=self.state.quarter,
+                time_remaining=self.state.time_remaining,
+            )
         yards = random.choices([-1, 0, 1, 2, 3, 4, 5],
                                 weights=[5, 8, 10, 15, 20, 15, 10])[0]
         return PlayResult("RUN", yards, "GAIN", description=f"Run for {yards} yards")
@@ -280,9 +289,20 @@ class Game:
         qb = self.get_qb()
         rb = self.get_rb()
         defense = self.get_defense_team()
+        situation = self.state.to_situation()
+        def_formation = self.ai.call_defense(situation, dice)
+        is_blitz = dice.play_tendency == PlayTendency.BLITZ
 
         if qb and rb:
-            return self.resolver.resolve_pass(dice, qb, rb, "SCREEN", defense.defense_rating)
+            return self.resolver.resolve_pass(
+                dice, qb, rb, "SCREEN", defense.defense_rating,
+                defense_pass_rush=defense.defense_rating,
+                defense_formation=def_formation,
+                is_blitz_tendency=is_blitz,
+                down=self.state.down, distance=self.state.distance,
+                yard_line=self.state.yard_line, quarter=self.state.quarter,
+                time_remaining=self.state.time_remaining,
+            )
         yards = random.randint(2, 8)
         return PlayResult("PASS", yards, "COMPLETE", description=f"Screen pass for {yards} yards")
 
@@ -290,11 +310,22 @@ class Game:
         qb = self.get_qb()
         receiver = self._pick_receiver(play_call)
         defense = self.get_defense_team()
+        situation = self.state.to_situation()
+        def_formation = self.ai.call_defense(situation, dice)
+        is_blitz = dice.play_tendency == PlayTendency.BLITZ
 
         length = "LONG" if play_call.play_type == "LONG_PASS" else "SHORT"
 
         if qb and receiver:
-            return self.resolver.resolve_pass(dice, qb, receiver, length, defense.defense_rating)
+            return self.resolver.resolve_pass(
+                dice, qb, receiver, length, defense.defense_rating,
+                defense_pass_rush=defense.defense_rating,
+                defense_formation=def_formation,
+                is_blitz_tendency=is_blitz,
+                down=self.state.down, distance=self.state.distance,
+                yard_line=self.state.yard_line, quarter=self.state.quarter,
+                time_remaining=self.state.time_remaining,
+            )
 
         yards = random.choices([0, 0, 5, 8, 12, 18, 25],
                                 weights=[20, 15, 15, 15, 12, 10, 5])[0]
@@ -328,9 +359,10 @@ class Game:
 
     def _execute_punt(self) -> PlayResult:
         punter = self.get_punter()
+        punt_dice = self.dice.roll()
 
         if punter:
-            result = self.resolver.resolve_punt(punter)
+            result = self.resolver.resolve_punt(punter, dice=punt_dice)
         else:
             dist = random.randint(38, 52)
             result = PlayResult("PUNT", dist - 8, "PUNT",
@@ -378,6 +410,9 @@ class Game:
             self.state.distance = 10
 
     def _calculate_time(self, result: PlayResult) -> int:
+        # OOB plays stop the clock — less time consumed
+        if result.out_of_bounds:
+            return random.randint(5, 10)
         if result.play_type == "RUN":
             return random.randint(25, 45)
         elif result.result == "INCOMPLETE":

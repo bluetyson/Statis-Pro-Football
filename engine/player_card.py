@@ -42,6 +42,9 @@ class PlayerCard:
     long_pass: CardColumn = field(default_factory=dict)
     screen_pass: CardColumn = field(default_factory=dict)
 
+    # QB rush column (new — Run Number → result)
+    qb_rush: CardColumn = field(default_factory=dict)
+
     inside_run: CardColumn = field(default_factory=dict)
     outside_run: CardColumn = field(default_factory=dict)
 
@@ -51,6 +54,8 @@ class PlayerCard:
     fg_chart: Dict[str, float] = field(default_factory=dict)
     xp_rate: float = 0.95
 
+    # Punter: slot-based column (new) plus legacy rate fields
+    punt_column: CardColumn = field(default_factory=dict)
     avg_distance: float = 44.0
     inside_20_rate: float = 0.35
 
@@ -70,12 +75,14 @@ class PlayerCard:
             "short_pass": self.short_pass,
             "long_pass": self.long_pass,
             "screen_pass": self.screen_pass,
+            "qb_rush": self.qb_rush,
             "inside_run": self.inside_run,
             "outside_run": self.outside_run,
             "short_reception": self.short_reception,
             "long_reception": self.long_reception,
             "fg_chart": self.fg_chart,
             "xp_rate": self.xp_rate,
+            "punt_column": self.punt_column,
             "avg_distance": self.avg_distance,
             "inside_20_rate": self.inside_20_rate,
             "pass_rush_rating": self.pass_rush_rating,
@@ -96,12 +103,14 @@ class PlayerCard:
         card.short_pass = data.get("short_pass", {})
         card.long_pass = data.get("long_pass", {})
         card.screen_pass = data.get("screen_pass", {})
+        card.qb_rush = data.get("qb_rush", {})
         card.inside_run = data.get("inside_run", {})
         card.outside_run = data.get("outside_run", {})
         card.short_reception = data.get("short_reception", {})
         card.long_reception = data.get("long_reception", {})
         card.fg_chart = data.get("fg_chart", {})
         card.xp_rate = data.get("xp_rate", 0.95)
+        card.punt_column = data.get("punt_column", {})
         card.avg_distance = data.get("avg_distance", 44.0)
         card.inside_20_rate = data.get("inside_20_rate", 0.35)
         card.pass_rush_rating = data.get("pass_rush_rating", 50)
