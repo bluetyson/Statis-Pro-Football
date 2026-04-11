@@ -12,7 +12,7 @@ function PlayerChip({ player, highlight }: { player: PlayerBrief; highlight?: bo
     player.overall_grade === 'D' ? 'grade-d' : 'grade-c';
 
   return (
-    <div className={`player-chip ${highlight ? 'chip-highlight' : ''} ${gradeClass}`}>
+    <div className={`player-chip ${highlight ? 'chip-highlight' : ''}`}>
       <span className="chip-pos">{player.position}</span>
       <span className="chip-number">#{player.number}</span>
       <span className="chip-name">{player.name}</span>
@@ -40,9 +40,7 @@ export function LetterBoards({ personnel, possession }: LetterBoardsProps) {
         <div className="board-header-bar">
           <span className="board-icon">⚔️</span>
           <h4>OFFENSE — {personnel.offense_team}</h4>
-          {possession === 'home'
-            ? <span className="ball-badge">🏈</span>
-            : <span className="ball-badge">🏈</span>}
+          <span className="ball-badge">🏈</span>
         </div>
         <div className="board-grid">
           {/* QB */}

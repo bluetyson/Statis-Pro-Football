@@ -33,6 +33,8 @@ _dice = FastActionDice()
 _ai = SolitaireAI()
 _gen = CardGenerator()
 
+MAX_LAST_PLAYS = 20  # Number of recent plays to include in state responses
+
 
 # ─── Request / Response Models ──────────────────────────────────────────────
 
@@ -444,7 +446,7 @@ def _serialize_state(state: GameState) -> dict:
         "is_over": state.is_over,
         "timeouts_home": state.timeouts_home,
         "timeouts_away": state.timeouts_away,
-        "last_plays": state.play_log[-20:] if state.play_log else [],
+        "last_plays": state.play_log[-MAX_LAST_PLAYS:] if state.play_log else [],
     }
 
 

@@ -17,10 +17,6 @@ export function Gridiron({ state }: GridironProps) {
   const ballPercent = absYardLine;
 
   // First down marker position
-  const firstDownYard = Math.min(
-    100,
-    isHome ? state.yard_line + state.distance : 100 - state.yard_line - state.distance,
-  );
   const firstDownPercent = isHome
     ? Math.min(100, state.yard_line + state.distance)
     : Math.max(0, 100 - state.yard_line - state.distance);
@@ -84,7 +80,7 @@ export function Gridiron({ state }: GridironProps) {
             <div
               className="first-down-marker"
               style={{ left: `${firstDownPercent}%` }}
-              title={`1st down line at ${firstDownPercent} yard line`}
+              title={`1st down marker`}
             />
           )}
 
