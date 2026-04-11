@@ -595,3 +595,271 @@ class TestDeckExhaustion:
                 pn_counts[pn] = pn_counts.get(pn, 0) + 1
         for pn in range(1, 49):
             assert pn_counts.get(pn, 0) >= 2, f"Pass number {pn} appears {pn_counts.get(pn, 0)} times"
+
+
+# ──────────────────────────────────────────────────────────────────────
+#  Authentic Card Format Tests
+# ──────────────────────────────────────────────────────────────────────
+
+class TestAuthenticCardModel:
+    """Test the authentic card data structures (PassRanges, ThreeValueRow)."""
+
+    def test_pass_ranges_resolve_complete(self):
+        from engine.player_card import PassRanges
+        pr = PassRanges(com_max=30, inc_max=47)
+        assert pr.resolve(1) == "COM"
+        assert pr.resolve(30) == "COM"
+        assert pr.resolve(31) == "INC"
+        assert pr.resolve(47) == "INC"
+        assert pr.resolve(48) == "INT"
+
+    def test_pass_ranges_no_interception(self):
+        from engine.player_card import PassRanges
+        pr = PassRanges(com_max=35, inc_max=48)
+        assert pr.resolve(48) == "INC"  # No INT zone
+
+    def test_pass_rush_ranges(self):
+        from engine.player_card import PassRushRanges
+        prr = PassRushRanges(sack_max=12, runs_max=30, com_max=40)
+        assert prr.resolve(1) == "SACK"
+        assert prr.resolve(12) == "SACK"
+        assert prr.resolve(13) == "RUNS"
+        assert prr.resolve(30) == "RUNS"
+        assert prr.resolve(31) == "COM"
+        assert prr.resolve(40) == "COM"
+        assert prr.resolve(41) == "INC"
+        assert prr.resolve(48) == "INC"
+
+    def test_three_value_row_from_list(self):
+        from engine.player_card import ThreeValueRow
+        row = ThreeValueRow.from_list([5, 10, 20])
+        assert row.v1 == 5
+        assert row.v2 == 10
+        assert row.v3 == 20
+
+    def test_three_value_row_to_list(self):
+        from engine.player_card import ThreeValueRow
+        row = ThreeValueRow(v1="Sg", v2=13, v3=44)
+        assert row.to_list() == ["Sg", 13, 44]
+
+    def test_pass_ranges_round_trip(self):
+        from engine.player_card import PassRanges
+        pr = PassRanges(com_max=33, inc_max=47)
+        d = pr.to_dict()
+        restored = PassRanges.from_dict(d)
+        assert restored.com_max == 33
+        assert restored.inc_max == 47
+
+
+class TestAuthenticCardGenerator:
+    """Test authentic card generation matching real Statis Pro Football format."""
+
+    def setup_method(self):
+        self.gen = CardGenerator(seed=42)
+
+    def test_qb_authentic_has_passing_ranges(self):
+        qb = self.gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B",
+        )
+        assert qb.passing_quick is not None
+        assert qb.passing_short is not None
+        assert qb.passing_long is not None
+        assert qb.pass_rush is not None
+
+    def test_qb_authentic_quick_more_complete_than_long(self):
+        qb = self.gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B",
+        )
+        assert qb.passing_quick.com_max >= qb.passing_long.com_max
+
+    def test_qb_authentic_has_12_rushing_rows(self):
+        qb = self.gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B",
+        )
+        assert len(qb.rushing) == 12
+
+    def test_qb_authentic_rushing_row1_is_special(self):
+        qb = self.gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B",
+        )
+        assert qb.rushing[0].v1 == "Sg"
+
+    def test_rb_authentic_has_12_rushing_rows(self):
+        rb = self.gen.generate_rb_card_authentic(
+            "Test RB", "TST", 2, 4.5, 0.02, "B",
+        )
+        assert len(rb.rushing) == 12
+
+    def test_rb_authentic_has_12_pass_gain_rows(self):
+        rb = self.gen.generate_rb_card_authentic(
+            "Test RB", "TST", 2, 4.5, 0.02, "B",
+        )
+        assert len(rb.pass_gain) == 12
+
+    def test_rb_and_wr_same_card_format(self):
+        """RB and WR cards should have the same structural layout."""
+        rb = self.gen.generate_rb_card_authentic(
+            "Test RB", "TST", 2, 4.5, 0.02, "B",
+        )
+        wr = self.gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B",
+        )
+        # Both have 12-row rushing and 12-row pass gain
+        assert len(rb.rushing) == 12
+        assert len(wr.rushing) == 12
+        assert len(rb.pass_gain) == 12
+        assert len(wr.pass_gain) == 12
+
+    def test_wr_has_blank_rushing(self):
+        wr = self.gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B",
+        )
+        assert not wr.has_rushing()
+
+    def test_wr_has_strong_pass_gain(self):
+        wr = self.gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "A",
+        )
+        assert wr.has_pass_gain()
+        # Row 1 should be "Lg" for top receivers
+        assert wr.pass_gain[0].v1 == "Lg"
+
+    def test_te_has_blank_rushing(self):
+        te = self.gen.generate_te_card_authentic(
+            "Test TE", "TST", 85, 0.60, 10.0, "C",
+        )
+        assert not te.has_rushing()
+
+    def test_te_has_higher_blocks_than_wr(self):
+        wr = self.gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B",
+        )
+        te = self.gen.generate_te_card_authentic(
+            "Test TE", "TST", 85, 0.60, 10.0, "C",
+        )
+        assert te.blocks > wr.blocks
+
+    def test_authentic_card_to_dict_round_trip(self):
+        qb = self.gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B",
+        )
+        d = qb.to_dict()
+        restored = PlayerCard.from_dict(d)
+        assert restored.passing_quick is not None
+        assert restored.passing_quick.com_max == qb.passing_quick.com_max
+        assert len(restored.rushing) == 12
+
+    def test_rb_authentic_round_trip(self):
+        rb = self.gen.generate_rb_card_authentic(
+            "Test RB", "TST", 2, 4.5, 0.02, "B",
+        )
+        d = rb.to_dict()
+        restored = PlayerCard.from_dict(d)
+        assert len(restored.rushing) == 12
+        assert len(restored.pass_gain) == 12
+        assert restored.blocks == rb.blocks
+
+
+class TestAuthenticPassResolution:
+    """Test pass resolution with authentic range-based cards."""
+
+    def setup_method(self):
+        random.seed(42)
+        gen = CardGenerator(seed=42)
+        self.resolver = PlayResolver()
+        self.deck = FACDeck(seed=42)
+
+        self.qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B",
+        )
+        self.wr1 = gen.generate_wr_card_authentic(
+            "Test WR1", "TST", 80, 0.70, 12.0, "B", receiver_letter="A",
+        )
+        self.wr2 = gen.generate_wr_card_authentic(
+            "Test WR2", "TST", 81, 0.65, 11.0, "C", receiver_letter="B",
+        )
+        self.te = gen.generate_te_card_authentic(
+            "Test TE", "TST", 85, 0.60, 10.0, "C", receiver_letter="D",
+        )
+        self.receivers = [self.wr1, self.wr2, self.te]
+
+    def test_authentic_pass_produces_result(self):
+        card = self.deck.draw_non_z()
+        result = self.resolver.resolve_pass_5e(
+            card, self.deck, self.qb, self.wr1, self.receivers, "SHORT",
+        )
+        assert isinstance(result, PlayResult)
+        assert result.play_type == "PASS"
+
+    def test_authentic_pass_variety(self):
+        results = set()
+        deck = FACDeck(seed=42)
+        for _ in range(100):
+            card = deck.draw_non_z()
+            result = self.resolver.resolve_pass_5e(
+                card, deck, self.qb, self.wr1, self.receivers, "SHORT",
+            )
+            results.add(result.result)
+        # Should produce at least completions and incompletions
+        assert len(results) >= 2
+
+    def test_authentic_long_pass_produces_result(self):
+        card = self.deck.draw_non_z()
+        result = self.resolver.resolve_pass_5e(
+            card, self.deck, self.qb, self.wr1, self.receivers, "LONG",
+        )
+        assert isinstance(result, PlayResult)
+
+    def test_authentic_quick_pass_produces_result(self):
+        card = self.deck.draw_non_z()
+        result = self.resolver.resolve_pass_5e(
+            card, self.deck, self.qb, self.wr1, self.receivers, "QUICK",
+        )
+        assert isinstance(result, PlayResult)
+
+
+class TestAuthenticRunResolution:
+    """Test run resolution with authentic 12-row rushing cards."""
+
+    def setup_method(self):
+        random.seed(42)
+        gen = CardGenerator(seed=42)
+        self.resolver = PlayResolver()
+        self.deck = FACDeck(seed=42)
+        self.rb = gen.generate_rb_card_authentic(
+            "Test RB", "TST", 2, 4.5, 0.02, "B",
+        )
+
+    def test_authentic_run_produces_result(self):
+        card = self.deck.draw_non_z()
+        result = self.resolver.resolve_run_5e(
+            card, self.deck, self.rb, "IL",
+        )
+        assert isinstance(result, PlayResult)
+        assert result.play_type == "RUN"
+
+    def test_authentic_run_variety(self):
+        results = set()
+        deck = FACDeck(seed=42)
+        for _ in range(100):
+            card = deck.draw_non_z()
+            result = self.resolver.resolve_run_5e(
+                card, deck, self.rb, "IL",
+            )
+            results.add(result.yards_gained)
+        # Should produce variety of yardage
+        assert len(results) >= 3
+
+    def test_run_number_1_can_be_breakaway(self):
+        """Run Number 1 should trigger "Sg" (special gain) breakaway."""
+        breakaway_count = 0
+        for seed in range(200):
+            deck = FACDeck(seed=seed)
+            card = deck.draw_non_z()
+            if card.run_num_int == 1:
+                result = self.resolver.resolve_run_5e(
+                    card, deck, self.rb, "IL",
+                )
+                if result.yards_gained > 10:
+                    breakaway_count += 1
+        assert breakaway_count > 0
