@@ -16,7 +16,7 @@ from engine.team import Team, Roster
 random.seed(42)
 gen = CardGenerator(seed=42)
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "2025")
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "2025")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ─── All 32 NFL Teams ─────────────────────────────────────────────────────────

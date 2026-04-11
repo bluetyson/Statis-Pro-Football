@@ -21,6 +21,21 @@ class DiceResult:
     penalty_check: bool     # ~8% chance
     turnover_modifier: int  # 1-8
 
+    @property
+    def pass_number(self) -> int:
+        """The Pass Number — indexes into QB and receiver card columns."""
+        return self.two_digit
+
+    @property
+    def run_number(self) -> int:
+        """The Run Number — indexes into RB/QB-rush and punter card columns."""
+        return self.two_digit
+
+    @property
+    def slot(self) -> str:
+        """The two-digit slot key as a string, e.g. '37'."""
+        return str(self.two_digit)
+
 
 class FastActionDice:
     """Simulates the Fast Action Dice from Statis Pro Football."""

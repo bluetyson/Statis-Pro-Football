@@ -9,7 +9,7 @@
     "losses": 0,
     "ties": 0
   },
-  "offense_rating": 81,
+  "offense_rating": 84,
   "defense_rating": 78,
   "players": [
     {
@@ -21,37 +21,37 @@
       "short_pass": {
         "11": {
           "result": "COMPLETE",
-          "yards": 14,
+          "yards": 5,
           "td": false
         },
         "12": {
-          "result": "COMPLETE",
-          "yards": 12,
-          "td": false
-        },
-        "13": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "14": {
+        "13": {
           "result": "COMPLETE",
-          "yards": 12,
+          "yards": 3,
+          "td": false
+        },
+        "14": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "15": {
           "result": "COMPLETE",
-          "yards": 5,
+          "yards": 8,
           "td": false
         },
         "16": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 14,
           "td": false
         },
         "17": {
-          "result": "COMPLETE",
-          "yards": 7,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "18": {
@@ -65,28 +65,28 @@
           "td": false
         },
         "22": {
-          "result": "SACK",
-          "yards": -5,
-          "td": false
-        },
-        "23": {
-          "result": "COMPLETE",
-          "yards": 8,
-          "td": false
-        },
-        "24": {
-          "result": "INT",
-          "yards": 0,
-          "td": false
-        },
-        "25": {
           "result": "COMPLETE",
           "yards": 6,
           "td": false
         },
+        "23": {
+          "result": "COMPLETE",
+          "yards": 9,
+          "td": false
+        },
+        "24": {
+          "result": "COMPLETE",
+          "yards": 6,
+          "td": false
+        },
+        "25": {
+          "result": "SACK",
+          "yards": -8,
+          "td": false
+        },
         "26": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 14,
           "td": false
         },
         "27": {
@@ -96,42 +96,42 @@
         },
         "28": {
           "result": "COMPLETE",
-          "yards": 9,
+          "yards": 6,
           "td": false
         },
         "31": {
-          "result": "COMPLETE",
-          "yards": 10,
-          "td": false
-        },
-        "32": {
-          "result": "SACK",
-          "yards": -4,
-          "td": false
-        },
-        "33": {
-          "result": "COMPLETE",
-          "yards": 4,
-          "td": false
-        },
-        "34": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "35": {
+        "32": {
           "result": "COMPLETE",
-          "yards": 8,
+          "yards": 4,
+          "td": false
+        },
+        "33": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "34": {
+          "result": "COMPLETE",
+          "yards": 3,
+          "td": false
+        },
+        "35": {
+          "result": "SACK",
+          "yards": -5,
           "td": false
         },
         "36": {
-          "result": "COMPLETE",
-          "yards": 8,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "37": {
           "result": "COMPLETE",
-          "yards": 8,
+          "yards": 14,
           "td": false
         },
         "38": {
@@ -141,67 +141,67 @@
         },
         "41": {
           "result": "COMPLETE",
-          "yards": 7,
-          "td": false
+          "yards": 5,
+          "td": true
         },
         "42": {
-          "result": "COMPLETE",
-          "yards": 5,
-          "td": false
-        },
-        "43": {
-          "result": "COMPLETE",
-          "yards": 10,
-          "td": false
-        },
-        "44": {
-          "result": "COMPLETE",
-          "yards": 3,
-          "td": false
-        },
-        "45": {
           "result": "COMPLETE",
           "yards": 8,
           "td": false
         },
-        "46": {
+        "43": {
           "result": "COMPLETE",
           "yards": 3,
           "td": false
         },
-        "47": {
-          "result": "SACK",
-          "yards": -5,
-          "td": false
-        },
-        "48": {
+        "44": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "51": {
-          "result": "COMPLETE",
-          "yards": 12,
+        "45": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
-        "52": {
+        "46": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "47": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "48": {
           "result": "COMPLETE",
           "yards": 7,
           "td": false
         },
+        "51": {
+          "result": "COMPLETE",
+          "yards": 6,
+          "td": false
+        },
+        "52": {
+          "result": "COMPLETE",
+          "yards": 8,
+          "td": false
+        },
         "53": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 6,
           "td": false
         },
         "54": {
-          "result": "SACK",
-          "yards": -6,
+          "result": "COMPLETE",
+          "yards": 9,
           "td": false
         },
         "55": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 5,
           "td": false
         },
         "56": {
@@ -211,92 +211,92 @@
         },
         "57": {
           "result": "COMPLETE",
-          "yards": 6,
+          "yards": 4,
           "td": false
         },
         "58": {
           "result": "COMPLETE",
-          "yards": 4,
+          "yards": 14,
           "td": false
         },
         "61": {
           "result": "COMPLETE",
-          "yards": 9,
+          "yards": 5,
           "td": false
         },
         "62": {
-          "result": "COMPLETE",
-          "yards": 3,
+          "result": "SACK",
+          "yards": -6,
           "td": false
         },
         "63": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 12,
           "td": false
         },
         "64": {
           "result": "COMPLETE",
-          "yards": 4,
+          "yards": 5,
           "td": false
         },
         "65": {
           "result": "COMPLETE",
-          "yards": 5,
-          "td": false
+          "yards": 8,
+          "td": true
         },
         "66": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 12,
           "td": false
         },
         "67": {
           "result": "COMPLETE",
-          "yards": 6,
+          "yards": 5,
           "td": false
         },
         "68": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 9,
           "td": false
         },
         "71": {
-          "result": "COMPLETE",
-          "yards": 3,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "72": {
           "result": "COMPLETE",
-          "yards": 6,
-          "td": true
+          "yards": 5,
+          "td": false
         },
         "73": {
           "result": "COMPLETE",
-          "yards": 3,
+          "yards": 6,
           "td": false
         },
         "74": {
-          "result": "COMPLETE",
-          "yards": 5,
-          "td": false
-        },
-        "75": {
-          "result": "COMPLETE",
-          "yards": 8,
-          "td": false
-        },
-        "76": {
-          "result": "COMPLETE",
-          "yards": 5,
-          "td": false
-        },
-        "77": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "78": {
+        "75": {
           "result": "COMPLETE",
           "yards": 5,
+          "td": false
+        },
+        "76": {
+          "result": "COMPLETE",
+          "yards": 10,
+          "td": false
+        },
+        "77": {
+          "result": "COMPLETE",
+          "yards": 3,
+          "td": false
+        },
+        "78": {
+          "result": "INT",
+          "yards": 0,
           "td": false
         },
         "81": {
@@ -306,22 +306,22 @@
         },
         "82": {
           "result": "COMPLETE",
-          "yards": 6,
+          "yards": 5,
           "td": false
         },
         "83": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "84": {
           "result": "COMPLETE",
           "yards": 7,
           "td": false
         },
+        "84": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
         "85": {
           "result": "COMPLETE",
-          "yards": 3,
+          "yards": 9,
           "td": false
         },
         "86": {
@@ -330,14 +330,14 @@
           "td": false
         },
         "87": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "SACK",
+          "yards": -8,
           "td": false
         },
         "88": {
           "result": "COMPLETE",
-          "yards": 10,
-          "td": true
+          "yards": 7,
+          "td": false
         }
       },
       "long_pass": {
@@ -347,48 +347,48 @@
           "td": false
         },
         "12": {
-          "result": "COMPLETE",
-          "yards": 22,
-          "td": false
-        },
-        "13": {
-          "result": "COMPLETE",
-          "yards": 22,
-          "td": false
-        },
-        "14": {
-          "result": "COMPLETE",
-          "yards": 22,
-          "td": false
-        },
-        "15": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "16": {
+        "13": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "14": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "15": {
           "result": "COMPLETE",
-          "yards": 15,
+          "yards": 18,
+          "td": false
+        },
+        "16": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "17": {
-          "result": "COMPLETE",
-          "yards": 30,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "18": {
-          "result": "INCOMPLETE",
+          "result": "INT",
           "yards": 0,
           "td": false
         },
         "21": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 15,
           "td": false
         },
         "22": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 28,
           "td": false
         },
         "23": {
@@ -412,18 +412,18 @@
           "td": false
         },
         "27": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 28,
           "td": false
         },
         "28": {
           "result": "COMPLETE",
-          "yards": 28,
+          "yards": 15,
           "td": false
         },
         "31": {
           "result": "COMPLETE",
-          "yards": 28,
+          "yards": 18,
           "td": false
         },
         "32": {
@@ -437,13 +437,13 @@
           "td": false
         },
         "34": {
-          "result": "COMPLETE",
-          "yards": 20,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "35": {
           "result": "COMPLETE",
-          "yards": 25,
+          "yards": 28,
           "td": false
         },
         "36": {
@@ -457,8 +457,8 @@
           "td": false
         },
         "38": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 18,
           "td": false
         },
         "41": {
@@ -467,9 +467,9 @@
           "td": false
         },
         "42": {
-          "result": "COMPLETE",
-          "yards": 15,
-          "td": true
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
         },
         "43": {
           "result": "INCOMPLETE",
@@ -492,8 +492,8 @@
           "td": false
         },
         "47": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 28,
           "td": false
         },
         "48": {
@@ -502,33 +502,33 @@
           "td": false
         },
         "51": {
-          "result": "COMPLETE",
-          "yards": 18,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "52": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 22,
           "td": false
         },
         "53": {
           "result": "COMPLETE",
           "yards": 22,
-          "td": true
+          "td": false
         },
         "54": {
           "result": "COMPLETE",
-          "yards": 35,
+          "yards": 22,
           "td": false
         },
         "55": {
           "result": "COMPLETE",
-          "yards": 15,
+          "yards": 25,
           "td": false
         },
         "56": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 22,
           "td": false
         },
         "57": {
@@ -538,12 +538,12 @@
         },
         "58": {
           "result": "COMPLETE",
-          "yards": 22,
+          "yards": 28,
           "td": false
         },
         "61": {
-          "result": "INT",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 30,
           "td": false
         },
         "62": {
@@ -557,8 +557,8 @@
           "td": false
         },
         "64": {
-          "result": "COMPLETE",
-          "yards": 20,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "65": {
@@ -567,28 +567,28 @@
           "td": false
         },
         "66": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 20,
           "td": false
         },
         "67": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 28,
           "td": false
         },
         "68": {
           "result": "COMPLETE",
-          "yards": 35,
+          "yards": 18,
           "td": false
         },
         "71": {
-          "result": "INCOMPLETE",
+          "result": "INT",
           "yards": 0,
           "td": false
         },
         "72": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 15,
           "td": false
         },
         "73": {
@@ -597,8 +597,8 @@
           "td": false
         },
         "74": {
-          "result": "COMPLETE",
-          "yards": 25,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "75": {
@@ -607,18 +607,18 @@
           "td": false
         },
         "76": {
-          "result": "COMPLETE",
-          "yards": 25,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "77": {
           "result": "COMPLETE",
-          "yards": 20,
+          "yards": 25,
           "td": false
         },
         "78": {
           "result": "COMPLETE",
-          "yards": 35,
+          "yards": 18,
           "td": false
         },
         "81": {
@@ -632,8 +632,8 @@
           "td": false
         },
         "83": {
-          "result": "COMPLETE",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "84": {
@@ -642,13 +642,13 @@
           "td": false
         },
         "85": {
-          "result": "INT",
+          "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
         "86": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 22,
           "td": false
         },
         "87": {
@@ -657,8 +657,8 @@
           "td": false
         },
         "88": {
-          "result": "COMPLETE",
-          "yards": 20,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         }
       },
@@ -669,103 +669,103 @@
           "td": false
         },
         "12": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "13": {
-          "result": "COMPLETE",
-          "yards": 3,
-          "td": false
-        },
-        "14": {
-          "result": "COMPLETE",
-          "yards": 2,
-          "td": false
-        },
-        "15": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "16": {
-          "result": "COMPLETE",
-          "yards": 4,
-          "td": false
-        },
-        "17": {
-          "result": "COMPLETE",
-          "yards": 8,
-          "td": false
-        },
-        "18": {
-          "result": "COMPLETE",
-          "yards": 2,
-          "td": false
-        },
-        "21": {
-          "result": "COMPLETE",
-          "yards": 2,
-          "td": false
-        },
-        "22": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "23": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "24": {
-          "result": "COMPLETE",
-          "yards": 4,
-          "td": false
-        },
-        "25": {
-          "result": "COMPLETE",
-          "yards": 4,
-          "td": false
-        },
-        "26": {
-          "result": "COMPLETE",
-          "yards": 4,
-          "td": false
-        },
-        "27": {
-          "result": "COMPLETE",
-          "yards": 6,
-          "td": false
-        },
-        "28": {
-          "result": "COMPLETE",
-          "yards": 3,
-          "td": false
-        },
-        "31": {
-          "result": "COMPLETE",
-          "yards": 5,
-          "td": false
-        },
-        "32": {
           "result": "COMPLETE",
           "yards": 10,
           "td": false
         },
-        "33": {
+        "13": {
           "result": "INCOMPLETE",
           "yards": 0,
+          "td": false
+        },
+        "14": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "15": {
+          "result": "COMPLETE",
+          "yards": 6,
+          "td": false
+        },
+        "16": {
+          "result": "COMPLETE",
+          "yards": 5,
+          "td": false
+        },
+        "17": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "18": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "21": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "22": {
+          "result": "COMPLETE",
+          "yards": 1,
+          "td": true
+        },
+        "23": {
+          "result": "COMPLETE",
+          "yards": 1,
+          "td": false
+        },
+        "24": {
+          "result": "COMPLETE",
+          "yards": 5,
+          "td": false
+        },
+        "25": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "26": {
+          "result": "COMPLETE",
+          "yards": 3,
+          "td": false
+        },
+        "27": {
+          "result": "COMPLETE",
+          "yards": 3,
+          "td": false
+        },
+        "28": {
+          "result": "INT",
+          "yards": 0,
+          "td": false
+        },
+        "31": {
+          "result": "FUMBLE",
+          "yards": 0,
+          "td": false
+        },
+        "32": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "33": {
+          "result": "COMPLETE",
+          "yards": 2,
           "td": false
         },
         "34": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 6,
           "td": false
         },
         "35": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 8,
           "td": false
         },
         "36": {
@@ -774,8 +774,8 @@
           "td": false
         },
         "37": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 7,
           "td": false
         },
         "38": {
@@ -785,17 +785,17 @@
         },
         "41": {
           "result": "COMPLETE",
-          "yards": 6,
+          "yards": 3,
           "td": false
         },
         "42": {
-          "result": "COMPLETE",
-          "yards": 1,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "43": {
-          "result": "INT",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 2,
           "td": false
         },
         "44": {
@@ -805,17 +805,17 @@
         },
         "45": {
           "result": "COMPLETE",
-          "yards": 8,
+          "yards": 3,
           "td": false
         },
         "46": {
-          "result": "INCOMPLETE",
+          "result": "FUMBLE",
           "yards": 0,
           "td": false
         },
         "47": {
           "result": "COMPLETE",
-          "yards": 5,
+          "yards": 6,
           "td": false
         },
         "48": {
@@ -829,53 +829,53 @@
           "td": false
         },
         "52": {
-          "result": "COMPLETE",
-          "yards": 4,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "53": {
           "result": "COMPLETE",
-          "yards": 7,
+          "yards": 6,
           "td": false
         },
         "54": {
           "result": "COMPLETE",
-          "yards": 6,
+          "yards": 1,
           "td": false
         },
         "55": {
           "result": "COMPLETE",
-          "yards": 6,
+          "yards": 4,
           "td": false
         },
         "56": {
           "result": "COMPLETE",
-          "yards": 1,
+          "yards": 2,
           "td": false
         },
         "57": {
           "result": "COMPLETE",
-          "yards": 5,
+          "yards": 7,
           "td": false
         },
         "58": {
           "result": "COMPLETE",
-          "yards": 3,
+          "yards": 7,
           "td": false
         },
         "61": {
-          "result": "INT",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 5,
           "td": false
         },
         "62": {
-          "result": "COMPLETE",
-          "yards": 8,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "63": {
-          "result": "COMPLETE",
-          "yards": 4,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "64": {
@@ -884,13 +884,13 @@
           "td": false
         },
         "65": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 6,
           "td": false
         },
         "66": {
           "result": "COMPLETE",
-          "yards": 4,
+          "yards": 2,
           "td": false
         },
         "67": {
@@ -899,33 +899,33 @@
           "td": false
         },
         "68": {
-          "result": "COMPLETE",
-          "yards": 2,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "71": {
           "result": "COMPLETE",
-          "yards": 7,
+          "yards": 5,
           "td": false
         },
         "72": {
           "result": "COMPLETE",
-          "yards": 8,
+          "yards": 2,
           "td": false
         },
         "73": {
           "result": "COMPLETE",
-          "yards": 2,
+          "yards": 6,
           "td": false
         },
         "74": {
-          "result": "COMPLETE",
-          "yards": 3,
+          "result": "INT",
+          "yards": 0,
           "td": false
         },
         "75": {
-          "result": "COMPLETE",
-          "yards": 2,
+          "result": "INT",
+          "yards": 0,
           "td": false
         },
         "76": {
@@ -934,33 +934,33 @@
           "td": false
         },
         "77": {
-          "result": "INT",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 1,
           "td": false
         },
         "78": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 6,
           "td": false
         },
         "81": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 6,
           "td": false
         },
         "82": {
           "result": "COMPLETE",
-          "yards": 4,
+          "yards": 5,
           "td": false
         },
         "83": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 7,
           "td": false
         },
         "84": {
           "result": "COMPLETE",
-          "yards": 3,
+          "yards": 10,
           "td": false
         },
         "85": {
@@ -969,17 +969,339 @@
           "td": false
         },
         "86": {
-          "result": "FUMBLE",
-          "yards": 0,
+          "result": "COMPLETE",
+          "yards": 1,
           "td": false
         },
         "87": {
+          "result": "COMPLETE",
+          "yards": 6,
+          "td": true
+        },
+        "88": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        }
+      },
+      "qb_rush": {
+        "11": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "12": {
+          "result": "GAIN",
+          "yards": 2,
+          "td": false
+        },
+        "13": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "14": {
+          "result": "GAIN",
+          "yards": 3,
+          "td": true
+        },
+        "15": {
+          "result": "GAIN",
+          "yards": 1,
+          "td": false
+        },
+        "16": {
+          "result": "GAIN",
+          "yards": 2,
+          "td": false
+        },
+        "17": {
+          "result": "GAIN",
+          "yards": 7,
+          "td": false
+        },
+        "18": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "21": {
+          "result": "GAIN",
+          "yards": 1,
+          "td": false
+        },
+        "22": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "23": {
+          "result": "GAIN",
+          "yards": 3,
+          "td": false
+        },
+        "24": {
+          "result": "GAIN",
+          "yards": 0,
+          "td": false
+        },
+        "25": {
+          "result": "OOB",
+          "yards": 4,
+          "td": false
+        },
+        "26": {
+          "result": "GAIN",
+          "yards": 1,
+          "td": false
+        },
+        "27": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": true
+        },
+        "28": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "31": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "32": {
+          "result": "GAIN",
+          "yards": -1,
+          "td": false
+        },
+        "33": {
+          "result": "GAIN",
+          "yards": -1,
+          "td": false
+        },
+        "34": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "35": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "36": {
           "result": "FUMBLE",
           "yards": 0,
           "td": false
         },
+        "37": {
+          "result": "OOB",
+          "yards": 5,
+          "td": false
+        },
+        "38": {
+          "result": "OOB",
+          "yards": 3,
+          "td": false
+        },
+        "41": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "42": {
+          "result": "OOB",
+          "yards": 6,
+          "td": false
+        },
+        "43": {
+          "result": "GAIN",
+          "yards": 7,
+          "td": false
+        },
+        "44": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "45": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "46": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "47": {
+          "result": "GAIN",
+          "yards": 3,
+          "td": true
+        },
+        "48": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "51": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "52": {
+          "result": "GAIN",
+          "yards": 8,
+          "td": false
+        },
+        "53": {
+          "result": "GAIN",
+          "yards": 7,
+          "td": false
+        },
+        "54": {
+          "result": "GAIN",
+          "yards": 2,
+          "td": false
+        },
+        "55": {
+          "result": "GAIN",
+          "yards": 1,
+          "td": false
+        },
+        "56": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "57": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "58": {
+          "result": "GAIN",
+          "yards": 3,
+          "td": true
+        },
+        "61": {
+          "result": "GAIN",
+          "yards": 2,
+          "td": false
+        },
+        "62": {
+          "result": "GAIN",
+          "yards": 2,
+          "td": false
+        },
+        "63": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "64": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "65": {
+          "result": "GAIN",
+          "yards": 1,
+          "td": false
+        },
+        "66": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "67": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "68": {
+          "result": "GAIN",
+          "yards": 0,
+          "td": false
+        },
+        "71": {
+          "result": "GAIN",
+          "yards": -1,
+          "td": false
+        },
+        "72": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "73": {
+          "result": "OOB",
+          "yards": 2,
+          "td": false
+        },
+        "74": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "75": {
+          "result": "GAIN",
+          "yards": 1,
+          "td": false
+        },
+        "76": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "77": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "78": {
+          "result": "GAIN",
+          "yards": 3,
+          "td": false
+        },
+        "81": {
+          "result": "GAIN",
+          "yards": -1,
+          "td": false
+        },
+        "82": {
+          "result": "GAIN",
+          "yards": 7,
+          "td": false
+        },
+        "83": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "84": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "85": {
+          "result": "GAIN",
+          "yards": -1,
+          "td": false
+        },
+        "86": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "87": {
+          "result": "GAIN",
+          "yards": 7,
+          "td": false
+        },
         "88": {
-          "result": "COMPLETE",
+          "result": "GAIN",
           "yards": 4,
           "td": false
         }
@@ -990,6 +1312,7 @@
       "long_reception": {},
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -999,7 +1322,8 @@
         "comp_pct": 0.643,
         "ypa": 7.6,
         "int_rate": 0.022,
-        "sack_rate": 0.068
+        "sack_rate": 0.068,
+        "rush_ypc": 3.0
       }
     },
     {
@@ -1011,30 +1335,31 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {
         "11": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 2,
           "td": false
         },
         "12": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 2,
           "td": false
         },
         "13": {
           "result": "GAIN",
-          "yards": 2,
-          "td": true
+          "yards": 6,
+          "td": false
         },
         "14": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 0,
           "td": false
         },
         "15": {
-          "result": "FUMBLE",
-          "yards": 0,
+          "result": "GAIN",
+          "yards": 8,
           "td": false
         },
         "16": {
@@ -1044,42 +1369,42 @@
         },
         "17": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 3,
           "td": false
         },
         "18": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 4,
           "td": false
         },
         "21": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 2,
           "td": false
         },
         "22": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 6,
           "td": false
         },
         "23": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": -1,
           "td": false
         },
         "24": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 6,
           "td": false
         },
         "25": {
           "result": "GAIN",
-          "yards": 2,
-          "td": true
+          "yards": 3,
+          "td": false
         },
         "26": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 2,
           "td": false
         },
         "27": {
@@ -1088,53 +1413,53 @@
           "td": false
         },
         "28": {
-          "result": "GAIN",
-          "yards": 4,
+          "result": "FUMBLE",
+          "yards": 0,
           "td": false
         },
         "31": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 0,
           "td": false
         },
         "32": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 5,
           "td": false
         },
         "33": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 3,
           "td": false
         },
         "34": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 3,
           "td": false
         },
         "35": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 3,
           "td": false
         },
         "36": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 2,
           "td": false
         },
         "37": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 5,
           "td": false
         },
         "38": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 2,
           "td": false
         },
         "41": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 2,
           "td": false
         },
         "42": {
@@ -1144,87 +1469,87 @@
         },
         "43": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 5,
           "td": false
         },
         "44": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 1,
           "td": false
         },
         "45": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "46": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 4,
           "td": false
         },
         "47": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 0,
           "td": false
         },
         "48": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 3,
           "td": false
         },
         "51": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 6,
           "td": false
         },
         "52": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 7,
           "td": false
         },
         "53": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": -1,
           "td": false
         },
         "54": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 8,
           "td": false
         },
         "55": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 6,
           "td": false
         },
         "56": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 1,
           "td": false
         },
         "57": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 5,
           "td": false
         },
         "58": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 8,
           "td": false
         },
         "61": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 4,
           "td": false
         },
         "62": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "63": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 1,
           "td": false
         },
         "64": {
@@ -1233,58 +1558,58 @@
           "td": false
         },
         "65": {
-          "result": "GAIN",
-          "yards": 7,
+          "result": "OOB",
+          "yards": 4,
           "td": false
         },
         "66": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 2,
           "td": false
         },
         "67": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": 4,
           "td": false
         },
         "68": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 7,
           "td": false
         },
         "71": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": 1,
           "td": false
         },
         "72": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 6,
           "td": false
         },
         "73": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": 4,
           "td": false
         },
         "74": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 6,
           "td": false
         },
         "75": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 2,
           "td": false
         },
         "76": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 8,
           "td": false
         },
         "77": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": -1,
           "td": false
         },
         "78": {
@@ -1294,274 +1619,274 @@
         },
         "81": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 0,
           "td": false
         },
         "82": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 5,
           "td": false
         },
         "83": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 3,
           "td": false
         },
         "84": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 5,
           "td": false
         },
         "85": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "86": {
-          "result": "GAIN",
-          "yards": 8,
+          "result": "OOB",
+          "yards": 6,
           "td": false
         },
         "87": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 6,
           "td": false
         },
         "88": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 4,
           "td": false
         }
       },
       "outside_run": {
         "11": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 2,
           "td": false
         },
         "12": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 4,
           "td": false
         },
         "13": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 5,
           "td": false
         },
         "14": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 6,
           "td": false
         },
         "15": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 1,
           "td": false
         },
         "16": {
           "result": "GAIN",
-          "yards": 10,
+          "yards": 2,
           "td": false
         },
         "17": {
           "result": "GAIN",
-          "yards": 8,
-          "td": false
+          "yards": 7,
+          "td": true
         },
         "18": {
-          "result": "GAIN",
-          "yards": -1,
-          "td": false
-        },
-        "21": {
-          "result": "GAIN",
-          "yards": 2,
-          "td": false
-        },
-        "22": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "23": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "24": {
-          "result": "GAIN",
-          "yards": -2,
-          "td": false
-        },
-        "25": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "26": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "27": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "28": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "31": {
-          "result": "GAIN",
-          "yards": 12,
-          "td": false
-        },
-        "32": {
-          "result": "GAIN",
-          "yards": 12,
-          "td": false
-        },
-        "33": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "34": {
-          "result": "GAIN",
-          "yards": 12,
-          "td": false
-        },
-        "35": {
-          "result": "GAIN",
-          "yards": 8,
-          "td": false
-        },
-        "36": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "37": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "38": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "41": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "42": {
-          "result": "GAIN",
-          "yards": 12,
-          "td": false
-        },
-        "43": {
           "result": "GAIN",
           "yards": 7,
           "td": false
         },
-        "44": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "45": {
-          "result": "GAIN",
-          "yards": 10,
-          "td": false
-        },
-        "46": {
+        "21": {
           "result": "GAIN",
           "yards": 6,
           "td": false
         },
-        "47": {
+        "22": {
           "result": "GAIN",
+          "yards": 3,
+          "td": false
+        },
+        "23": {
+          "result": "GAIN",
+          "yards": 0,
+          "td": false
+        },
+        "24": {
+          "result": "GAIN",
+          "yards": -1,
+          "td": false
+        },
+        "25": {
+          "result": "GAIN",
+          "yards": 8,
+          "td": false
+        },
+        "26": {
+          "result": "GAIN",
+          "yards": 3,
+          "td": false
+        },
+        "27": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "28": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "31": {
+          "result": "GAIN",
+          "yards": 10,
+          "td": false
+        },
+        "32": {
+          "result": "GAIN",
+          "yards": -1,
+          "td": false
+        },
+        "33": {
+          "result": "GAIN",
+          "yards": 7,
+          "td": false
+        },
+        "34": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "35": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "36": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "37": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "38": {
+          "result": "GAIN",
+          "yards": 0,
+          "td": false
+        },
+        "41": {
+          "result": "GAIN",
+          "yards": 6,
+          "td": false
+        },
+        "42": {
+          "result": "GAIN",
+          "yards": 2,
+          "td": false
+        },
+        "43": {
+          "result": "GAIN",
+          "yards": 5,
+          "td": false
+        },
+        "44": {
+          "result": "GAIN",
+          "yards": -1,
+          "td": false
+        },
+        "45": {
+          "result": "GAIN",
+          "yards": 4,
+          "td": false
+        },
+        "46": {
+          "result": "GAIN",
+          "yards": 10,
+          "td": false
+        },
+        "47": {
+          "result": "OOB",
           "yards": 3,
           "td": false
         },
         "48": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 8,
           "td": false
         },
         "51": {
           "result": "GAIN",
-          "yards": 10,
+          "yards": 2,
           "td": false
         },
         "52": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 2,
           "td": false
         },
         "53": {
-          "result": "FUMBLE",
-          "yards": 0,
-          "td": false
+          "result": "GAIN",
+          "yards": 8,
+          "td": true
         },
         "54": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 1,
           "td": false
         },
         "55": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 5,
           "td": false
         },
         "56": {
-          "result": "GAIN",
+          "result": "FUMBLE",
           "yards": 0,
           "td": false
         },
         "57": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 6,
           "td": false
         },
         "58": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 7,
           "td": false
         },
         "61": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 3,
           "td": false
         },
         "62": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 3,
           "td": false
         },
         "63": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 1,
           "td": false
         },
         "64": {
           "result": "GAIN",
-          "yards": 10,
+          "yards": 3,
           "td": false
         },
         "65": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 0,
           "td": false
         },
         "66": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 3,
           "td": false
         },
         "67": {
@@ -1571,22 +1896,22 @@
         },
         "68": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 4,
           "td": false
         },
         "71": {
-          "result": "GAIN",
-          "yards": 3,
+          "result": "OOB",
+          "yards": 4,
           "td": false
         },
         "72": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 4,
           "td": false
         },
         "73": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 8,
           "td": false
         },
         "74": {
@@ -1596,62 +1921,62 @@
         },
         "75": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 3,
           "td": false
         },
         "76": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 4,
           "td": false
         },
         "77": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 12,
           "td": false
         },
         "78": {
-          "result": "GAIN",
-          "yards": 4,
+          "result": "OOB",
+          "yards": 6,
           "td": false
         },
         "81": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 5,
           "td": false
         },
         "82": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 3,
           "td": false
         },
         "83": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 5,
           "td": false
         },
         "84": {
-          "result": "GAIN",
-          "yards": 6,
+          "result": "OOB",
+          "yards": 3,
           "td": false
         },
         "85": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 5,
           "td": false
         },
         "86": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 5,
           "td": false
         },
         "87": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": -1,
           "td": false
         },
         "88": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": 8,
           "td": false
         }
       },
@@ -1659,6 +1984,7 @@
       "long_reception": {},
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -1678,110 +2004,111 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {
         "11": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 4,
           "td": false
         },
         "12": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "13": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": 5,
           "td": false
         },
         "14": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 5,
           "td": false
         },
         "15": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 1,
           "td": false
         },
         "16": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 2,
           "td": false
         },
         "17": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 4,
           "td": false
         },
         "18": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": -1,
           "td": false
         },
         "21": {
           "result": "GAIN",
-          "yards": -2,
+          "yards": 1,
           "td": false
         },
         "22": {
           "result": "GAIN",
-          "yards": 1,
-          "td": false
+          "yards": 4,
+          "td": true
         },
         "23": {
-          "result": "GAIN",
-          "yards": -1,
-          "td": false
-        },
-        "24": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "25": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "26": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "27": {
           "result": "GAIN",
           "yards": 4,
           "td": false
         },
+        "24": {
+          "result": "GAIN",
+          "yards": 0,
+          "td": false
+        },
+        "25": {
+          "result": "GAIN",
+          "yards": 1,
+          "td": false
+        },
+        "26": {
+          "result": "GAIN",
+          "yards": 1,
+          "td": false
+        },
+        "27": {
+          "result": "GAIN",
+          "yards": 3,
+          "td": false
+        },
         "28": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "31": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 2,
           "td": false
         },
         "32": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 7,
           "td": false
         },
         "33": {
-          "result": "GAIN",
-          "yards": 6,
+          "result": "FUMBLE",
+          "yards": 0,
           "td": false
         },
         "34": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 2,
           "td": false
         },
         "35": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 2,
           "td": false
         },
         "36": {
@@ -1791,57 +2118,57 @@
         },
         "37": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 8,
           "td": false
         },
         "38": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 2,
           "td": false
         },
         "41": {
           "result": "GAIN",
-          "yards": 3,
-          "td": false
+          "yards": 1,
+          "td": true
         },
         "42": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 4,
           "td": false
         },
         "43": {
-          "result": "GAIN",
-          "yards": 4,
+          "result": "OOB",
+          "yards": 3,
           "td": false
         },
         "44": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 6,
           "td": false
         },
         "45": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": -1,
           "td": false
         },
         "46": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 5,
           "td": false
         },
         "47": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "48": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": -1,
           "td": false
         },
         "51": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 1,
           "td": false
         },
         "52": {
@@ -1850,23 +2177,23 @@
           "td": false
         },
         "53": {
-          "result": "GAIN",
+          "result": "OOB",
           "yards": 3,
           "td": false
         },
         "54": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 3,
           "td": false
         },
         "55": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 4,
           "td": false
         },
         "56": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": 2,
           "td": false
         },
         "57": {
@@ -1876,12 +2203,12 @@
         },
         "58": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": -2,
           "td": false
         },
         "61": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 5,
           "td": false
         },
         "62": {
@@ -1891,72 +2218,72 @@
         },
         "63": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 5,
           "td": false
         },
         "64": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": -1,
           "td": false
         },
         "65": {
           "result": "GAIN",
-          "yards": -2,
+          "yards": 5,
           "td": false
         },
         "66": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 4,
           "td": false
         },
         "67": {
           "result": "GAIN",
-          "yards": -2,
+          "yards": -1,
           "td": false
         },
         "68": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 2,
           "td": false
         },
         "71": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 3,
           "td": false
         },
         "72": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": -1,
           "td": false
         },
         "73": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "74": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 7,
           "td": false
         },
         "75": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": 2,
           "td": false
         },
         "76": {
-          "result": "FUMBLE",
-          "yards": 0,
+          "result": "GAIN",
+          "yards": 1,
           "td": false
         },
         "77": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 2,
           "td": false
         },
         "78": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 1,
           "td": false
         },
         "81": {
@@ -1966,224 +2293,224 @@
         },
         "82": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 1,
           "td": false
         },
         "83": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 1,
           "td": false
         },
         "84": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 0,
           "td": false
         },
         "85": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 4,
           "td": false
         },
         "86": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "87": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": -2,
           "td": false
         },
         "88": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": -2,
           "td": false
         }
       },
       "outside_run": {
         "11": {
-          "result": "GAIN",
-          "yards": 4,
+          "result": "OOB",
+          "yards": 3,
           "td": false
         },
         "12": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": -2,
           "td": false
         },
         "13": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 3,
           "td": false
         },
         "14": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 6,
           "td": false
         },
         "15": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 5,
           "td": false
         },
         "16": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 1,
           "td": false
         },
         "17": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 7,
           "td": false
         },
         "18": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 3,
           "td": false
         },
         "21": {
           "result": "GAIN",
-          "yards": 2,
-          "td": false
+          "yards": 8,
+          "td": true
         },
         "22": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 3,
           "td": false
         },
         "23": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 1,
           "td": false
         },
         "24": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 2,
           "td": false
         },
         "25": {
-          "result": "GAIN",
+          "result": "OOB",
           "yards": 3,
           "td": false
         },
         "26": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 2,
           "td": false
         },
         "27": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 3,
           "td": false
         },
         "28": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 0,
           "td": false
         },
         "31": {
           "result": "GAIN",
-          "yards": 7,
-          "td": false
+          "yards": 2,
+          "td": true
         },
         "32": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 6,
           "td": false
         },
         "33": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 3,
           "td": false
         },
         "34": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 3,
           "td": false
         },
         "35": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 6,
           "td": false
         },
         "36": {
           "result": "GAIN",
-          "yards": 2,
-          "td": false
+          "yards": 3,
+          "td": true
         },
         "37": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "38": {
           "result": "GAIN",
-          "yards": 3,
-          "td": true
+          "yards": 4,
+          "td": false
         },
         "41": {
           "result": "GAIN",
-          "yards": 3,
-          "td": true
+          "yards": 6,
+          "td": false
         },
         "42": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 1,
           "td": false
         },
         "43": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": -2,
           "td": false
         },
         "44": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": -2,
           "td": false
         },
         "45": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 1,
           "td": false
         },
         "46": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": -1,
           "td": false
         },
         "47": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 8,
           "td": false
         },
         "48": {
-          "result": "GAIN",
-          "yards": 4,
+          "result": "FUMBLE",
+          "yards": 0,
           "td": false
         },
         "51": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 8,
           "td": false
         },
         "52": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 0,
           "td": false
         },
         "53": {
           "result": "GAIN",
-          "yards": 5,
+          "yards": 7,
           "td": false
         },
         "54": {
-          "result": "GAIN",
-          "yards": 5,
+          "result": "OOB",
+          "yards": 1,
           "td": false
         },
         "55": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 5,
           "td": false
         },
         "56": {
@@ -2193,57 +2520,57 @@
         },
         "57": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": 1,
           "td": false
         },
         "58": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": 4,
           "td": false
         },
         "61": {
-          "result": "GAIN",
+          "result": "OOB",
           "yards": 1,
           "td": false
         },
         "62": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 0,
           "td": false
         },
         "63": {
           "result": "GAIN",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "64": {
           "result": "GAIN",
-          "yards": 1,
-          "td": true
+          "yards": 6,
+          "td": false
         },
         "65": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 8,
           "td": false
         },
         "66": {
           "result": "GAIN",
-          "yards": 0,
+          "yards": 2,
           "td": false
         },
         "67": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 6,
           "td": false
         },
         "68": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": -2,
           "td": false
         },
         "71": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": -1,
           "td": false
         },
         "72": {
@@ -2253,17 +2580,17 @@
         },
         "73": {
           "result": "GAIN",
-          "yards": 1,
+          "yards": 3,
           "td": false
         },
         "74": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 1,
           "td": false
         },
         "75": {
           "result": "GAIN",
-          "yards": 8,
+          "yards": 4,
           "td": false
         },
         "76": {
@@ -2273,7 +2600,7 @@
         },
         "77": {
           "result": "GAIN",
-          "yards": 3,
+          "yards": 4,
           "td": false
         },
         "78": {
@@ -2282,8 +2609,8 @@
           "td": false
         },
         "81": {
-          "result": "FUMBLE",
-          "yards": 0,
+          "result": "GAIN",
+          "yards": -2,
           "td": false
         },
         "82": {
@@ -2293,32 +2620,32 @@
         },
         "83": {
           "result": "GAIN",
-          "yards": -1,
+          "yards": 1,
           "td": false
         },
         "84": {
           "result": "GAIN",
-          "yards": 7,
+          "yards": -1,
           "td": false
         },
         "85": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": -2,
           "td": false
         },
         "86": {
           "result": "GAIN",
-          "yards": 5,
-          "td": false
+          "yards": 3,
+          "td": true
         },
         "87": {
           "result": "GAIN",
-          "yards": 4,
+          "yards": 6,
           "td": false
         },
         "88": {
           "result": "GAIN",
-          "yards": 6,
+          "yards": -2,
           "td": false
         }
       },
@@ -2326,6 +2653,7 @@
       "long_reception": {},
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -2345,67 +2673,68 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {
         "11": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 4,
           "td": false
         },
         "12": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 12,
           "td": false
         },
         "13": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 12,
           "td": false
         },
         "14": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 9,
           "td": false
         },
         "15": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 8,
           "td": false
         },
         "16": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 9,
           "td": false
         },
         "17": {
           "result": "CATCH",
-          "yards": 9,
+          "yards": 6,
           "td": false
         },
         "18": {
           "result": "CATCH",
-          "yards": 9,
+          "yards": 10,
           "td": false
         },
         "21": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 6,
           "td": false
         },
         "22": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 8,
           "td": false
         },
         "23": {
           "result": "CATCH",
-          "yards": 4,
+          "yards": 10,
           "td": false
         },
         "24": {
-          "result": "CATCH",
-          "yards": 9,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "25": {
@@ -2414,33 +2743,33 @@
           "td": false
         },
         "26": {
-          "result": "CATCH",
-          "yards": 7,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "27": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 12,
           "td": false
         },
         "28": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
           "result": "CATCH",
           "yards": 7,
           "td": false
         },
-        "33": {
+        "31": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 7,
+          "td": false
+        },
+        "32": {
+          "result": "CATCH",
+          "yards": 9,
+          "td": false
+        },
+        "33": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "34": {
@@ -2451,51 +2780,51 @@
         "35": {
           "result": "CATCH",
           "yards": 7,
-          "td": false
+          "td": true
         },
         "36": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 10,
           "td": false
         },
         "37": {
           "result": "CATCH",
-          "yards": 5,
-          "td": true
+          "yards": 8,
+          "td": false
         },
         "38": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 10,
           "td": false
         },
         "41": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 6,
           "td": false
         },
         "42": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 5,
           "td": false
         },
         "43": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "44": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 9,
           "td": false
         },
         "45": {
-          "result": "CATCH",
-          "yards": 12,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "46": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 14,
           "td": false
         },
         "47": {
@@ -2505,22 +2834,22 @@
         },
         "48": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 10,
           "td": false
         },
         "51": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 14,
           "td": false
         },
         "52": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "53": {
           "result": "CATCH",
           "yards": 9,
+          "td": true
+        },
+        "53": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "54": {
@@ -2530,22 +2859,22 @@
         },
         "55": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 4,
           "td": false
         },
         "56": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 4,
           "td": false
         },
         "57": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 8,
           "td": false
         },
         "58": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 12,
           "td": false
         },
         "61": {
@@ -2554,79 +2883,79 @@
           "td": false
         },
         "62": {
-          "result": "CATCH",
-          "yards": 12,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "63": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 8,
           "td": false
         },
         "64": {
-          "result": "CATCH",
-          "yards": 10,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "65": {
-          "result": "CATCH",
-          "yards": 9,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "66": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 7,
           "td": false
         },
         "67": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "68": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 14,
           "td": false
         },
         "71": {
-          "result": "CATCH",
-          "yards": 14,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "72": {
           "result": "CATCH",
-          "yards": 12,
+          "yards": 9,
           "td": false
         },
         "73": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 4,
           "td": false
         },
         "74": {
           "result": "CATCH",
-          "yards": 12,
+          "yards": 5,
           "td": false
         },
         "75": {
+          "result": "CATCH",
+          "yards": 8,
+          "td": false
+        },
+        "76": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "76": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
         "77": {
-          "result": "CATCH",
-          "yards": 9,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "78": {
           "result": "CATCH",
-          "yards": 14,
-          "td": false
+          "yards": 7,
+          "td": true
         },
         "81": {
           "result": "INCOMPLETE",
@@ -2635,7 +2964,7 @@
         },
         "82": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 6,
           "td": false
         },
         "83": {
@@ -2645,34 +2974,34 @@
         },
         "84": {
           "result": "CATCH",
-          "yards": 12,
+          "yards": 6,
           "td": false
         },
         "85": {
           "result": "CATCH",
-          "yards": 4,
+          "yards": 12,
           "td": false
         },
         "86": {
-          "result": "CATCH",
-          "yards": 8,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "87": {
           "result": "CATCH",
-          "yards": 12,
+          "yards": 9,
           "td": false
         },
         "88": {
-          "result": "CATCH",
-          "yards": 9,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         }
       },
       "long_reception": {
         "11": {
           "result": "CATCH",
-          "yards": 22,
+          "yards": 15,
           "td": false
         },
         "12": {
@@ -2681,18 +3010,18 @@
           "td": false
         },
         "13": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "14": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "15": {
+        "14": {
           "result": "CATCH",
-          "yards": 15,
+          "yards": 20,
+          "td": false
+        },
+        "15": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "16": {
@@ -2701,13 +3030,13 @@
           "td": false
         },
         "17": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 30,
           "td": false
         },
         "18": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 25,
           "td": false
         },
         "21": {
@@ -2716,13 +3045,13 @@
           "td": false
         },
         "22": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": true
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
         },
         "23": {
-          "result": "CATCH",
-          "yards": 18,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "24": {
@@ -2736,58 +3065,58 @@
           "td": false
         },
         "26": {
-          "result": "CATCH",
-          "yards": 18,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "27": {
           "result": "CATCH",
-          "yards": 15,
+          "yards": 35,
           "td": false
         },
         "28": {
           "result": "CATCH",
-          "yards": 30,
+          "yards": 20,
           "td": false
         },
         "31": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "33": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "34": {
           "result": "CATCH",
           "yards": 22,
           "td": false
         },
-        "35": {
+        "32": {
           "result": "CATCH",
-          "yards": 30,
+          "yards": 35,
           "td": false
         },
-        "36": {
+        "33": {
+          "result": "CATCH",
+          "yards": 18,
+          "td": false
+        },
+        "34": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
+        "35": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "36": {
+          "result": "CATCH",
+          "yards": 45,
+          "td": false
+        },
         "37": {
           "result": "CATCH",
-          "yards": 20,
+          "yards": 22,
           "td": false
         },
         "38": {
           "result": "CATCH",
-          "yards": 30,
+          "yards": 28,
           "td": false
         },
         "41": {
@@ -2796,8 +3125,8 @@
           "td": false
         },
         "42": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "43": {
@@ -2812,7 +3141,7 @@
         },
         "45": {
           "result": "CATCH",
-          "yards": 22,
+          "yards": 20,
           "td": false
         },
         "46": {
@@ -2821,8 +3150,8 @@
           "td": false
         },
         "47": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 35,
           "td": false
         },
         "48": {
@@ -2832,17 +3161,17 @@
         },
         "51": {
           "result": "CATCH",
-          "yards": 45,
+          "yards": 22,
           "td": false
         },
         "52": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "53": {
           "result": "CATCH",
-          "yards": 25,
+          "yards": 15,
           "td": false
         },
         "54": {
@@ -2851,23 +3180,23 @@
           "td": false
         },
         "55": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 15,
           "td": false
         },
         "56": {
           "result": "CATCH",
-          "yards": 25,
-          "td": true
+          "yards": 15,
+          "td": false
         },
         "57": {
-          "result": "CATCH",
-          "yards": 30,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "58": {
           "result": "CATCH",
-          "yards": 25,
+          "yards": 18,
           "td": false
         },
         "61": {
@@ -2876,8 +3205,8 @@
           "td": false
         },
         "62": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "63": {
@@ -2892,27 +3221,27 @@
         },
         "65": {
           "result": "CATCH",
-          "yards": 18,
+          "yards": 35,
           "td": false
         },
         "66": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "67": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "68": {
-          "result": "CATCH",
-          "yards": 35,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "71": {
           "result": "CATCH",
-          "yards": 40,
+          "yards": 28,
           "td": false
         },
         "72": {
@@ -2921,23 +3250,23 @@
           "td": false
         },
         "73": {
-          "result": "CATCH",
-          "yards": 35,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "74": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "75": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "76": {
-          "result": "CATCH",
-          "yards": 28,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "77": {
@@ -2946,8 +3275,8 @@
           "td": false
         },
         "78": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "81": {
@@ -2956,8 +3285,8 @@
           "td": false
         },
         "82": {
-          "result": "CATCH",
-          "yards": 20,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "83": {
@@ -2966,33 +3295,34 @@
           "td": false
         },
         "84": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "85": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "86": {
           "result": "CATCH",
-          "yards": 25,
+          "yards": 15,
           "td": false
         },
         "87": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 25,
           "td": false
         },
         "88": {
-          "result": "CATCH",
-          "yards": 45,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         }
       },
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -3012,22 +3342,23 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {
         "11": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 6,
           "td": false
         },
         "12": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "13": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 6,
           "td": false
         },
         "14": {
@@ -3042,222 +3373,222 @@
         },
         "16": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 14,
           "td": false
         },
         "17": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "18": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 7,
           "td": false
         },
         "21": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 10,
           "td": false
         },
         "22": {
           "result": "CATCH",
-          "yards": 4,
+          "yards": 8,
           "td": false
         },
         "23": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 7,
           "td": false
         },
         "24": {
-          "result": "CATCH",
-          "yards": 5,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "25": {
-          "result": "CATCH",
-          "yards": 5,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "26": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 8,
           "td": false
         },
         "27": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 6,
           "td": false
         },
         "28": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 9,
           "td": false
         },
         "31": {
-          "result": "CATCH",
-          "yards": 7,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "32": {
           "result": "CATCH",
-          "yards": 9,
+          "yards": 4,
           "td": false
         },
         "33": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "34": {
           "result": "CATCH",
-          "yards": 9,
+          "yards": 8,
           "td": false
         },
         "35": {
           "result": "CATCH",
-          "yards": 14,
+          "yards": 7,
           "td": false
         },
         "36": {
           "result": "CATCH",
-          "yards": 4,
+          "yards": 12,
           "td": false
         },
         "37": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 6,
           "td": false
         },
         "38": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "41": {
-          "result": "CATCH",
-          "yards": 9,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "42": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 12,
           "td": false
         },
         "43": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "44": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 9,
           "td": false
         },
         "45": {
           "result": "CATCH",
-          "yards": 12,
+          "yards": 14,
           "td": false
         },
         "46": {
           "result": "CATCH",
-          "yards": 12,
+          "yards": 5,
           "td": false
         },
         "47": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "48": {
           "result": "CATCH",
-          "yards": 12,
+          "yards": 7,
           "td": false
         },
         "51": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 6,
           "td": false
         },
         "52": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 7,
           "td": false
         },
         "53": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 12,
           "td": false
         },
         "54": {
           "result": "CATCH",
-          "yards": 6,
-          "td": false
+          "yards": 10,
+          "td": true
         },
         "55": {
-          "result": "CATCH",
-          "yards": 8,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "56": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "57": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 8,
           "td": false
         },
         "58": {
-          "result": "CATCH",
-          "yards": 5,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "61": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 10,
           "td": false
         },
         "62": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "63": {
-          "result": "CATCH",
-          "yards": 12,
-          "td": false
-        },
-        "64": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "65": {
           "result": "CATCH",
           "yards": 7,
           "td": false
         },
-        "66": {
+        "63": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 7,
           "td": false
         },
-        "67": {
+        "64": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 5,
           "td": false
         },
-        "68": {
+        "65": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "71": {
+        "66": {
+          "result": "CATCH",
+          "yards": 5,
+          "td": false
+        },
+        "67": {
+          "result": "CATCH",
+          "yards": 8,
+          "td": false
+        },
+        "68": {
           "result": "CATCH",
           "yards": 4,
+          "td": false
+        },
+        "71": {
+          "result": "CATCH",
+          "yards": 10,
           "td": false
         },
         "72": {
@@ -3272,84 +3603,84 @@
         },
         "74": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 14,
           "td": false
         },
         "75": {
-          "result": "CATCH",
-          "yards": 12,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "76": {
           "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "77": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "78": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "81": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "82": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "83": {
-          "result": "CATCH",
           "yards": 12,
           "td": false
         },
-        "84": {
+        "77": {
           "result": "CATCH",
           "yards": 9,
           "td": false
         },
-        "85": {
+        "78": {
+          "result": "CATCH",
+          "yards": 7,
+          "td": false
+        },
+        "81": {
           "result": "CATCH",
           "yards": 6,
           "td": false
         },
-        "86": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": true
+        "82": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
         },
-        "87": {
+        "83": {
+          "result": "CATCH",
+          "yards": 7,
+          "td": false
+        },
+        "84": {
           "result": "CATCH",
           "yards": 8,
           "td": false
         },
-        "88": {
+        "85": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "86": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 12,
+          "td": false
+        },
+        "87": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "88": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         }
       },
       "long_reception": {
         "11": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "12": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 35,
           "td": false
         },
         "13": {
-          "result": "CATCH",
-          "yards": 25,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "14": {
@@ -3363,13 +3694,13 @@
           "td": false
         },
         "16": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 35,
           "td": false
         },
         "17": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "18": {
@@ -3379,32 +3710,32 @@
         },
         "21": {
           "result": "CATCH",
-          "yards": 40,
-          "td": false
+          "yards": 15,
+          "td": true
         },
         "22": {
-          "result": "CATCH",
-          "yards": 25,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "23": {
-          "result": "CATCH",
-          "yards": 20,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "24": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 35,
           "td": false
         },
         "25": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "26": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 40,
           "td": false
         },
         "27": {
@@ -3413,8 +3744,8 @@
           "td": false
         },
         "28": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 45,
           "td": false
         },
         "31": {
@@ -3424,22 +3755,22 @@
         },
         "32": {
           "result": "CATCH",
-          "yards": 15,
+          "yards": 18,
           "td": false
         },
         "33": {
           "result": "CATCH",
-          "yards": 28,
+          "yards": 15,
           "td": false
         },
         "34": {
           "result": "CATCH",
-          "yards": 20,
+          "yards": 15,
           "td": false
         },
         "35": {
-          "result": "CATCH",
-          "yards": 28,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "36": {
@@ -3449,12 +3780,12 @@
         },
         "37": {
           "result": "CATCH",
-          "yards": 22,
+          "yards": 35,
           "td": false
         },
         "38": {
-          "result": "CATCH",
-          "yards": 18,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "41": {
@@ -3463,13 +3794,13 @@
           "td": false
         },
         "42": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "43": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "44": {
@@ -3483,43 +3814,43 @@
           "td": false
         },
         "46": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "48": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": true
-        },
-        "51": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "52": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "53": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "54": {
           "result": "CATCH",
           "yards": 18,
           "td": false
         },
-        "55": {
+        "47": {
+          "result": "CATCH",
+          "yards": 45,
+          "td": false
+        },
+        "48": {
+          "result": "CATCH",
+          "yards": 28,
+          "td": false
+        },
+        "51": {
+          "result": "CATCH",
+          "yards": 35,
+          "td": false
+        },
+        "52": {
+          "result": "CATCH",
+          "yards": 18,
+          "td": false
+        },
+        "53": {
+          "result": "CATCH",
+          "yards": 22,
+          "td": false
+        },
+        "54": {
           "result": "INCOMPLETE",
           "yards": 0,
+          "td": false
+        },
+        "55": {
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "56": {
@@ -3528,28 +3859,28 @@
           "td": false
         },
         "57": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 28,
           "td": false
         },
         "58": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": true
-        },
-        "61": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "62": {
+        "61": {
           "result": "CATCH",
-          "yards": 35,
+          "yards": 28,
+          "td": false
+        },
+        "62": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "63": {
           "result": "CATCH",
-          "yards": 18,
+          "yards": 15,
           "td": false
         },
         "64": {
@@ -3558,18 +3889,18 @@
           "td": false
         },
         "65": {
-          "result": "CATCH",
-          "yards": 15,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "66": {
-          "result": "CATCH",
-          "yards": 28,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "67": {
-          "result": "CATCH",
-          "yards": 35,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "68": {
@@ -3584,82 +3915,83 @@
         },
         "72": {
           "result": "CATCH",
-          "yards": 30,
+          "yards": 15,
           "td": false
         },
         "73": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "74": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "75": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 25,
           "td": false
         },
         "76": {
           "result": "CATCH",
-          "yards": 15,
+          "yards": 22,
           "td": false
         },
         "77": {
-          "result": "CATCH",
-          "yards": 20,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "78": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 25,
           "td": false
         },
         "81": {
           "result": "CATCH",
-          "yards": 20,
+          "yards": 45,
           "td": false
         },
         "82": {
-          "result": "CATCH",
-          "yards": 30,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "83": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": true
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
         },
         "84": {
-          "result": "CATCH",
-          "yards": 20,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "85": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "86": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 35,
           "td": false
         },
         "87": {
           "result": "CATCH",
-          "yards": 28,
+          "yards": 15,
           "td": false
         },
         "88": {
-          "result": "CATCH",
-          "yards": 28,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         }
       },
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -3679,6 +4011,7 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {
@@ -3689,7 +4022,7 @@
         },
         "12": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 7,
           "td": false
         },
         "13": {
@@ -3699,32 +4032,32 @@
         },
         "14": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 5,
           "td": false
         },
         "15": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "16": {
           "result": "CATCH",
-          "yards": 4,
+          "yards": 2,
           "td": false
         },
         "17": {
           "result": "CATCH",
-          "yards": 2,
+          "yards": 3,
           "td": false
         },
         "18": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 4,
           "td": false
         },
         "21": {
-          "result": "CATCH",
-          "yards": 8,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "22": {
@@ -3733,18 +4066,18 @@
           "td": false
         },
         "23": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "24": {
           "result": "CATCH",
-          "yards": 2,
+          "yards": 5,
           "td": false
         },
         "25": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 4,
           "td": false
         },
         "26": {
@@ -3759,12 +4092,12 @@
         },
         "28": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 4,
           "td": false
         },
         "31": {
-          "result": "CATCH",
-          "yards": 3,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "32": {
@@ -3774,52 +4107,52 @@
         },
         "33": {
           "result": "CATCH",
-          "yards": 2,
+          "yards": 6,
           "td": false
         },
         "34": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 5,
           "td": false
         },
         "35": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "36": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "37": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
+        "36": {
+          "result": "CATCH",
+          "yards": 4,
+          "td": false
+        },
+        "37": {
+          "result": "CATCH",
+          "yards": 5,
+          "td": false
+        },
         "38": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 3,
           "td": false
         },
         "41": {
           "result": "CATCH",
-          "yards": 9,
+          "yards": 6,
           "td": false
         },
         "42": {
           "result": "CATCH",
-          "yards": 4,
-          "td": true
+          "yards": 6,
+          "td": false
         },
         "43": {
-          "result": "CATCH",
-          "yards": 9,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "44": {
           "result": "CATCH",
-          "yards": 9,
+          "yards": 7,
           "td": false
         },
         "45": {
@@ -3828,43 +4161,43 @@
           "td": false
         },
         "46": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "47": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
+          "result": "CATCH",
+          "yards": 5,
+          "td": true
         },
         "48": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 4,
           "td": false
         },
         "51": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 10,
           "td": false
         },
         "52": {
           "result": "CATCH",
           "yards": 7,
-          "td": false
+          "td": true
         },
         "53": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "54": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "55": {
+        "54": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 4,
+          "td": false
+        },
+        "55": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "56": {
@@ -3873,23 +4206,23 @@
           "td": false
         },
         "57": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "58": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": true
-        },
-        "61": {
           "result": "CATCH",
           "yards": 4,
           "td": false
         },
-        "62": {
+        "58": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "61": {
           "result": "CATCH",
-          "yards": 2,
+          "yards": 9,
+          "td": false
+        },
+        "62": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "63": {
@@ -3898,48 +4231,48 @@
           "td": false
         },
         "64": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "65": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "66": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
-        "67": {
           "result": "CATCH",
           "yards": 6,
           "td": false
         },
-        "68": {
+        "65": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 9,
+          "td": false
+        },
+        "66": {
+          "result": "CATCH",
+          "yards": 3,
+          "td": false
+        },
+        "67": {
+          "result": "CATCH",
+          "yards": 8,
+          "td": false
+        },
+        "68": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "71": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 9,
           "td": false
         },
         "72": {
-          "result": "CATCH",
-          "yards": 8,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "73": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 9,
           "td": false
         },
         "74": {
-          "result": "CATCH",
-          "yards": 8,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "75": {
@@ -3948,8 +4281,8 @@
           "td": false
         },
         "76": {
-          "result": "CATCH",
-          "yards": 7,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "77": {
@@ -3959,27 +4292,27 @@
         },
         "78": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 6,
           "td": false
         },
         "81": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 5,
           "td": false
         },
         "82": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 6,
           "td": false
         },
         "83": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 5,
           "td": false
         },
         "84": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "85": {
@@ -3989,17 +4322,17 @@
         },
         "86": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 3,
           "td": false
         },
         "87": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 6,
           "td": false
         },
         "88": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 6,
           "td": false
         }
       },
@@ -4010,28 +4343,28 @@
           "td": false
         },
         "12": {
-          "result": "CATCH",
-          "yards": 15,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "13": {
           "result": "CATCH",
-          "yards": 20,
+          "yards": 18,
           "td": false
         },
         "14": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "15": {
           "result": "CATCH",
           "yards": 20,
           "td": false
         },
-        "15": {
-          "result": "INCOMPLETE",
-          "yards": 0,
-          "td": false
-        },
         "16": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 15,
           "td": false
         },
         "17": {
@@ -4046,7 +4379,7 @@
         },
         "21": {
           "result": "CATCH",
-          "yards": 18,
+          "yards": 25,
           "td": false
         },
         "22": {
@@ -4060,13 +4393,13 @@
           "td": false
         },
         "24": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "25": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 28,
           "td": false
         },
         "26": {
@@ -4075,13 +4408,13 @@
           "td": false
         },
         "27": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 20,
           "td": false
         },
         "28": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 25,
           "td": false
         },
         "31": {
@@ -4095,13 +4428,13 @@
           "td": false
         },
         "33": {
-          "result": "CATCH",
-          "yards": 28,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "34": {
-          "result": "CATCH",
-          "yards": 18,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "35": {
@@ -4110,13 +4443,13 @@
           "td": false
         },
         "36": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "37": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "38": {
@@ -4125,14 +4458,14 @@
           "td": false
         },
         "41": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 25,
           "td": false
         },
         "42": {
           "result": "CATCH",
-          "yards": 25,
-          "td": false
+          "yards": 22,
+          "td": true
         },
         "43": {
           "result": "INCOMPLETE",
@@ -4140,23 +4473,23 @@
           "td": false
         },
         "44": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "45": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 20,
           "td": false
         },
         "46": {
           "result": "CATCH",
-          "yards": 18,
+          "yards": 15,
           "td": false
         },
         "47": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 15,
           "td": false
         },
         "48": {
@@ -4170,8 +4503,8 @@
           "td": false
         },
         "52": {
-          "result": "CATCH",
-          "yards": 15,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "53": {
@@ -4185,13 +4518,13 @@
           "td": false
         },
         "55": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 22,
           "td": false
         },
         "56": {
           "result": "CATCH",
-          "yards": 25,
+          "yards": 18,
           "td": false
         },
         "57": {
@@ -4205,8 +4538,8 @@
           "td": false
         },
         "61": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "62": {
@@ -4220,8 +4553,8 @@
           "td": false
         },
         "64": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 20,
           "td": false
         },
         "65": {
@@ -4230,18 +4563,18 @@
           "td": false
         },
         "66": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "67": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
+        "67": {
+          "result": "CATCH",
+          "yards": 15,
+          "td": false
+        },
         "68": {
           "result": "CATCH",
-          "yards": 18,
+          "yards": 20,
           "td": false
         },
         "71": {
@@ -4255,23 +4588,23 @@
           "td": false
         },
         "73": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "74": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "75": {
+        "74": {
           "result": "CATCH",
-          "yards": 18,
+          "yards": 28,
+          "td": false
+        },
+        "75": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "76": {
-          "result": "CATCH",
-          "yards": 18,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "77": {
@@ -4280,23 +4613,23 @@
           "td": false
         },
         "78": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "81": {
-          "result": "CATCH",
-          "yards": 22,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "82": {
-          "result": "CATCH",
-          "yards": 18,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "83": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 28,
           "td": false
         },
         "84": {
@@ -4305,18 +4638,18 @@
           "td": false
         },
         "85": {
-          "result": "CATCH",
-          "yards": 25,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "86": {
           "result": "CATCH",
-          "yards": 20,
+          "yards": 25,
           "td": false
         },
         "87": {
-          "result": "CATCH",
-          "yards": 25,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "88": {
@@ -4327,6 +4660,7 @@
       },
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -4346,42 +4680,43 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {
         "11": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 9,
           "td": false
         },
         "12": {
-          "result": "CATCH",
-          "yards": 7,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "13": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "14": {
           "result": "CATCH",
-          "yards": 4,
+          "yards": 8,
           "td": false
         },
         "15": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 5,
           "td": false
         },
         "16": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 3,
           "td": false
         },
         "17": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 9,
           "td": false
         },
         "18": {
@@ -4390,23 +4725,23 @@
           "td": false
         },
         "21": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "22": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "23": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
+        "22": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "23": {
+          "result": "CATCH",
+          "yards": 10,
+          "td": false
+        },
         "24": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 5,
           "td": false
         },
         "25": {
@@ -4416,37 +4751,37 @@
         },
         "26": {
           "result": "CATCH",
-          "yards": 3,
+          "yards": 9,
           "td": false
         },
         "27": {
+          "result": "CATCH",
+          "yards": 8,
+          "td": false
+        },
+        "28": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "28": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
         "31": {
           "result": "CATCH",
-          "yards": 10,
+          "yards": 6,
           "td": false
         },
         "32": {
-          "result": "CATCH",
-          "yards": 5,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "33": {
           "result": "CATCH",
-          "yards": 7,
+          "yards": 4,
           "td": false
         },
         "34": {
-          "result": "CATCH",
-          "yards": 7,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "35": {
@@ -4461,7 +4796,7 @@
         },
         "37": {
           "result": "CATCH",
-          "yards": 4,
+          "yards": 7,
           "td": false
         },
         "38": {
@@ -4470,13 +4805,13 @@
           "td": false
         },
         "41": {
-          "result": "CATCH",
-          "yards": 4,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "42": {
           "result": "CATCH",
-          "yards": 9,
+          "yards": 6,
           "td": false
         },
         "43": {
@@ -4485,13 +4820,13 @@
           "td": false
         },
         "44": {
-          "result": "CATCH",
-          "yards": 10,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "45": {
-          "result": "CATCH",
-          "yards": 5,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "46": {
@@ -4501,27 +4836,27 @@
         },
         "47": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 8,
           "td": false
         },
         "48": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 5,
           "td": false
         },
         "51": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "52": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 4,
           "td": false
         },
         "53": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 3,
           "td": false
         },
         "54": {
@@ -4530,23 +4865,23 @@
           "td": false
         },
         "55": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "56": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 10,
           "td": false
         },
         "57": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 5,
           "td": false
         },
         "58": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 7,
           "td": false
         },
         "61": {
@@ -4555,13 +4890,13 @@
           "td": false
         },
         "62": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 10,
           "td": false
         },
         "63": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 8,
           "td": false
         },
         "64": {
@@ -4571,37 +4906,37 @@
         },
         "65": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 3,
           "td": false
         },
         "66": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 5,
           "td": false
         },
         "67": {
           "result": "CATCH",
-          "yards": 9,
+          "yards": 6,
           "td": false
         },
         "68": {
-          "result": "CATCH",
-          "yards": 6,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "71": {
           "result": "CATCH",
-          "yards": 6,
+          "yards": 8,
           "td": false
         },
         "72": {
           "result": "CATCH",
-          "yards": 3,
+          "yards": 5,
           "td": false
         },
         "73": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 7,
           "td": false
         },
         "74": {
@@ -4610,8 +4945,8 @@
           "td": false
         },
         "75": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 7,
           "td": false
         },
         "76": {
@@ -4626,37 +4961,37 @@
         },
         "78": {
           "result": "CATCH",
-          "yards": 5,
+          "yards": 4,
           "td": false
         },
         "81": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 6,
           "td": false
         },
         "82": {
-          "result": "CATCH",
-          "yards": 8,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "83": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 7,
           "td": false
         },
         "84": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 8,
           "td": false
         },
         "85": {
           "result": "CATCH",
-          "yards": 8,
+          "yards": 10,
           "td": false
         },
         "86": {
-          "result": "CATCH",
-          "yards": 9,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "87": {
@@ -4665,20 +5000,20 @@
           "td": false
         },
         "88": {
-          "result": "CATCH",
-          "yards": 10,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         }
       },
       "long_reception": {
         "11": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "12": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         },
         "13": {
@@ -4692,23 +5027,23 @@
           "td": false
         },
         "15": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "16": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "17": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
+        "16": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "17": {
+          "result": "CATCH",
+          "yards": 22,
+          "td": false
+        },
         "18": {
           "result": "CATCH",
-          "yards": 18,
+          "yards": 28,
           "td": false
         },
         "21": {
@@ -4727,33 +5062,33 @@
           "td": false
         },
         "24": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 28,
           "td": false
         },
         "25": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 35,
           "td": false
         },
         "26": {
           "result": "CATCH",
-          "yards": 15,
-          "td": true
-        },
-        "27": {
-          "result": "CATCH",
           "yards": 30,
           "td": false
         },
-        "28": {
+        "27": {
           "result": "CATCH",
-          "yards": 20,
+          "yards": 25,
+          "td": false
+        },
+        "28": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "31": {
-          "result": "CATCH",
-          "yards": 20,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "32": {
@@ -4772,8 +5107,8 @@
           "td": false
         },
         "35": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 28,
           "td": false
         },
         "36": {
@@ -4798,7 +5133,7 @@
         },
         "42": {
           "result": "CATCH",
-          "yards": 15,
+          "yards": 25,
           "td": false
         },
         "43": {
@@ -4807,18 +5142,18 @@
           "td": false
         },
         "44": {
-          "result": "CATCH",
-          "yards": 25,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "45": {
           "result": "CATCH",
-          "yards": 35,
+          "yards": 20,
           "td": false
         },
         "46": {
-          "result": "CATCH",
-          "yards": 35,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "47": {
@@ -4827,8 +5162,8 @@
           "td": false
         },
         "48": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 15,
           "td": false
         },
         "51": {
@@ -4842,14 +5177,14 @@
           "td": false
         },
         "53": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "54": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
+        },
+        "54": {
+          "result": "CATCH",
+          "yards": 25,
+          "td": true
         },
         "55": {
           "result": "INCOMPLETE",
@@ -4857,48 +5192,48 @@
           "td": false
         },
         "56": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "57": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "58": {
+        "57": {
           "result": "CATCH",
-          "yards": 22,
+          "yards": 15,
+          "td": false
+        },
+        "58": {
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "61": {
-          "result": "CATCH",
-          "yards": 18,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "62": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": true
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
         },
         "63": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "64": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "65": {
           "result": "CATCH",
           "yards": 28,
           "td": false
         },
+        "64": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
+        "65": {
+          "result": "INCOMPLETE",
+          "yards": 0,
+          "td": false
+        },
         "66": {
-          "result": "CATCH",
-          "yards": 30,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "67": {
@@ -4907,23 +5242,23 @@
           "td": false
         },
         "68": {
+          "result": "CATCH",
+          "yards": 35,
+          "td": false
+        },
+        "71": {
           "result": "INCOMPLETE",
           "yards": 0,
           "td": false
         },
-        "71": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
         "72": {
-          "result": "CATCH",
-          "yards": 15,
+          "result": "INCOMPLETE",
+          "yards": 0,
           "td": false
         },
         "73": {
           "result": "CATCH",
-          "yards": 20,
+          "yards": 30,
           "td": false
         },
         "74": {
@@ -4932,8 +5267,8 @@
           "td": false
         },
         "75": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 15,
           "td": false
         },
         "76": {
@@ -4942,13 +5277,13 @@
           "td": false
         },
         "77": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 25,
           "td": false
         },
         "78": {
           "result": "CATCH",
-          "yards": 18,
+          "yards": 15,
           "td": false
         },
         "81": {
@@ -4967,8 +5302,8 @@
           "td": false
         },
         "84": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 35,
           "td": false
         },
         "85": {
@@ -4977,23 +5312,24 @@
           "td": false
         },
         "86": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 25,
           "td": false
         },
         "87": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 20,
           "td": false
         },
         "88": {
-          "result": "INCOMPLETE",
-          "yards": 0,
+          "result": "CATCH",
+          "yards": 18,
           "td": false
         }
       },
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -5013,6 +5349,7 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {},
@@ -5026,6 +5363,7 @@
         "60+": 0.548
       },
       "xp_rate": 0.98,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -5045,12 +5383,335 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {},
       "long_reception": {},
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {
+        "11": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "12": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "13": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "14": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "15": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "16": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "17": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "18": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "21": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "22": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "23": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "24": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "25": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "26": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "27": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "28": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "31": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "32": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "33": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "34": {
+          "result": "NORMAL",
+          "yards": 52,
+          "td": false
+        },
+        "35": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "36": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "37": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "38": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "41": {
+          "result": "NORMAL",
+          "yards": 52,
+          "td": false
+        },
+        "42": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "43": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "44": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "45": {
+          "result": "NORMAL",
+          "yards": 40,
+          "td": false
+        },
+        "46": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "47": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "48": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "51": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "52": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "53": {
+          "result": "NORMAL",
+          "yards": 52,
+          "td": false
+        },
+        "54": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "55": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "56": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "57": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "58": {
+          "result": "NORMAL",
+          "yards": 58,
+          "td": false
+        },
+        "61": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "62": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "63": {
+          "result": "NORMAL",
+          "yards": 58,
+          "td": false
+        },
+        "64": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "65": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "66": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "67": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "68": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "71": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "72": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "73": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "74": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "75": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "76": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "77": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "78": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "81": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "82": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "83": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "84": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "85": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "86": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "87": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "88": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        }
+      },
       "avg_distance": 48.0,
       "inside_20_rate": 0.42,
       "pass_rush_rating": 50,
@@ -5070,12 +5731,14 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {},
       "long_reception": {},
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 80,
@@ -5096,12 +5759,14 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {},
       "long_reception": {},
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 80,
@@ -5122,12 +5787,14 @@
       "short_pass": {},
       "long_pass": {},
       "screen_pass": {},
+      "qb_rush": {},
       "inside_run": {},
       "outside_run": {},
       "short_reception": {},
       "long_reception": {},
       "fg_chart": {},
       "xp_rate": 0.95,
+      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 46,

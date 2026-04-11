@@ -1,86 +1,79 @@
-"""Card generator for Statis Pro Football player cards."""
-import random
-from typing import Dict, Any, List
-from .player_card import PlayerCard
+"""Card generator for Statis Pro Football player cards.
 
+Uses FAC distribution tables from ``fac_distributions`` to determine the
+fixed number of slots per outcome type, then fills yardage values from
+grade-appropriate pools.
+"""
+import random
+from typing import Dict, Any, List, Tuple
+
+from .player_card import PlayerCard
+from .fac_distributions import (
+    all_slots, SLOT_COUNT,
+    qb_short_pass_distribution, qb_long_pass_distribution,
+    qb_screen_pass_distribution, qb_rush_distribution,
+    rb_run_distribution, reception_distribution,
+    punter_distribution,
+    get_yards_pool,
+    SHORT_PASS_YARDS, LONG_PASS_YARDS, SCREEN_PASS_YARDS,
+    INSIDE_RUN_YARDS, OUTSIDE_RUN_YARDS, QB_RUSH_YARDS,
+    SHORT_RECEPTION_YARDS, LONG_RECEPTION_YARDS,
+    OOB_RUN_YARDS, PUNT_YARDS, SACK_YARDS,
+)
+
+
+# ── helpers ──────────────────────────────────────────────────────────
 
 def _all_slots() -> List[str]:
-    return [f"{t}{o}" for t in range(1, 9) for o in range(1, 9)]
+    return all_slots()
 
 
 def _distribute_results(slot_assignments: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     """Map a list of 64 result dicts to slot keys."""
     slots = _all_slots()
-    assert len(slot_assignments) == 64, f"Expected 64 slots, got {len(slot_assignments)}"
+    assert len(slot_assignments) == SLOT_COUNT, f"Expected {SLOT_COUNT} slots, got {len(slot_assignments)}"
     return {slot: result for slot, result in zip(slots, slot_assignments)}
 
 
-def _make_qb_short_pass(comp_pct: float, int_pct: float, sack_pct: float, grade: str) -> Dict[str, Any]:
-    n_complete = round(comp_pct * 64)
-    n_int = max(1, round(int_pct * 64))
-    n_sack = max(1, round(sack_pct * 64))
-    n_incomplete = 64 - n_complete - n_int - n_sack
-    if n_incomplete < 0:
-        n_complete = 64 - n_int - n_sack
-        n_incomplete = 0
+def _pick_yards(pool: List[int], weights: List[int]) -> int:
+    return random.choices(pool, weights=weights)[0]
 
-    if grade in ("A+", "A"):
-        yards_pool = [4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20]
-        weights = [5, 8, 10, 12, 12, 10, 8, 6, 5, 5, 4, 3]
-    elif grade == "B":
-        yards_pool = [3, 4, 5, 6, 7, 8, 9, 10, 12, 14]
-        weights = [5, 8, 12, 12, 10, 10, 8, 6, 5, 4]
-    elif grade == "C":
-        yards_pool = [2, 3, 4, 5, 6, 7, 8, 10, 12]
-        weights = [6, 8, 12, 12, 12, 10, 8, 5, 3]
-    else:
-        yards_pool = [1, 2, 3, 4, 5, 6, 7, 8]
-        weights = [8, 10, 12, 12, 10, 8, 6, 4]
 
-    results = []
-    for _ in range(n_complete):
-        yds = random.choices(yards_pool, weights=weights)[0]
-        td = random.random() < 0.04
-        results.append({"result": "COMPLETE", "yards": yds, "td": td})
-    for _ in range(n_incomplete):
+# ── QB columns ───────────────────────────────────────────────────────
+
+def _make_qb_short_pass(comp_pct: float, int_pct: float,
+                         sack_pct: float, grade: str) -> Dict[str, Any]:
+    dist = qb_short_pass_distribution(comp_pct, int_pct, sack_pct, grade)
+    pool, weights = get_yards_pool(SHORT_PASS_YARDS, grade)
+    sack_pool, sack_weights = SACK_YARDS
+
+    results: List[Dict[str, Any]] = []
+    for _ in range(dist["COMPLETE"]):
+        yds = _pick_yards(pool, weights)
+        results.append({"result": "COMPLETE", "yards": yds, "td": random.random() < 0.04})
+    for _ in range(dist["INCOMPLETE"]):
         results.append({"result": "INCOMPLETE", "yards": 0, "td": False})
-    for _ in range(n_int):
+    for _ in range(dist["INT"]):
         results.append({"result": "INT", "yards": 0, "td": False})
-    for _ in range(n_sack):
-        loss = random.choice([-3, -4, -5, -6, -7, -8])
-        results.append({"result": "SACK", "yards": loss, "td": False})
+    for _ in range(dist["SACK"]):
+        results.append({"result": "SACK", "yards": _pick_yards(sack_pool, sack_weights), "td": False})
 
     random.shuffle(results)
     return _distribute_results(results)
 
 
-def _make_qb_long_pass(comp_pct: float, int_pct: float, grade: str) -> Dict[str, Any]:
-    long_comp = comp_pct * 0.55
-    n_complete = round(long_comp * 64)
-    n_int = max(1, round(int_pct * 1.5 * 64))
-    n_incomplete = 64 - n_complete - n_int
-    if n_incomplete < 0:
-        n_complete = 64 - n_int
-        n_incomplete = 0
+def _make_qb_long_pass(comp_pct: float, int_pct: float,
+                        grade: str) -> Dict[str, Any]:
+    dist = qb_long_pass_distribution(comp_pct, int_pct, grade)
+    pool, weights = get_yards_pool(LONG_PASS_YARDS, grade)
 
-    if grade in ("A+", "A"):
-        yards_pool = [15, 18, 20, 22, 25, 28, 30, 35, 40, 45, 50]
-        weights = [8, 10, 12, 12, 10, 8, 8, 6, 5, 3, 2]
-    elif grade == "B":
-        yards_pool = [15, 18, 20, 22, 25, 28, 30, 35, 40]
-        weights = [10, 12, 12, 12, 10, 8, 6, 4, 2]
-    else:
-        yards_pool = [15, 18, 20, 22, 25, 28, 30]
-        weights = [12, 14, 14, 12, 10, 8, 6]
-
-    results = []
-    for _ in range(n_complete):
-        yds = random.choices(yards_pool, weights=weights)[0]
-        td = random.random() < 0.08
-        results.append({"result": "COMPLETE", "yards": yds, "td": td})
-    for _ in range(n_incomplete):
+    results: List[Dict[str, Any]] = []
+    for _ in range(dist["COMPLETE"]):
+        yds = _pick_yards(pool, weights)
+        results.append({"result": "COMPLETE", "yards": yds, "td": random.random() < 0.08})
+    for _ in range(dist["INCOMPLETE"]):
         results.append({"result": "INCOMPLETE", "yards": 0, "td": False})
-    for _ in range(n_int):
+    for _ in range(dist["INT"]):
         results.append({"result": "INT", "yards": 0, "td": False})
 
     random.shuffle(results)
@@ -88,131 +81,110 @@ def _make_qb_long_pass(comp_pct: float, int_pct: float, grade: str) -> Dict[str,
 
 
 def _make_qb_screen_pass(grade: str) -> Dict[str, Any]:
-    n_complete = 42
-    n_incomplete = 16
-    n_fumble = 3
-    n_int = 3
+    dist = qb_screen_pass_distribution(grade)
+    pool, weights = get_yards_pool(SCREEN_PASS_YARDS, grade)
 
-    if grade in ("A+", "A"):
-        yards_pool = [3, 4, 5, 6, 7, 8, 10, 12, 15]
-        weights = [8, 12, 14, 14, 12, 10, 8, 5, 3]
-    else:
-        yards_pool = [1, 2, 3, 4, 5, 6, 7, 8, 10]
-        weights = [8, 10, 14, 14, 12, 10, 8, 5, 3]
-
-    results = []
-    for _ in range(n_complete):
-        yds = random.choices(yards_pool, weights=weights)[0]
-        td = random.random() < 0.03
-        results.append({"result": "COMPLETE", "yards": yds, "td": td})
-    for _ in range(n_incomplete):
+    results: List[Dict[str, Any]] = []
+    for _ in range(dist["COMPLETE"]):
+        yds = _pick_yards(pool, weights)
+        results.append({"result": "COMPLETE", "yards": yds, "td": random.random() < 0.03})
+    for _ in range(dist["INCOMPLETE"]):
         results.append({"result": "INCOMPLETE", "yards": 0, "td": False})
-    for _ in range(n_fumble):
+    for _ in range(dist["FUMBLE"]):
         results.append({"result": "FUMBLE", "yards": 0, "td": False})
-    for _ in range(n_int):
+    for _ in range(dist["INT"]):
         results.append({"result": "INT", "yards": 0, "td": False})
 
     random.shuffle(results)
     return _distribute_results(results)
 
 
-def _make_rb_inside_run(ypc: float, fumble_rate: float, grade: str) -> Dict[str, Any]:
-    n_fumble = max(1, round(fumble_rate * 64))
+def _make_qb_rush(rush_ypc: float, fumble_rate: float,
+                   grade: str) -> Dict[str, Any]:
+    """Generate a QB rush card column (Run Number → result)."""
+    dist = qb_rush_distribution(rush_ypc, fumble_rate, grade)
+    gain_pool, gain_weights = get_yards_pool(QB_RUSH_YARDS, grade)
+    oob_pool, oob_weights = get_yards_pool(OOB_RUN_YARDS, grade)
 
-    if grade in ("A+", "A"):
-        yards_pool = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15]
-        weights = [2, 3, 5, 8, 12, 14, 12, 10, 8, 6, 5, 3, 2]
-    elif grade == "B":
-        yards_pool = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10]
-        weights = [3, 5, 7, 10, 12, 12, 10, 8, 6, 5, 4]
-    elif grade == "C":
-        yards_pool = [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8]
-        weights = [3, 5, 8, 10, 12, 12, 10, 8, 6, 4, 3]
-    else:
-        yards_pool = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
-        weights = [4, 6, 8, 10, 12, 12, 10, 8, 6, 4]
-
-    n_regular = 64 - n_fumble
-    results = []
-    for _ in range(n_regular):
-        yds = random.choices(yards_pool, weights=weights)[0]
-        td = random.random() < 0.03
-        results.append({"result": "GAIN", "yards": yds, "td": td})
-    for _ in range(n_fumble):
+    results: List[Dict[str, Any]] = []
+    for _ in range(dist["GAIN"]):
+        yds = _pick_yards(gain_pool, gain_weights)
+        results.append({"result": "GAIN", "yards": yds, "td": random.random() < 0.04})
+    for _ in range(dist["FUMBLE"]):
         results.append({"result": "FUMBLE", "yards": 0, "td": False})
+    for _ in range(dist["OOB"]):
+        yds = _pick_yards(oob_pool, oob_weights)
+        results.append({"result": "OOB", "yards": yds, "td": False})
 
     random.shuffle(results)
     return _distribute_results(results)
 
 
-def _make_rb_outside_run(ypc: float, fumble_rate: float, grade: str) -> Dict[str, Any]:
-    n_fumble = max(1, round(fumble_rate * 64))
+# ── RB columns (with OOB) ───────────────────────────────────────────
 
-    if grade in ("A+", "A"):
-        yards_pool = [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20]
-        weights = [2, 2, 3, 4, 6, 8, 10, 12, 12, 8, 6, 5, 4, 3, 2]
-    elif grade == "B":
-        yards_pool = [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12]
-        weights = [3, 3, 5, 6, 8, 10, 12, 10, 8, 6, 5, 4, 3]
-    elif grade == "C":
-        yards_pool = [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8]
-        weights = [4, 5, 7, 8, 10, 12, 12, 10, 8, 5, 4]
-    else:
-        yards_pool = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
-        weights = [5, 7, 8, 10, 12, 12, 10, 8, 5, 3]
+def _make_rb_inside_run(ypc: float, fumble_rate: float,
+                         grade: str) -> Dict[str, Any]:
+    dist = rb_run_distribution(fumble_rate, grade, is_outside=False)
+    gain_pool, gain_weights = get_yards_pool(INSIDE_RUN_YARDS, grade)
+    oob_pool, oob_weights = get_yards_pool(OOB_RUN_YARDS, grade)
 
-    n_regular = 64 - n_fumble
-    results = []
-    for _ in range(n_regular):
-        yds = random.choices(yards_pool, weights=weights)[0]
-        td = random.random() < 0.04
-        results.append({"result": "GAIN", "yards": yds, "td": td})
-    for _ in range(n_fumble):
+    results: List[Dict[str, Any]] = []
+    for _ in range(dist["GAIN"]):
+        yds = _pick_yards(gain_pool, gain_weights)
+        results.append({"result": "GAIN", "yards": yds, "td": random.random() < 0.03})
+    for _ in range(dist["FUMBLE"]):
         results.append({"result": "FUMBLE", "yards": 0, "td": False})
+    for _ in range(dist["OOB"]):
+        yds = _pick_yards(oob_pool, oob_weights)
+        results.append({"result": "OOB", "yards": yds, "td": False})
 
     random.shuffle(results)
     return _distribute_results(results)
 
 
-def _make_wr_reception(catch_rate: float, avg_yards: float, grade: str, is_long: bool = False) -> Dict[str, Any]:
-    n_catch = round(catch_rate * 64)
-    n_drop = 64 - n_catch
+def _make_rb_outside_run(ypc: float, fumble_rate: float,
+                          grade: str) -> Dict[str, Any]:
+    dist = rb_run_distribution(fumble_rate, grade, is_outside=True)
+    gain_pool, gain_weights = get_yards_pool(OUTSIDE_RUN_YARDS, grade)
+    oob_pool, oob_weights = get_yards_pool(OOB_RUN_YARDS, grade)
 
+    results: List[Dict[str, Any]] = []
+    for _ in range(dist["GAIN"]):
+        yds = _pick_yards(gain_pool, gain_weights)
+        results.append({"result": "GAIN", "yards": yds, "td": random.random() < 0.04})
+    for _ in range(dist["FUMBLE"]):
+        results.append({"result": "FUMBLE", "yards": 0, "td": False})
+    for _ in range(dist["OOB"]):
+        yds = _pick_yards(oob_pool, oob_weights)
+        results.append({"result": "OOB", "yards": yds, "td": False})
+
+    random.shuffle(results)
+    return _distribute_results(results)
+
+
+# ── WR / TE columns ─────────────────────────────────────────────────
+
+def _make_wr_reception(catch_rate: float, avg_yards: float,
+                        grade: str, is_long: bool = False) -> Dict[str, Any]:
+    dist = reception_distribution(catch_rate, is_long)
     if is_long:
-        if grade in ("A+", "A"):
-            yards_pool = [15, 18, 20, 22, 25, 28, 30, 35, 40, 45]
-            weights = [8, 10, 12, 12, 10, 8, 8, 6, 4, 2]
-        elif grade == "B":
-            yards_pool = [15, 18, 20, 22, 25, 28, 30, 35]
-            weights = [10, 12, 14, 14, 12, 10, 6, 4]
-        else:
-            yards_pool = [15, 18, 20, 22, 25, 28]
-            weights = [14, 16, 16, 14, 12, 8]
+        pool, weights = get_yards_pool(LONG_RECEPTION_YARDS, grade)
     else:
-        if grade in ("A+", "A"):
-            yards_pool = [4, 5, 6, 7, 8, 9, 10, 12, 14]
-            weights = [5, 8, 12, 14, 14, 12, 10, 8, 5]
-        elif grade == "B":
-            yards_pool = [3, 4, 5, 6, 7, 8, 9, 10, 12]
-            weights = [5, 8, 12, 14, 14, 12, 10, 8, 4]
-        elif grade == "C":
-            yards_pool = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-            weights = [6, 8, 12, 14, 14, 12, 10, 7, 4]
-        else:
-            yards_pool = [1, 2, 3, 4, 5, 6, 7, 8]
-            weights = [8, 10, 14, 14, 14, 12, 8, 4]
+        pool, weights = get_yards_pool(SHORT_RECEPTION_YARDS, grade)
 
-    results = []
-    for _ in range(n_catch):
-        yds = random.choices(yards_pool, weights=weights)[0]
+    results: List[Dict[str, Any]] = []
+    for _ in range(dist["CATCH"]):
+        yds = _pick_yards(pool, weights)
         td = random.random() < (0.06 if is_long else 0.04)
         results.append({"result": "CATCH", "yards": yds, "td": td})
-    for _ in range(n_drop):
+    for _ in range(dist["INCOMPLETE"]):
         results.append({"result": "INCOMPLETE", "yards": 0, "td": False})
 
     random.shuffle(results)
     return _distribute_results(results)
 
+
+# ── Kicker ───────────────────────────────────────────────────────────
 
 def _make_kicker_fg_chart(accuracy: float, grade: str) -> Dict[str, float]:
     return {
@@ -225,8 +197,31 @@ def _make_kicker_fg_chart(accuracy: float, grade: str) -> Dict[str, float]:
     }
 
 
+# ── Punter (slot-based column) ───────────────────────────────────────
+
+def _make_punter_column(avg_distance: float, inside_20_rate: float,
+                         grade: str) -> Dict[str, Any]:
+    """Generate a 64-slot punter card column."""
+    dist = punter_distribution(avg_distance, inside_20_rate)
+    punt_pool, punt_weights = get_yards_pool(PUNT_YARDS, grade)
+
+    results: List[Dict[str, Any]] = []
+    for _ in range(dist["NORMAL"]):
+        yds = _pick_yards(punt_pool, punt_weights)
+        results.append({"result": "NORMAL", "yards": yds, "td": False})
+    for _ in range(dist["INSIDE_20"]):
+        results.append({"result": "INSIDE_20", "yards": 0, "td": False})
+    for _ in range(dist["TOUCHBACK"]):
+        results.append({"result": "TOUCHBACK", "yards": 0, "td": False})
+
+    random.shuffle(results)
+    return _distribute_results(results)
+
+
+# ── Main generator class ─────────────────────────────────────────────
+
 class CardGenerator:
-    """Generates player cards from raw stats."""
+    """Generates player cards from raw stats using FAC distribution tables."""
 
     def __init__(self, seed: int = None):
         if seed is not None:
@@ -234,17 +229,21 @@ class CardGenerator:
 
     def generate_qb_card(self, name: str, team: str, number: int,
                          comp_pct: float, ypa: float, int_rate: float,
-                         sack_rate: float, grade: str) -> PlayerCard:
+                         sack_rate: float, grade: str,
+                         rush_ypc: float = 3.0,
+                         rush_fumble_rate: float = 0.015) -> PlayerCard:
         card = PlayerCard(
             player_name=name, team=team, position="QB",
-            number=number, overall_grade=grade
+            number=number, overall_grade=grade,
         )
         card.short_pass = _make_qb_short_pass(comp_pct, int_rate, sack_rate, grade)
         card.long_pass = _make_qb_long_pass(comp_pct, int_rate, grade)
         card.screen_pass = _make_qb_screen_pass(grade)
+        card.qb_rush = _make_qb_rush(rush_ypc, rush_fumble_rate, grade)
         card.stats_summary = {
             "comp_pct": comp_pct, "ypa": ypa,
-            "int_rate": int_rate, "sack_rate": sack_rate
+            "int_rate": int_rate, "sack_rate": sack_rate,
+            "rush_ypc": rush_ypc,
         }
         return card
 
@@ -252,7 +251,7 @@ class CardGenerator:
                          ypc: float, fumble_rate: float, grade: str) -> PlayerCard:
         card = PlayerCard(
             player_name=name, team=team, position="RB",
-            number=number, overall_grade=grade
+            number=number, overall_grade=grade,
         )
         card.inside_run = _make_rb_inside_run(ypc, fumble_rate, grade)
         card.outside_run = _make_rb_outside_run(ypc, fumble_rate, grade)
@@ -263,7 +262,7 @@ class CardGenerator:
                          catch_rate: float, avg_yards: float, grade: str) -> PlayerCard:
         card = PlayerCard(
             player_name=name, team=team, position="WR",
-            number=number, overall_grade=grade
+            number=number, overall_grade=grade,
         )
         card.short_reception = _make_wr_reception(catch_rate, avg_yards, grade, is_long=False)
         card.long_reception = _make_wr_reception(catch_rate * 0.7, avg_yards, grade, is_long=True)
@@ -274,7 +273,7 @@ class CardGenerator:
                          catch_rate: float, avg_yards: float, grade: str) -> PlayerCard:
         card = PlayerCard(
             player_name=name, team=team, position="TE",
-            number=number, overall_grade=grade
+            number=number, overall_grade=grade,
         )
         card.short_reception = _make_wr_reception(catch_rate, avg_yards, grade, is_long=False)
         card.long_reception = _make_wr_reception(catch_rate * 0.6, avg_yards, grade, is_long=True)
@@ -285,7 +284,7 @@ class CardGenerator:
                         accuracy: float, xp_rate: float, grade: str) -> PlayerCard:
         card = PlayerCard(
             player_name=name, team=team, position="K",
-            number=number, overall_grade=grade
+            number=number, overall_grade=grade,
         )
         card.fg_chart = _make_kicker_fg_chart(accuracy, grade)
         card.xp_rate = xp_rate
@@ -296,8 +295,9 @@ class CardGenerator:
                         avg_distance: float, inside_20_rate: float, grade: str) -> PlayerCard:
         card = PlayerCard(
             player_name=name, team=team, position="P",
-            number=number, overall_grade=grade
+            number=number, overall_grade=grade,
         )
+        card.punt_column = _make_punter_column(avg_distance, inside_20_rate, grade)
         card.avg_distance = avg_distance
         card.inside_20_rate = inside_20_rate
         card.stats_summary = {"avg_distance": avg_distance, "inside_20_rate": inside_20_rate}
@@ -307,7 +307,7 @@ class CardGenerator:
                           pass_rush: int, coverage: int, run_stop: int, grade: str) -> PlayerCard:
         card = PlayerCard(
             player_name=name, team=team, position=position,
-            number=number, overall_grade=grade
+            number=number, overall_grade=grade,
         )
         card.pass_rush_rating = pass_rush
         card.coverage_rating = coverage
