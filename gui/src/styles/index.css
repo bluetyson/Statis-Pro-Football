@@ -1061,3 +1061,232 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
+
+/* ─── Defense Play Caller ─────────────────────────────────────── */
+
+.defense-caller .field-situation {
+  border-left: 3px solid #ef4444;
+}
+
+.defense-chip {
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.defense-grid {
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.defense-btn.selected {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+}
+
+.formation-info {
+  margin: 0.5rem 0;
+}
+
+.formation-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 0.4rem 0.8rem;
+  background: var(--bg-hover);
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  font-weight: 700;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.your-defense {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* ─── Expanded Player Chip & Card Tables ──────────────────────── */
+
+.player-chip-wrap {
+  margin-bottom: 2px;
+}
+
+.player-chip-wrap.expanded {
+  margin-bottom: 6px;
+}
+
+.player-chip {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.player-chip:hover {
+  background: var(--bg-hover);
+}
+
+.chip-expand {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-left: auto;
+  padding-left: 4px;
+}
+
+.chip-letter.def-letter {
+  background: #ef4444;
+}
+
+.chip-card-detail {
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-top: 2px;
+  font-size: 0.75rem;
+}
+
+.card-table {
+  margin-bottom: 6px;
+}
+
+.card-table-label {
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.card-table th {
+  background: var(--bg-hover);
+  padding: 2px 4px;
+  text-align: center;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-table td {
+  padding: 1px 4px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card-table .row-num,
+.card-table .row-label {
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.pass-com { color: #22c55e; }
+.pass-inc { color: #f59e0b; }
+.pass-int { color: #ef4444; }
+
+.pass-rush-info {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  padding: 2px 4px;
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+
+.endurance-badge,
+.blocks-badge,
+.punter-info {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  margin: 2px 0;
+}
+
+/* Defense Ratings Bars */
+.defense-ratings {
+  margin-top: 4px;
+}
+
+.rating-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  height: 16px;
+}
+
+.rating-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  width: 30px;
+  color: var(--text-muted);
+}
+
+.rating-fill {
+  height: 8px;
+  background: #3b82f6;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.rating-fill.coverage {
+  background: #22c55e;
+}
+
+.rating-fill.run-stop {
+  background: #f59e0b;
+}
+
+.rating-value {
+  font-size: 0.68rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: right;
+}
+
+/* ─── Card Data Table (used in PlayerCardView) ────────────────── */
+
+.card-section {
+  margin: 8px 0;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+
+.section-title {
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.card-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.card-data-table th {
+  background: var(--bg-hover);
+  padding: 3px 6px;
+  text-align: center;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-data-table td {
+  padding: 2px 6px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}

@@ -20,6 +20,7 @@ export default function App() {
     startGame,
     executePlay,
     executeHumanPlay,
+    executeHumanDefense,
     simulateDrive,
     simulateGame,
     rollDice,
@@ -27,6 +28,7 @@ export default function App() {
     downloadGameLog,
     resetError,
     isHumanTurn,
+    isHumanOnDefense,
   } = useGameEngine();
 
   const [phase, setPhase] = useState<GamePhase>('setup');
@@ -88,8 +90,10 @@ export default function App() {
                 personnel={personnel}
                 loading={loading}
                 isHumanTurn={isHumanTurn()}
+                isHumanOnDefense={isHumanOnDefense()}
                 onExecutePlay={executePlay}
                 onExecuteHumanPlay={executeHumanPlay}
+                onExecuteHumanDefense={executeHumanDefense}
                 onSimulateDrive={simulateDrive}
                 onSimulateGame={simulateGame}
                 onRollDice={rollDice}
@@ -109,7 +113,7 @@ export default function App() {
                 {['ARI','ATL','BAL','BUF','CAR','CHI','CIN','CLE',
                   'DAL','DEN','DET','GB','HOU','IND','JAX','KC',
                   'LAC','LAR','LV','MIA','MIN','NE','NO','NYG',
-                  'NYJ','PHI','PIT','SF','SEA','TB','TEN','WAS'].map((t) => (
+                  'NYJ','PHI','PIT','SF','SEA','TB','TEN','WSH'].map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>

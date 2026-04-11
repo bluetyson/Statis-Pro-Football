@@ -101,6 +101,30 @@ export interface PlayerBrief {
   number: number;
   overall_grade: string;
   receiver_letter: string;
+  defender_letter: string;
+  // Defensive ratings
+  pass_rush_rating: number;
+  coverage_rating: number;
+  run_stop_rating: number;
+  // QB passing ranges
+  passing_quick: { com_max: number; inc_max: number } | null;
+  passing_short: { com_max: number; inc_max: number } | null;
+  passing_long: { com_max: number; inc_max: number } | null;
+  pass_rush: { sack_max: number; runs_max: number; com_max: number } | null;
+  qb_endurance: string;
+  // Rushing (12-row N/SG/LG)
+  rushing: (number[] | null)[];
+  endurance_rushing: number;
+  // Pass gain (12-row Q/S/L)
+  pass_gain: (number[] | null)[];
+  endurance_pass: number;
+  blocks: number;
+  // Kicker
+  fg_chart: FGChart | null;
+  xp_rate: number;
+  // Punter
+  avg_distance: number;
+  inside_20_rate: number;
 }
 
 export interface PersonnelData {
@@ -119,3 +143,19 @@ export interface HumanPlayCall {
   direction: string;
   formation: string;
 }
+
+export interface DefensivePlayCall {
+  formation: string;
+}
+
+export const DEFENSIVE_FORMATIONS = [
+  { value: '4_3', label: '4-3 Base', icon: '🛡️' },
+  { value: '3_4', label: '3-4 Base', icon: '🛡️' },
+  { value: '4_3_COVER2', label: '4-3 Cover 2', icon: '👁️' },
+  { value: '3_4_ZONE', label: '3-4 Zone', icon: '🌐' },
+  { value: '4_3_BLITZ', label: '4-3 Blitz', icon: '⚡' },
+  { value: 'NICKEL_ZONE', label: 'Nickel Zone', icon: '🪙' },
+  { value: 'NICKEL_BLITZ', label: 'Nickel Blitz', icon: '💥' },
+  { value: 'NICKEL_COVER2', label: 'Nickel Cover 2', icon: '🪙' },
+  { value: 'GOAL_LINE', label: 'Goal Line', icon: '🧱' },
+] as const;

@@ -28,6 +28,79 @@ export function PlayerCardView({ card }: PlayerCardProps) {
         </div>
       </div>
 
+      {/* QB Passing Ranges */}
+      {card.position === 'QB' && (card as Record<string, unknown>).passing_quick && (
+        <div className="card-section">
+          <div className="section-title">Passing Ranges (1-48)</div>
+          <table className="card-data-table">
+            <thead>
+              <tr><th>Type</th><th>COM</th><th>INC</th><th>INT</th></tr>
+            </thead>
+            <tbody>
+              {['Quick', 'Short', 'Long'].map((label) => {
+                const key = `passing_${label.toLowerCase()}` as keyof typeof card;
+                const ranges = (card as Record<string, unknown>)[key] as { com_max: number; inc_max: number } | null;
+                if (!ranges) return null;
+                return (
+                  <tr key={label}>
+                    <td>{label}</td>
+                    <td>1-{ranges.com_max}</td>
+                    <td>{ranges.com_max + 1}-{ranges.inc_max}</td>
+                    <td>{ranges.inc_max < 48 ? `${ranges.inc_max + 1}-48` : '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Rushing Table */}
+      {(card as Record<string, unknown>).rushing && Array.isArray((card as Record<string, unknown>).rushing) &&
+       ((card as Record<string, unknown>).rushing as unknown[]).length > 0 && (
+        <div className="card-section">
+          <div className="section-title">Rushing (N/SG/LG)</div>
+          <table className="card-data-table">
+            <thead>
+              <tr><th>#</th><th>N</th><th>SG</th><th>LG</th></tr>
+            </thead>
+            <tbody>
+              {((card as Record<string, unknown>).rushing as (number[] | null)[]).map((row, i) => (
+                <tr key={i}>
+                  <td>{i + 1}</td>
+                  <td>{row ? row[0] : '—'}</td>
+                  <td>{row ? row[1] : '—'}</td>
+                  <td>{row ? row[2] : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pass Gain Table */}
+      {(card as Record<string, unknown>).pass_gain && Array.isArray((card as Record<string, unknown>).pass_gain) &&
+       ((card as Record<string, unknown>).pass_gain as unknown[]).length > 0 && (
+        <div className="card-section">
+          <div className="section-title">Pass Gain (Q/S/L)</div>
+          <table className="card-data-table">
+            <thead>
+              <tr><th>#</th><th>Q</th><th>S</th><th>L</th></tr>
+            </thead>
+            <tbody>
+              {((card as Record<string, unknown>).pass_gain as (number[] | null)[]).map((row, i) => (
+                <tr key={i}>
+                  <td>{i + 1}</td>
+                  <td>{row ? row[0] : '—'}</td>
+                  <td>{row ? row[1] : '—'}</td>
+                  <td>{row ? row[2] : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {card.stats_summary && Object.keys(card.stats_summary).length > 0 && (
         <div className="card-stats">
           {Object.entries(card.stats_summary).map(([key, val]) => (
@@ -65,3 +138,4 @@ export function PlayerCardView({ card }: PlayerCardProps) {
     </div>
   );
 }
+
