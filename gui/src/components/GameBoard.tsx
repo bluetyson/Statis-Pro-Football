@@ -1,7 +1,8 @@
-import type { GameState, PlayResult, DriveResult, PersonnelData, HumanPlayCall, GameMode } from '../types/game';
+import type { GameState, PlayResult, DriveResult, PersonnelData, HumanPlayCall, DefensivePlayCall, GameMode } from '../types/game';
 import { Scoreboard } from './Scoreboard';
 import { PlayCaller } from './PlayCaller';
 import { HumanPlayCaller } from './HumanPlayCaller';
+import { DefensivePlayCaller } from './DefensivePlayCaller';
 import { GameLog } from './GameLog';
 import { Gridiron } from './Gridiron';
 import { LetterBoards } from './LetterBoards';
@@ -19,8 +20,10 @@ interface GameBoardProps {
   personnel: PersonnelData | null;
   loading: boolean;
   isHumanTurn: boolean;
+  isHumanOnDefense: boolean;
   onExecutePlay: () => void;
   onExecuteHumanPlay: (call: HumanPlayCall) => void;
+  onExecuteHumanDefense: (call: DefensivePlayCall) => void;
   onSimulateDrive: () => void;
   onSimulateGame: () => void;
   onRollDice: () => void;
@@ -39,8 +42,10 @@ export function GameBoard({
   personnel,
   loading,
   isHumanTurn,
+  isHumanOnDefense,
   onExecutePlay,
   onExecuteHumanPlay,
+  onExecuteHumanDefense,
   onSimulateDrive,
   onSimulateGame,
   onRollDice,
@@ -75,12 +80,21 @@ export function GameBoard({
 
       <div className="board-content">
         <div className="board-left">
-          {/* Play caller: human or AI mode */}
+          {/* Play caller: human offense, human defense, or AI mode */}
           {isInteractive && isHumanTurn ? (
             <HumanPlayCaller
               state={state}
               loading={loading}
               onCallPlay={onExecuteHumanPlay}
+              onSimulateDrive={onSimulateDrive}
+              onSimulateGame={onSimulateGame}
+              onExecuteAIPlay={onExecutePlay}
+            />
+          ) : isInteractive && isHumanOnDefense ? (
+            <DefensivePlayCaller
+              state={state}
+              loading={loading}
+              onCallDefense={onExecuteHumanDefense}
               onSimulateDrive={onSimulateDrive}
               onSimulateGame={onSimulateGame}
               onExecuteAIPlay={onExecutePlay}
@@ -97,9 +111,11 @@ export function GameBoard({
 
           {/* Turn indicator for interactive mode */}
           {isInteractive && !state.is_over && (
-            <div className={`turn-indicator ${isHumanTurn ? 'your-turn' : 'ai-turn'}`}>
+            <div className={`turn-indicator ${isHumanTurn ? 'your-turn' : isHumanOnDefense ? 'your-defense' : 'ai-turn'}`}>
               {isHumanTurn
-                ? '🎮 YOUR TURN — Call a play!'
+                ? '🎮 YOUR TURN — Call an offensive play!'
+                : isHumanOnDefense
+                ? '🛡️ YOUR DEFENSE — Call a defensive formation!'
                 : '🤖 AI\'s turn — Run AI Play or Sim Drive'}
             </div>
           )}
@@ -130,8 +146,8 @@ export function GameBoard({
             </div>
           )}
 
-          {/* Substitution panel (interactive modes) */}
-          {isInteractive && isHumanTurn && (
+          {/* Substitution panel (interactive modes, on offense or defense) */}
+          {isInteractive && (isHumanTurn || isHumanOnDefense) && (
             <SubstitutionPanel
               personnel={personnel}
               loading={loading}
@@ -143,10 +159,8 @@ export function GameBoard({
         </div>
 
         <div className="board-right">
-          {/* Letter boards for offense/defense */}
-          {isInteractive && (
-            <LetterBoards personnel={personnel} possession={state.possession} />
-          )}
+          {/* Letter boards for offense/defense — always visible */}
+          <LetterBoards personnel={personnel} possession={state.possession} />
 
           <GameLog plays={state.last_plays} />
         </div>

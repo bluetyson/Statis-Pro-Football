@@ -7,6 +7,7 @@ import type {
   DiceRollResult,
   PersonnelData,
   HumanPlayCall,
+  DefensivePlayCall,
   GameMode,
 } from '../types/game';
 
@@ -25,6 +26,7 @@ interface UseGameEngineReturn {
   startGame: (homeTeam: string, awayTeam: string, mode: GameMode) => Promise<void>;
   executePlay: () => Promise<void>;
   executeHumanPlay: (call: HumanPlayCall) => Promise<void>;
+  executeHumanDefense: (call: DefensivePlayCall) => Promise<void>;
   simulateDrive: () => Promise<void>;
   simulateGame: () => Promise<void>;
   rollDice: () => Promise<void>;
@@ -33,6 +35,7 @@ interface UseGameEngineReturn {
   downloadGameLog: () => void;
   resetError: () => void;
   isHumanTurn: () => boolean;
+  isHumanOnDefense: () => boolean;
 }
 
 export function useGameEngine(): UseGameEngineReturn {
@@ -76,12 +79,10 @@ export function useGameEngine(): UseGameEngineReturn {
       setPersonnel(null);
 
       // Fetch initial personnel
-      if (mode !== 'solitaire') {
-        try {
-          const pRes = await axios.get(`${API_BASE}/games/${res.data.game_id}/personnel`);
-          setPersonnel(pRes.data);
-        } catch { /* personnel fetch is optional */ }
-      }
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${res.data.game_id}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* personnel fetch is optional */ }
     } catch (err) {
       handleError(err);
     } finally {
@@ -98,12 +99,10 @@ export function useGameEngine(): UseGameEngineReturn {
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
       // Refresh personnel after play
-      if (gameMode !== 'solitaire') {
-        try {
-          const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
-          setPersonnel(pRes.data);
-        } catch { /* ok */ }
-      }
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
     } catch (err) {
       handleError(err);
     } finally {
@@ -131,6 +130,26 @@ export function useGameEngine(): UseGameEngineReturn {
     }
   }, [gameId]);
 
+  const executeHumanDefense = useCallback(async (call: DefensivePlayCall) => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/human-defense`, call);
+      setLastPlay(res.data.play_result);
+      setGameState(res.data.state);
+      // Refresh personnel after play
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
   const simulateDrive = useCallback(async () => {
     if (!gameId) return;
     setLoading(true);
@@ -139,12 +158,10 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/simulate-drive`);
       setLastDrive(res.data.drive);
       setGameState(res.data.state);
-      if (gameMode !== 'solitaire') {
-        try {
-          const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
-          setPersonnel(pRes.data);
-        } catch { /* ok */ }
-      }
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
     } catch (err) {
       handleError(err);
     } finally {
@@ -224,6 +241,13 @@ export function useGameEngine(): UseGameEngineReturn {
     return false;
   }, [gameState, gameMode]);
 
+  const isHumanOnDefense = useCallback(() => {
+    if (!gameState || gameMode === 'solitaire') return false;
+    if (gameMode === 'human_home') return gameState.possession === 'away';
+    if (gameMode === 'human_away') return gameState.possession === 'home';
+    return false;
+  }, [gameState, gameMode]);
+
   const resetError = useCallback(() => setError(null), []);
 
   return {
@@ -239,6 +263,7 @@ export function useGameEngine(): UseGameEngineReturn {
     startGame,
     executePlay,
     executeHumanPlay,
+    executeHumanDefense,
     simulateDrive,
     simulateGame,
     rollDice,
@@ -247,5 +272,6 @@ export function useGameEngine(): UseGameEngineReturn {
     downloadGameLog,
     resetError,
     isHumanTurn,
+    isHumanOnDefense,
   };
 }

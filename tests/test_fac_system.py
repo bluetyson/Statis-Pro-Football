@@ -409,7 +409,7 @@ class TestOOBAndClock:
         assert oob_found, "Should get at least one OOB result in 500 plays"
 
     def test_oob_result_stops_clock(self):
-        """OOB plays should be treated like incomplete passes for clock."""
+        """OOB plays should use clock-stop time (5 seconds)."""
         from engine.game import Game
         home = Team.load("KC", 2025)
         away = Team.load("BUF", 2025)
@@ -421,8 +421,8 @@ class TestOOBAndClock:
             out_of_bounds=True, description="Run OOB",
         )
         time_used = game._calculate_time(oob_result)
-        # OOB should use 5-10 seconds (like INCOMPLETE)
-        assert 5 <= time_used <= 10
+        # 5th-edition: OOB stops clock → 5 seconds
+        assert time_used == 5
 
     def test_run_play_uses_more_time(self):
         from engine.game import Game
@@ -432,7 +432,88 @@ class TestOOBAndClock:
 
         run_result = PlayResult(play_type="RUN", yards_gained=5, result="GAIN")
         time_used = game._calculate_time(run_result)
-        assert 25 <= time_used <= 45
+        # 5th-edition: standard play → 30 seconds
+        assert time_used == 30
+
+    def test_incomplete_pass_uses_clock_stop_time(self):
+        from engine.game import Game
+        home = Team.load("KC", 2025)
+        away = Team.load("BUF", 2025)
+        game = Game(home, away)
+
+        inc_result = PlayResult(play_type="PASS", yards_gained=0, result="INCOMPLETE")
+        time_used = game._calculate_time(inc_result)
+        # 5th-edition: incomplete → clock stops → 5 seconds
+        assert time_used == 5
+
+    def test_complete_pass_uses_standard_time(self):
+        from engine.game import Game
+        home = Team.load("KC", 2025)
+        away = Team.load("BUF", 2025)
+        game = Game(home, away)
+
+        com_result = PlayResult(play_type="PASS", yards_gained=12, result="COMPLETE")
+        time_used = game._calculate_time(com_result)
+        # 5th-edition: complete pass → 30 seconds
+        assert time_used == 30
+
+    def test_kneel_uses_maximum_time(self):
+        from engine.game import Game
+        home = Team.load("KC", 2025)
+        away = Team.load("BUF", 2025)
+        game = Game(home, away)
+
+        kneel_result = PlayResult(play_type="KNEEL", yards_gained=-1, result="KNEEL")
+        time_used = game._calculate_time(kneel_result)
+        # 5th-edition: kneel → 40 seconds
+        assert time_used == 40
+
+    def test_penalty_uses_no_time(self):
+        from engine.game import Game
+        home = Team.load("KC", 2025)
+        away = Team.load("BUF", 2025)
+        game = Game(home, away)
+
+        pen_result = PlayResult(
+            play_type="RUN", yards_gained=0, result="PENALTY",
+            penalty={"type": "HOLDING_OFF", "yards": 10},
+        )
+        time_used = game._calculate_time(pen_result)
+        # 5th-edition: penalty → no time (play replayed)
+        assert time_used == 0
+
+
+# ─── Defense Play Call Override ─────────────────────────────────────
+
+class TestDefenseFormationOverride:
+    def setup_method(self):
+        random.seed(42)
+
+    def test_execute_play_with_defense_formation(self):
+        """Human-specified defense formation should be used instead of AI."""
+        from engine.game import Game
+        home = Team.load("KC", 2025)
+        away = Team.load("BUF", 2025)
+        game = Game(home, away, seed=42)
+
+        # Execute play with a specific defense formation
+        result = game.execute_play(defense_formation="GOAL_LINE")
+        assert result is not None
+        assert hasattr(result, "play_type")
+
+    def test_execute_play_with_both_play_call_and_defense(self):
+        """Both offense play call and defense formation can be specified."""
+        from engine.game import Game
+        from engine.solitaire import PlayCall
+        home = Team.load("KC", 2025)
+        away = Team.load("BUF", 2025)
+        game = Game(home, away, seed=42)
+
+        play_call = PlayCall("RUN", "I_FORM", "MIDDLE", "Test")
+        result = game.execute_play(
+            play_call=play_call, defense_formation="4_3_BLITZ"
+        )
+        assert result is not None
 
 
 # ─── Defense Integration in Resolution ──────────────────────────────

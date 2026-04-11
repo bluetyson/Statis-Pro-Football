@@ -52,6 +52,10 @@ class HumanPlayCallRequest(BaseModel):
     formation: str = "SHOTGUN"  # SHOTGUN, UNDER_CENTER, I_FORM, TRIPS, etc.
 
 
+class DefensivePlayCallRequest(BaseModel):
+    formation: str = "4_3"  # 4_3, 3_4, 4_3_BLITZ, 3_4_ZONE, NICKEL_BLITZ, NICKEL_ZONE, NICKEL_COVER2, GOAL_LINE, 4_3_COVER2
+
+
 class SubstitutionRequest(BaseModel):
     position: str  # QB, RB, WR, TE, K, P
     player_out: str  # player name to remove from starters
@@ -181,6 +185,47 @@ def execute_human_play(game_id: str, request: HumanPlayCallRequest):
     }
 
 
+VALID_FORMATIONS = {
+    "4_3", "3_4", "4_3_BLITZ", "3_4_ZONE", "4_3_COVER2",
+    "NICKEL_BLITZ", "NICKEL_ZONE", "NICKEL_COVER2", "GOAL_LINE",
+}
+
+
+@app.post("/games/{game_id}/human-defense")
+def execute_human_defense(game_id: str, request: DefensivePlayCallRequest):
+    """Execute a play where the human calls the defensive formation.
+
+    The offense is AI-controlled while the human picks the defense.
+    """
+    game = _get_game(game_id)
+
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+
+    formation = request.formation.upper()
+    if formation not in VALID_FORMATIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid formation: {formation}. Valid: {sorted(VALID_FORMATIONS)}",
+        )
+
+    result = game.execute_play(defense_formation=formation)
+
+    return {
+        "game_id": game_id,
+        "play_result": {
+            "play_type": result.play_type,
+            "yards": result.yards_gained,
+            "result": result.result,
+            "description": result.description,
+            "is_touchdown": result.is_touchdown,
+            "turnover": result.turnover,
+            "defense_formation": formation,
+        },
+        "state": _serialize_state(game.state),
+    }
+
+
 @app.post("/games/{game_id}/simulate-drive")
 def simulate_drive(game_id: str):
     """Simulate an entire drive."""
@@ -266,13 +311,39 @@ def get_personnel(game_id: str):
     defense_team = game.get_defense_team()
 
     def _player_brief(p):
-        return {
+        """Build a player summary including card data for board display."""
+        brief = {
             "name": p.player_name,
             "position": p.position,
             "number": p.number,
             "overall_grade": p.overall_grade,
             "receiver_letter": getattr(p, "receiver_letter", ""),
+            "defender_letter": getattr(p, "defender_letter", ""),
+            # Defensive ratings
+            "pass_rush_rating": getattr(p, "pass_rush_rating", 0),
+            "coverage_rating": getattr(p, "coverage_rating", 0),
+            "run_stop_rating": getattr(p, "run_stop_rating", 0),
+            # QB passing ranges
+            "passing_quick": p.passing_quick.to_dict() if getattr(p, "passing_quick", None) else None,
+            "passing_short": p.passing_short.to_dict() if getattr(p, "passing_short", None) else None,
+            "passing_long": p.passing_long.to_dict() if getattr(p, "passing_long", None) else None,
+            "pass_rush": p.pass_rush.to_dict() if getattr(p, "pass_rush", None) else None,
+            "qb_endurance": getattr(p, "qb_endurance", ""),
+            # Rushing (12-row N/SG/LG)
+            "rushing": [r.to_list() if r else None for r in getattr(p, "rushing", [])],
+            "endurance_rushing": getattr(p, "endurance_rushing", 0),
+            # Pass gain (12-row Q/S/L)
+            "pass_gain": [r.to_list() if r else None for r in getattr(p, "pass_gain", [])],
+            "endurance_pass": getattr(p, "endurance_pass", 0),
+            "blocks": getattr(p, "blocks", 0),
+            # Kicker
+            "fg_chart": getattr(p, "fg_chart", None) or None,
+            "xp_rate": getattr(p, "xp_rate", 0),
+            # Punter
+            "avg_distance": getattr(p, "avg_distance", 0),
+            "inside_20_rate": getattr(p, "inside_20_rate", 0),
         }
+        return brief
 
     offense_starters = {}
     for pos in ["QB", "RB", "WR", "TE", "K", "P"]:
