@@ -19,742 +19,93 @@
       "team": "NYJ",
       "overall_grade": "B",
       "receiver_letter": "",
-      "short_pass": {
-        "1": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "2": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "3": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "5": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "6": {
-          "result": "E",
-          "yards": 0,
-          "td": false
-        },
-        "7": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "8": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "9": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "10": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "11": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "12": {
-          "result": "E",
-          "yards": 0,
-          "td": false
-        },
-        "13": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "15": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "16": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "17": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "18": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "19": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "20": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "21": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "22": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "23": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "24": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "25": {
-          "result": "E",
-          "yards": 0,
-          "td": false
-        },
-        "26": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "27": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "28": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "29": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "30": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "33": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "34": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "35": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "36": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "37": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "38": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "39": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "40": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "41": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "42": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "43": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "44": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "45": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "46": {
-          "result": "INT",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "48": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        }
+      "passing_quick": {
+        "com_max": 32,
+        "inc_max": 47
       },
-      "long_pass": {
-        "1": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "2": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "3": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "5": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "6": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "7": {
-          "result": "INT",
-          "yards": 0,
-          "td": false
-        },
-        "8": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "9": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "10": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "11": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "12": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "13": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "15": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "16": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "17": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "18": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "19": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "20": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "21": {
-          "result": "INT",
-          "yards": 0,
-          "td": false
-        },
-        "22": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "23": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "24": {
-          "result": "E",
-          "yards": 0,
-          "td": false
-        },
-        "25": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "26": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "27": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "28": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "29": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "E",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "33": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "34": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "35": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "36": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "37": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "38": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "39": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "40": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "41": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "42": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "43": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "44": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "45": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "46": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "48": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        }
+      "passing_short": {
+        "com_max": 30,
+        "inc_max": 47
       },
-      "quick_pass": {
-        "1": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "2": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "3": {
-          "result": "INT",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "5": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "6": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "7": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "8": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "9": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "10": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "11": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "12": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "13": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "15": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "16": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "17": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "18": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "19": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "20": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "21": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "22": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "23": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "24": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "25": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "26": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "27": {
-          "result": "E",
-          "yards": 0,
-          "td": false
-        },
-        "28": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "29": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "E",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "33": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        },
-        "34": {
-          "result": "E",
-          "yards": 0,
-          "td": false
-        },
-        "35": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "36": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "37": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "38": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "39": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "40": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "41": {
-          "result": "A",
-          "yards": 0,
-          "td": false
-        },
-        "42": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "43": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "44": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "45": {
-          "result": "C",
-          "yards": 0,
-          "td": false
-        },
-        "46": {
-          "result": "D",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "48": {
-          "result": "B",
-          "yards": 0,
-          "td": false
-        }
+      "passing_long": {
+        "com_max": 26,
+        "inc_max": 46
       },
-      "screen_pass": {},
-      "qb_rush": {},
-      "inside_run": {},
-      "outside_run": {},
-      "sweep": {},
-      "short_reception": {},
-      "long_reception": {},
+      "pass_rush": {
+        "sack_max": 10,
+        "runs_max": 30,
+        "com_max": 37
+      },
+      "long_pass_com_adj": 0,
+      "qb_endurance": "A",
+      "rushing": [
+        [
+          "Sg",
+          8,
+          13
+        ],
+        [
+          5,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          3,
+          6,
+          10
+        ],
+        [
+          2,
+          6,
+          10
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          0,
+          6,
+          10
+        ],
+        [
+          -1,
+          6,
+          10
+        ]
+      ],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
       "fg_chart": {},
       "xp_rate": 0.95,
-      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -765,444 +116,9 @@
         "comp_pct": 0.622,
         "ypa": 7.0,
         "int_rate": 0.025,
-        "sack_rate": 0.082
-      }
-    },
-    {
-      "name": "Breece Hall",
-      "position": "RB",
-      "number": 20,
-      "team": "NYJ",
-      "overall_grade": "A",
-      "receiver_letter": "",
-      "short_pass": {},
-      "long_pass": {},
-      "quick_pass": {},
-      "screen_pass": {},
-      "qb_rush": {},
-      "inside_run": {
-        "1": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "2": {
-          "result": "BREAKAWAY",
-          "yards": 25,
-          "td": false
-        },
-        "3": {
-          "result": "GAIN",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "5": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "6": {
-          "result": "GAIN",
-          "yards": 1,
-          "td": false
-        },
-        "7": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "8": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "9": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "10": {
-          "result": "GAIN",
-          "yards": 2,
-          "td": false
-        },
-        "11": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "12": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        }
+        "sack_rate": 0.082,
+        "rush_ypc": 3.0
       },
-      "outside_run": {
-        "1": {
-          "result": "GAIN",
-          "yards": 7,
-          "td": false
-        },
-        "2": {
-          "result": "GAIN",
-          "yards": 20,
-          "td": false
-        },
-        "3": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "4": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "5": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "6": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "7": {
-          "result": "BREAKAWAY",
-          "yards": 25,
-          "td": false
-        },
-        "8": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "9": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "10": {
-          "result": "GAIN",
-          "yards": 2,
-          "td": false
-        },
-        "11": {
-          "result": "BREAKAWAY",
-          "yards": 50,
-          "td": false
-        },
-        "12": {
-          "result": "GAIN",
-          "yards": 15,
-          "td": false
-        }
-      },
-      "sweep": {
-        "1": {
-          "result": "GAIN",
-          "yards": 0,
-          "td": false
-        },
-        "2": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "3": {
-          "result": "BREAKAWAY",
-          "yards": 40,
-          "td": false
-        },
-        "4": {
-          "result": "GAIN",
-          "yards": 1,
-          "td": false
-        },
-        "5": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "6": {
-          "result": "GAIN",
-          "yards": 7,
-          "td": false
-        },
-        "7": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "8": {
-          "result": "GAIN",
-          "yards": 10,
-          "td": false
-        },
-        "9": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "10": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "11": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "12": {
-          "result": "BREAKAWAY",
-          "yards": 40,
-          "td": true
-        }
-      },
-      "short_reception": {},
-      "long_reception": {},
-      "fg_chart": {},
-      "xp_rate": 0.95,
-      "punt_column": {},
-      "avg_distance": 44.0,
-      "inside_20_rate": 0.35,
-      "pass_rush_rating": 50,
-      "coverage_rating": 50,
-      "run_stop_rating": 50,
-      "defender_letter": "",
-      "stats_summary": {
-        "ypc": 4.9,
-        "fumble_rate": 0.01
-      }
-    },
-    {
-      "name": "Dalvin Cook",
-      "position": "RB",
-      "number": 4,
-      "team": "NYJ",
-      "overall_grade": "C",
-      "receiver_letter": "",
-      "short_pass": {},
-      "long_pass": {},
-      "quick_pass": {},
-      "screen_pass": {},
-      "qb_rush": {},
-      "inside_run": {
-        "1": {
-          "result": "GAIN",
-          "yards": 1,
-          "td": false
-        },
-        "2": {
-          "result": "GAIN",
-          "yards": 1,
-          "td": false
-        },
-        "3": {
-          "result": "GAIN",
-          "yards": 1,
-          "td": false
-        },
-        "4": {
-          "result": "GAIN",
-          "yards": 0,
-          "td": false
-        },
-        "5": {
-          "result": "GAIN",
-          "yards": 2,
-          "td": false
-        },
-        "6": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "7": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "8": {
-          "result": "GAIN",
-          "yards": 7,
-          "td": false
-        },
-        "9": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "10": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "11": {
-          "result": "GAIN",
-          "yards": 2,
-          "td": false
-        },
-        "12": {
-          "result": "GAIN",
-          "yards": -2,
-          "td": false
-        }
-      },
-      "outside_run": {
-        "1": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "2": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "3": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "4": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": false
-        },
-        "5": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "6": {
-          "result": "GAIN",
-          "yards": -1,
-          "td": false
-        },
-        "7": {
-          "result": "GAIN",
-          "yards": 2,
-          "td": false
-        },
-        "8": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "9": {
-          "result": "GAIN",
-          "yards": -2,
-          "td": false
-        },
-        "10": {
-          "result": "GAIN",
-          "yards": 8,
-          "td": true
-        },
-        "11": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "12": {
-          "result": "BREAKAWAY",
-          "yards": 15,
-          "td": true
-        }
-      },
-      "sweep": {
-        "1": {
-          "result": "GAIN",
-          "yards": 6,
-          "td": false
-        },
-        "2": {
-          "result": "GAIN",
-          "yards": -1,
-          "td": false
-        },
-        "3": {
-          "result": "GAIN",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "GAIN",
-          "yards": 2,
-          "td": false
-        },
-        "5": {
-          "result": "GAIN",
-          "yards": 4,
-          "td": false
-        },
-        "6": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "7": {
-          "result": "GAIN",
-          "yards": 8,
-          "td": false
-        },
-        "8": {
-          "result": "GAIN",
-          "yards": 3,
-          "td": false
-        },
-        "9": {
-          "result": "GAIN",
-          "yards": 7,
-          "td": false
-        },
-        "10": {
-          "result": "GAIN",
-          "yards": 1,
-          "td": false
-        },
-        "11": {
-          "result": "GAIN",
-          "yards": 5,
-          "td": true
-        },
-        "12": {
-          "result": "BREAKAWAY",
-          "yards": 40,
-          "td": true
-        }
-      },
-      "short_reception": {},
-      "long_reception": {},
-      "fg_chart": {},
-      "xp_rate": 0.95,
-      "punt_column": {},
-      "avg_distance": 44.0,
-      "inside_20_rate": 0.35,
-      "pass_rush_rating": 50,
-      "coverage_rating": 50,
-      "run_stop_rating": 50,
-      "defender_letter": "",
-      "stats_summary": {
-        "ypc": 3.8,
-        "fumble_rate": 0.015
-      }
-    },
-    {
-      "name": "Garrett Wilson",
-      "position": "WR",
-      "number": 17,
-      "team": "NYJ",
-      "overall_grade": "A",
-      "receiver_letter": "A",
       "short_pass": {},
       "long_pass": {},
       "quick_pass": {},
@@ -1211,493 +127,436 @@
       "inside_run": {},
       "outside_run": {},
       "sweep": {},
-      "short_reception": {
-        "1": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "2": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "3": {
-          "result": "CATCH",
-          "yards": 14,
-          "td": false
-        },
-        "4": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "5": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "6": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": true
-        },
-        "7": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "8": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "9": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "10": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "11": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "12": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "13": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "15": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "16": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "17": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "18": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "19": {
-          "result": "CATCH",
-          "yards": 12,
-          "td": false
-        },
-        "20": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "21": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "22": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "23": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "24": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "25": {
-          "result": "CATCH",
-          "yards": 14,
-          "td": false
-        },
-        "26": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "27": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "28": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "29": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "32": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "33": {
-          "result": "CATCH",
-          "yards": 14,
-          "td": false
-        },
-        "34": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "35": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "36": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "37": {
-          "result": "CATCH",
-          "yards": 12,
-          "td": false
-        },
-        "38": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "39": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "40": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "41": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "42": {
-          "result": "CATCH",
-          "yards": 14,
-          "td": false
-        },
-        "43": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "44": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "45": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": true
-        },
-        "46": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "48": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        }
-      },
-      "long_reception": {
-        "1": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "2": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "3": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "5": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "6": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "7": {
-          "result": "CATCH",
-          "yards": 45,
-          "td": false
-        },
-        "8": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "9": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "10": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "11": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "12": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "13": {
-          "result": "CATCH",
-          "yards": 30,
-          "td": true
-        },
-        "14": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "15": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "16": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "17": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "18": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "19": {
-          "result": "CATCH",
-          "yards": 45,
-          "td": false
-        },
-        "20": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "21": {
-          "result": "CATCH",
-          "yards": 30,
-          "td": false
-        },
-        "22": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "23": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "24": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "25": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "26": {
-          "result": "CATCH",
-          "yards": 40,
-          "td": false
-        },
-        "27": {
-          "result": "CATCH",
-          "yards": 35,
-          "td": false
-        },
-        "28": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "29": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "33": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "34": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "35": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "36": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "37": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "38": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "39": {
-          "result": "CATCH",
-          "yards": 40,
-          "td": false
-        },
-        "40": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "41": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "42": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "43": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "44": {
-          "result": "CATCH",
-          "yards": 40,
-          "td": false
-        },
-        "45": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "46": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "48": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        }
-      },
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Breece Hall",
+      "position": "RB",
+      "number": 20,
+      "team": "NYJ",
+      "overall_grade": "A",
+      "receiver_letter": "A",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        [
+          "Sg",
+          15,
+          33
+        ],
+        [
+          12,
+          13,
+          27
+        ],
+        [
+          10,
+          12,
+          26
+        ],
+        [
+          9,
+          12,
+          25
+        ],
+        [
+          8,
+          12,
+          24
+        ],
+        [
+          7,
+          11,
+          22
+        ],
+        [
+          5,
+          11,
+          21
+        ],
+        [
+          4,
+          10,
+          20
+        ],
+        [
+          3,
+          10,
+          19
+        ],
+        [
+          2,
+          10,
+          18
+        ],
+        [
+          1,
+          9,
+          16
+        ],
+        [
+          -1,
+          9,
+          15
+        ]
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          7,
+          9,
+          20
+        ],
+        [
+          6,
+          9,
+          20
+        ],
+        [
+          6,
+          8,
+          20
+        ],
+        [
+          5,
+          8,
+          20
+        ],
+        [
+          5,
+          7,
+          20
+        ],
+        [
+          4,
+          7,
+          20
+        ],
+        [
+          3,
+          6,
+          20
+        ],
+        [
+          3,
+          6,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          1,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ]
+      ],
+      "endurance_pass": 2,
+      "blocks": 1,
       "fg_chart": {},
       "xp_rate": 0.95,
-      "punt_column": {},
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "defender_letter": "",
+      "stats_summary": {
+        "ypc": 4.9,
+        "fumble_rate": 0.01,
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Dalvin Cook",
+      "position": "RB",
+      "number": 4,
+      "team": "NYJ",
+      "overall_grade": "C",
+      "receiver_letter": "B",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        [
+          "Sg",
+          12,
+          24
+        ],
+        [
+          7,
+          9,
+          18
+        ],
+        [
+          6,
+          9,
+          17
+        ],
+        [
+          6,
+          8,
+          15
+        ],
+        [
+          5,
+          8,
+          14
+        ],
+        [
+          4,
+          8,
+          13
+        ],
+        [
+          3,
+          7,
+          12
+        ],
+        [
+          2,
+          7,
+          11
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          0,
+          6,
+          10
+        ],
+        [
+          -1,
+          6,
+          10
+        ],
+        [
+          -2,
+          5,
+          10
+        ]
+      ],
+      "endurance_rushing": 1,
+      "pass_gain": [
+        [
+          4,
+          6,
+          20
+        ],
+        [
+          3,
+          5,
+          20
+        ],
+        [
+          3,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          1,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ],
+        [
+          -1,
+          5,
+          20
+        ],
+        [
+          -1,
+          5,
+          20
+        ],
+        [
+          -2,
+          5,
+          20
+        ],
+        [
+          -3,
+          5,
+          20
+        ]
+      ],
+      "endurance_pass": 2,
+      "blocks": 1,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "defender_letter": "",
+      "stats_summary": {
+        "ypc": 3.8,
+        "fumble_rate": 0.015,
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Garrett Wilson",
+      "position": "WR",
+      "number": 17,
+      "team": "NYJ",
+      "overall_grade": "A",
+      "receiver_letter": "C",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          64
+        ],
+        [
+          13,
+          20,
+          43
+        ],
+        [
+          13,
+          19,
+          42
+        ],
+        [
+          12,
+          19,
+          40
+        ],
+        [
+          12,
+          18,
+          39
+        ],
+        [
+          11,
+          18,
+          37
+        ],
+        [
+          10,
+          17,
+          36
+        ],
+        [
+          10,
+          17,
+          34
+        ],
+        [
+          9,
+          16,
+          33
+        ],
+        [
+          9,
+          16,
+          31
+        ],
+        [
+          8,
+          15,
+          30
+        ],
+        [
+          7,
+          15,
+          28
+        ]
+      ],
+      "endurance_pass": 0,
+      "blocks": -2,
+      "fg_chart": {},
+      "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -1707,15 +566,7 @@
       "stats_summary": {
         "catch_rate": 0.7,
         "avg_yards": 13.8
-      }
-    },
-    {
-      "name": "Allen Lazard",
-      "position": "WR",
-      "number": 10,
-      "team": "NYJ",
-      "overall_grade": "C",
-      "receiver_letter": "B",
+      },
       "short_pass": {},
       "long_pass": {},
       "quick_pass": {},
@@ -1724,493 +575,104 @@
       "inside_run": {},
       "outside_run": {},
       "sweep": {},
-      "short_reception": {
-        "1": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "2": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "3": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "4": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "5": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "6": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "7": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "8": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "9": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "10": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "11": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "12": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "13": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "15": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "16": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "17": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "18": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "19": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "20": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "21": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "22": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "23": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "24": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "25": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "26": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "27": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "28": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "29": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "30": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "31": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "33": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "34": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "35": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "36": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "37": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "38": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "39": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "40": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "41": {
-          "result": "CATCH",
-          "yards": 3,
-          "td": false
-        },
-        "42": {
-          "result": "CATCH",
-          "yards": 3,
-          "td": false
-        },
-        "43": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "44": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "45": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "46": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "47": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "48": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        }
-      },
-      "long_reception": {
-        "1": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "2": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "3": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "5": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "6": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "7": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "8": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "9": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "10": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "11": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "12": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "13": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "15": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "16": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "17": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "18": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "19": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "20": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "21": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "22": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "23": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "24": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": true
-        },
-        "25": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "26": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "27": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "28": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "29": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "32": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "33": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "34": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "35": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "36": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "37": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "38": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "39": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "40": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "41": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "42": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "43": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": true
-        },
-        "44": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "45": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "46": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "47": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "48": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        }
-      },
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Allen Lazard",
+      "position": "WR",
+      "number": 10,
+      "team": "NYJ",
+      "overall_grade": "C",
+      "receiver_letter": "D",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          44
+        ],
+        [
+          8,
+          13,
+          29
+        ],
+        [
+          8,
+          12,
+          28
+        ],
+        [
+          7,
+          12,
+          26
+        ],
+        [
+          6,
+          11,
+          25
+        ],
+        [
+          6,
+          11,
+          23
+        ],
+        [
+          5,
+          10,
+          22
+        ],
+        [
+          5,
+          10,
+          20
+        ],
+        [
+          4,
+          9,
+          20
+        ],
+        [
+          3,
+          9,
+          20
+        ],
+        [
+          3,
+          8,
+          20
+        ],
+        [
+          2,
+          8,
+          20
+        ]
+      ],
+      "endurance_pass": 1,
+      "blocks": -2,
       "fg_chart": {},
       "xp_rate": 0.95,
-      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -2220,15 +682,7 @@
       "stats_summary": {
         "catch_rate": 0.6,
         "avg_yards": 11.0
-      }
-    },
-    {
-      "name": "Xavier Gipson",
-      "position": "WR",
-      "number": 83,
-      "team": "NYJ",
-      "overall_grade": "C",
-      "receiver_letter": "C",
+      },
       "short_pass": {},
       "long_pass": {},
       "quick_pass": {},
@@ -2237,493 +691,104 @@
       "inside_run": {},
       "outside_run": {},
       "sweep": {},
-      "short_reception": {
-        "1": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "2": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "3": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "4": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "5": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "6": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "7": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "8": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "9": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "10": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "11": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "12": {
-          "result": "CATCH",
-          "yards": 3,
-          "td": false
-        },
-        "13": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "14": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "15": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "16": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "17": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "18": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "19": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "20": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "21": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "22": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "23": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "24": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "25": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "26": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "27": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "28": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "29": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "32": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "33": {
-          "result": "CATCH",
-          "yards": 3,
-          "td": false
-        },
-        "34": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "35": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "36": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "37": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "38": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "39": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "40": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "41": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "42": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "43": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "44": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "45": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "46": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "48": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        }
-      },
-      "long_reception": {
-        "1": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "2": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "3": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "5": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "6": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "7": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "8": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "9": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "10": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "11": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "12": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "13": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "15": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "16": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "17": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "18": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "19": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "20": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "21": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "22": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "23": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "24": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "25": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "26": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "27": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": true
-        },
-        "28": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "29": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "32": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "33": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "34": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "35": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "36": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "37": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "38": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "39": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "40": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "41": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "42": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "43": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "44": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "45": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "46": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "47": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "48": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        }
-      },
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Xavier Gipson",
+      "position": "WR",
+      "number": 83,
+      "team": "NYJ",
+      "overall_grade": "C",
+      "receiver_letter": "E",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          40
+        ],
+        [
+          7,
+          12,
+          26
+        ],
+        [
+          7,
+          11,
+          25
+        ],
+        [
+          6,
+          10,
+          24
+        ],
+        [
+          6,
+          10,
+          22
+        ],
+        [
+          5,
+          10,
+          20
+        ],
+        [
+          4,
+          9,
+          20
+        ],
+        [
+          4,
+          8,
+          20
+        ],
+        [
+          3,
+          8,
+          20
+        ],
+        [
+          3,
+          8,
+          20
+        ],
+        [
+          2,
+          7,
+          20
+        ],
+        [
+          1,
+          6,
+          20
+        ]
+      ],
+      "endurance_pass": 1,
+      "blocks": -2,
       "fg_chart": {},
       "xp_rate": 0.95,
-      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -2733,15 +798,7 @@
       "stats_summary": {
         "catch_rate": 0.62,
         "avg_yards": 10.0
-      }
-    },
-    {
-      "name": "Tyler Conklin",
-      "position": "TE",
-      "number": 83,
-      "team": "NYJ",
-      "overall_grade": "C",
-      "receiver_letter": "D",
+      },
       "short_pass": {},
       "long_pass": {},
       "quick_pass": {},
@@ -2750,493 +807,104 @@
       "inside_run": {},
       "outside_run": {},
       "sweep": {},
-      "short_reception": {
-        "1": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "2": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "3": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "4": {
-          "result": "CATCH",
-          "yards": 3,
-          "td": false
-        },
-        "5": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "6": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "7": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "8": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "9": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "10": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "11": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "12": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "13": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "15": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "16": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "17": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "18": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "19": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "20": {
-          "result": "CATCH",
-          "yards": 2,
-          "td": false
-        },
-        "21": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "22": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "23": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "24": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "25": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "26": {
-          "result": "CATCH",
-          "yards": 3,
-          "td": false
-        },
-        "27": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "28": {
-          "result": "CATCH",
-          "yards": 7,
-          "td": false
-        },
-        "29": {
-          "result": "CATCH",
-          "yards": 6,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": false
-        },
-        "33": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "34": {
-          "result": "CATCH",
-          "yards": 3,
-          "td": false
-        },
-        "35": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "36": {
-          "result": "CATCH",
-          "yards": 8,
-          "td": true
-        },
-        "37": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "38": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "39": {
-          "result": "CATCH",
-          "yards": 10,
-          "td": false
-        },
-        "40": {
-          "result": "CATCH",
-          "yards": 4,
-          "td": false
-        },
-        "41": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "42": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "43": {
-          "result": "CATCH",
-          "yards": 9,
-          "td": false
-        },
-        "44": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "45": {
-          "result": "CATCH",
-          "yards": 5,
-          "td": false
-        },
-        "46": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "48": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        }
-      },
-      "long_reception": {
-        "1": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": true
-        },
-        "2": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "3": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "4": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "5": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "6": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "7": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "8": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "9": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "10": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "11": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "12": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "13": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "14": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "15": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "16": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "17": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "18": {
-          "result": "CATCH",
-          "yards": 28,
-          "td": false
-        },
-        "19": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "20": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "21": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "22": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "23": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "24": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "25": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "26": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "27": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "28": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "29": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "30": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "31": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "32": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": true
-        },
-        "33": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "34": {
-          "result": "CATCH",
-          "yards": 15,
-          "td": false
-        },
-        "35": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "36": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "37": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "38": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "39": {
-          "result": "CATCH",
-          "yards": 25,
-          "td": false
-        },
-        "40": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "41": {
-          "result": "CATCH",
-          "yards": 18,
-          "td": false
-        },
-        "42": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "43": {
-          "result": "CATCH",
-          "yards": 22,
-          "td": false
-        },
-        "44": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "45": {
-          "result": "CATCH",
-          "yards": 20,
-          "td": false
-        },
-        "46": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "47": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        },
-        "48": {
-          "result": "INC",
-          "yards": 0,
-          "td": false
-        }
-      },
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Tyler Conklin",
+      "position": "TE",
+      "number": 83,
+      "team": "NYJ",
+      "overall_grade": "C",
+      "receiver_letter": "E",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          34
+        ],
+        [
+          6,
+          10,
+          22
+        ],
+        [
+          6,
+          9,
+          21
+        ],
+        [
+          5,
+          9,
+          20
+        ],
+        [
+          4,
+          8,
+          20
+        ],
+        [
+          4,
+          8,
+          20
+        ],
+        [
+          3,
+          7,
+          20
+        ],
+        [
+          3,
+          7,
+          20
+        ],
+        [
+          2,
+          6,
+          20
+        ],
+        [
+          1,
+          6,
+          20
+        ],
+        [
+          1,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ]
+      ],
+      "endurance_pass": 2,
+      "blocks": 3,
       "fg_chart": {},
       "xp_rate": 0.95,
-      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 50,
@@ -3246,7 +914,18 @@
       "stats_summary": {
         "catch_rate": 0.63,
         "avg_yards": 8.5
-      }
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
     },
     {
       "name": "Greg Zuerlein",
@@ -3637,19 +1316,19 @@
       "team": "NYJ",
       "overall_grade": "A",
       "receiver_letter": "",
-      "short_pass": {},
-      "long_pass": {},
-      "quick_pass": {},
-      "screen_pass": {},
-      "qb_rush": {},
-      "inside_run": {},
-      "outside_run": {},
-      "sweep": {},
-      "short_reception": {},
-      "long_reception": {},
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
       "fg_chart": {},
       "xp_rate": 0.95,
-      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 88,
@@ -3660,15 +1339,7 @@
         "pass_rush_rating": 88,
         "coverage_rating": 44,
         "run_stop_rating": 82
-      }
-    },
-    {
-      "name": "C.J. Mosley",
-      "position": "LB",
-      "number": 57,
-      "team": "NYJ",
-      "overall_grade": "B",
-      "receiver_letter": "",
+      },
       "short_pass": {},
       "long_pass": {},
       "quick_pass": {},
@@ -3679,9 +1350,28 @@
       "sweep": {},
       "short_reception": {},
       "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "C.J. Mosley",
+      "position": "LB",
+      "number": 57,
+      "team": "NYJ",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
       "fg_chart": {},
       "xp_rate": 0.95,
-      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 60,
@@ -3692,15 +1382,7 @@
         "pass_rush_rating": 60,
         "coverage_rating": 72,
         "run_stop_rating": 82
-      }
-    },
-    {
-      "name": "Sauce Gardner",
-      "position": "CB",
-      "number": 1,
-      "team": "NYJ",
-      "overall_grade": "A",
-      "receiver_letter": "",
+      },
       "short_pass": {},
       "long_pass": {},
       "quick_pass": {},
@@ -3711,9 +1393,28 @@
       "sweep": {},
       "short_reception": {},
       "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Sauce Gardner",
+      "position": "CB",
+      "number": 1,
+      "team": "NYJ",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
       "fg_chart": {},
       "xp_rate": 0.95,
-      "punt_column": {},
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
       "pass_rush_rating": 44,
@@ -3724,7 +1425,18 @@
         "pass_rush_rating": 44,
         "coverage_rating": 92,
         "run_stop_rating": 70
-      }
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
     }
   ],
   "edition": "5e"

@@ -1,16 +1,21 @@
 """Card generator for Statis Pro Football player cards.
 
-Supports both 5th-edition card formats (48/12-slot with receiver letters)
-and legacy 64-slot cards.
+Supports both authentic card formats (range-based QB passing, 12-row
+N/SG/LG rushing and Q/S/L pass gain shared by RB/WR/TE) and legacy
+64-slot cards.
 
 Uses FAC distribution tables from ``fac_distributions`` to determine the
 fixed number of slots per outcome type, then fills yardage values from
 grade-appropriate pools.
 """
 import random
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
-from .player_card import PlayerCard, PASS_SLOTS, RUN_SLOTS, RECEIVER_LETTERS
+from .player_card import (
+    PlayerCard, PASS_SLOTS, RUN_SLOTS, RECEIVER_LETTERS,
+    PassRanges, PassRushRanges, ThreeValueRow,
+    PASS_NUMBER_MAX, RUN_NUMBER_MAX,
+)
 from .fac_distributions import (
     all_slots, pass_slots, run_slots,
     SLOT_COUNT, PASS_SLOT_COUNT, RUN_SLOT_COUNT,
@@ -406,6 +411,171 @@ class CardGenerator:
         }
         return card
 
+    # ══════════════════════════════════════════════════════════════════
+    #  AUTHENTIC CARD GENERATORS
+    #  Match the real Statis Pro Football card format:
+    #    QB: range-based passing + 12-row rushing
+    #    RB/WR/TE: same layout - 12-row rushing + 12-row pass gain
+    # ══════════════════════════════════════════════════════════════════
+
+    def generate_qb_card_authentic(
+        self, name: str, team: str, number: int,
+        comp_pct: float, ypa: float, int_rate: float,
+        sack_rate: float, grade: str,
+        rush_ypc: float = 3.0,
+        rush_fumble_rate: float = 0.015,
+        qb_endurance: str = "A",
+    ) -> PlayerCard:
+        """Generate an authentic QB card with range-based passing columns.
+
+        Passing columns use ranges within 1-48 (Com/Inc/Int boundaries),
+        matching the original Avalon Hill card format.
+        Rushing uses 12 rows with N/SG/LG values.
+        """
+        card = PlayerCard(
+            player_name=name, team=team, position="QB",
+            number=number, overall_grade=grade,
+        )
+
+        # Passing ranges (Quick is highest completion, Long is lowest)
+        card.passing_quick = _make_qb_pass_ranges(
+            comp_pct + 0.04, int_rate * 0.5, grade,
+        )
+        card.passing_short = _make_qb_pass_ranges(
+            comp_pct, int_rate, grade,
+        )
+        card.passing_long = _make_qb_pass_ranges(
+            comp_pct - 0.08, int_rate * 1.5, grade,
+        )
+
+        # Pass Rush ranges
+        card.pass_rush = _make_pass_rush_ranges(sack_rate, comp_pct, grade)
+
+        # QB Rushing: 12 rows with N/SG/LG
+        card.rushing = _make_rushing_12rows(
+            rush_ypc, grade, is_qb=True,
+        )
+        card.endurance_rushing = 3
+        card.qb_endurance = qb_endurance
+
+        card.stats_summary = {
+            "comp_pct": comp_pct, "ypa": ypa,
+            "int_rate": int_rate, "sack_rate": sack_rate,
+            "rush_ypc": rush_ypc,
+        }
+        return card
+
+    def generate_rb_card_authentic(
+        self, name: str, team: str, number: int,
+        ypc: float, fumble_rate: float, grade: str,
+        catch_rate: float = 0.3,
+        avg_rec_yards: float = 7.0,
+        endurance_pass: int = 2,
+        blocks: int = 1,
+        receiver_letter: str = "",
+    ) -> PlayerCard:
+        """Generate an authentic RB card (same format as WR/TE).
+
+        RBs have strong rushing columns and varying pass gain columns.
+        endurance_pass: 0 = unlimited, 4 = very limited pass involvement.
+        """
+        card = PlayerCard(
+            player_name=name, team=team, position="RB",
+            number=number, overall_grade=grade,
+        )
+        card.receiver_letter = receiver_letter
+
+        # Rushing: 12 rows N/SG/LG (strong for RBs)
+        card.rushing = _make_rushing_12rows(ypc, grade, is_qb=False)
+        card.endurance_rushing = 0 if grade in ("A", "A+") else 1
+
+        # Pass Gain: 12 rows Q/S/L (varies based on endurance_pass)
+        card.pass_gain = _make_pass_gain_12rows(
+            catch_rate, avg_rec_yards, grade,
+            pass_endurance=endurance_pass,
+        )
+        card.endurance_pass = endurance_pass
+        card.blocks = blocks
+
+        card.stats_summary = {
+            "ypc": ypc, "fumble_rate": fumble_rate,
+            "catch_rate": catch_rate, "avg_rec_yards": avg_rec_yards,
+        }
+        return card
+
+    def generate_wr_card_authentic(
+        self, name: str, team: str, number: int,
+        catch_rate: float, avg_yards: float, grade: str,
+        receiver_letter: str = "A",
+        has_rushing: bool = False,
+        rush_ypc: float = 4.0,
+        endurance_rush: str = "No",
+        blocks: int = -2,
+    ) -> PlayerCard:
+        """Generate an authentic WR card (same format as RB/TE).
+
+        WRs have strong pass gain columns but usually blank rushing.
+        """
+        card = PlayerCard(
+            player_name=name, team=team, position="WR",
+            number=number, overall_grade=grade,
+        )
+        card.receiver_letter = receiver_letter
+
+        # Rushing: usually blank for WRs, but some have end-around ability
+        if has_rushing:
+            card.rushing = _make_rushing_12rows(rush_ypc, grade, is_qb=False)
+            card.endurance_rushing = 4  # Very limited
+        else:
+            card.rushing = [None] * RUN_NUMBER_MAX
+            card.endurance_rushing = 0  # "No" rushing
+
+        # Pass Gain: 12 rows Q/S/L (strong for WRs)
+        card.pass_gain = _make_pass_gain_12rows(
+            catch_rate, avg_yards, grade,
+            pass_endurance=0,  # WRs have strong pass gain
+        )
+        card.endurance_pass = 0 if grade in ("A", "A+") else 1
+        card.blocks = blocks
+
+        card.stats_summary = {
+            "catch_rate": catch_rate, "avg_yards": avg_yards,
+        }
+        return card
+
+    def generate_te_card_authentic(
+        self, name: str, team: str, number: int,
+        catch_rate: float, avg_yards: float, grade: str,
+        receiver_letter: str = "D",
+        blocks: int = 3,
+    ) -> PlayerCard:
+        """Generate an authentic TE card (same format as RB/WR).
+
+        TEs have blank rushing, good blocking, moderate pass gain.
+        """
+        card = PlayerCard(
+            player_name=name, team=team, position="TE",
+            number=number, overall_grade=grade,
+        )
+        card.receiver_letter = receiver_letter
+
+        # Rushing: blank for TEs
+        card.rushing = [None] * RUN_NUMBER_MAX
+        card.endurance_rushing = 0  # "No" rushing
+
+        # Pass Gain: 12 rows Q/S/L (moderate for TEs)
+        card.pass_gain = _make_pass_gain_12rows(
+            catch_rate, avg_yards, grade,
+            pass_endurance=0,
+        )
+        card.endurance_pass = 0 if grade in ("A", "A+") else 2
+        card.blocks = blocks
+
+        card.stats_summary = {
+            "catch_rate": catch_rate, "avg_yards": avg_yards,
+        }
+        return card
+
 
 # ── 5th-edition column builders ──────────────────────────────────────
 
@@ -523,3 +693,157 @@ def _make_wr_reception_5e(catch_rate: float, avg_yards: float,
 
     random.shuffle(results)
     return _distribute_pass_results(results)
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  AUTHENTIC CARD BUILDER HELPERS
+# ══════════════════════════════════════════════════════════════════════
+
+# Grade-based adjustments
+_GRADE_RUSH_BOOST = {"A+": 3, "A": 2, "B": 1, "C": 0, "D": -1}
+_GRADE_PASS_BOOST = {"A+": 4, "A": 3, "B": 1, "C": 0, "D": -2}
+
+
+def _make_qb_pass_ranges(
+    comp_pct: float, int_rate: float, grade: str,
+) -> PassRanges:
+    """Build range boundaries for a QB pass column (Quick, Short, or Long).
+
+    comp_pct: completion percentage 0-1.
+    int_rate: interception rate per attempt 0-1.
+    """
+    # Com range: PN 1 through com_max
+    com_max = max(1, min(PASS_NUMBER_MAX - 1, round(comp_pct * PASS_NUMBER_MAX)))
+
+    # Int range: PN inc_max+1 through 48
+    n_int = max(0, round(int_rate * PASS_NUMBER_MAX))
+    inc_max = PASS_NUMBER_MAX - n_int
+    if inc_max <= com_max:
+        inc_max = com_max  # No incomplete zone
+
+    return PassRanges(com_max=com_max, inc_max=inc_max)
+
+
+def _make_pass_rush_ranges(
+    sack_rate: float, comp_pct: float, grade: str,
+) -> PassRushRanges:
+    """Build range boundaries for QB pass rush resolution."""
+    sack_max = max(1, min(30, round(sack_rate * PASS_NUMBER_MAX * 2.5)))
+    runs_max = 30  # QB runs typically range from sack_max+1 to 30
+    if sack_max >= runs_max:
+        runs_max = sack_max + 1
+
+    # On pass rush, some passes still get completed
+    comp_slots = max(1, round(comp_pct * (PASS_NUMBER_MAX - runs_max) * 0.6))
+    com_max = min(PASS_NUMBER_MAX - 1, runs_max + comp_slots)
+
+    return PassRushRanges(sack_max=sack_max, runs_max=runs_max, com_max=com_max)
+
+
+def _make_rushing_12rows(
+    ypc: float, grade: str, is_qb: bool = False,
+) -> List[Optional[ThreeValueRow]]:
+    """Build 12 rows of N/SG/LG rushing values.
+
+    Row 1 has the best values (including "Sg" breakaway potential).
+    Row 12 has the worst.
+
+    N  = Normal yards (base result)
+    SG = Short-Gain yards (used on SG blocking result)
+    LG = Long-Gain yards (used on LG blocking result)
+    """
+    boost = _GRADE_RUSH_BOOST.get(grade, 0)
+    rows: List[ThreeValueRow] = []
+
+    # Base values scale with ypc
+    # Row 1 is the best, row 12 is the worst
+    for i in range(RUN_NUMBER_MAX):
+        # N column: descending from good to bad
+        if i == 0:
+            # Row 1: "Sg" (special gain) — represent as string or high value
+            n_val = "Sg"
+        else:
+            base_n = round(ypc * 2.2 - i * ypc * 0.25 + boost)
+            if is_qb:
+                base_n = round(base_n * 0.7)  # QBs are weaker rushers
+            n_val = max(-5, base_n)
+
+        # SG column: moderate value
+        sg_base = round(ypc * 2.5 + boost * 0.5 - i * 0.4)
+        if is_qb:
+            sg_base = max(6, round(sg_base * 0.65))
+        sg_val = max(sg_base if i > 0 else sg_base + 2, 5 if not is_qb else 2)
+
+        # LG column: highest value (long gain potential)
+        lg_base = round(ypc * 5.0 + boost * 2 - i * 1.2)
+        if is_qb:
+            lg_base = round(lg_base * 0.5)
+        lg_val = max(lg_base if i > 0 else lg_base + 5, 10)
+        if is_qb:
+            lg_val = max(lg_val, sg_val)
+
+        rows.append(ThreeValueRow(v1=n_val, v2=sg_val, v3=lg_val))
+
+    return rows
+
+
+def _make_pass_gain_12rows(
+    catch_rate: float, avg_yards: float, grade: str,
+    pass_endurance: int = 0,
+) -> List[Optional[ThreeValueRow]]:
+    """Build 12 rows of Q/S/L pass gain values.
+
+    Row 1 has the best values.  Row 12 has the worst.
+
+    Q = Quick pass yards
+    S = Short pass yards
+    L = Long pass yards
+
+    pass_endurance: 0 = best receiver (unlimited), 4 = worst.
+    Players with endurance 3-4 get fewer columns / lower values.
+    """
+    boost = _GRADE_PASS_BOOST.get(grade, 0)
+    rows: List[ThreeValueRow] = []
+
+    # Scale factor: 0=great receiver, 4=barely catches
+    scale = max(0.3, 1.0 - pass_endurance * 0.15)
+
+    for i in range(RUN_NUMBER_MAX):
+        if pass_endurance >= 4 and catch_rate < 0.3:
+            # Very poor receiver — only single values (no Q/S/L split)
+            base = round(avg_yards * scale * 0.6 - i * 0.8 + boost * 0.3)
+            val = max(-3, base)
+            rows.append(ThreeValueRow(v1=val, v2=val, v3=val))
+            continue
+
+        # Row 1 can be "Lg" (long gain) for top receivers
+        if i == 0 and pass_endurance <= 1:
+            q_val = "Lg"
+            s_val = "Lg"
+            l_val = round(avg_yards * 4.0 * scale + boost * 3)
+            l_val = max(20, l_val)
+        else:
+            # Q column (Quick pass): shortest yards
+            q_base = round(avg_yards * 0.8 * scale - i * 0.6 + boost)
+            q_val = max(0 if i < 8 else -3, q_base)
+
+            # S column (Short pass): moderate yards
+            s_base = round(avg_yards * 1.2 * scale - i * 0.5 + boost * 1.2)
+            s_val = max(5, s_base)
+
+            # L column (Long pass): highest yards
+            l_base = round(avg_yards * 2.8 * scale - i * 1.5 + boost * 2)
+            l_val = max(20, l_base)
+
+        # For RBs with high endurance_pass (3-4), Long column might be missing
+        if pass_endurance >= 3 and i > 0:
+            # Weak long-pass ability for non-receiving backs
+            if isinstance(l_val, (int, float)):
+                l_val = max(s_val if isinstance(s_val, int) else 10, l_val)
+            # Some rows might only have S/L or just a single value
+            if pass_endurance >= 4:
+                q_val = s_val  # No quick-pass ability
+
+        rows.append(ThreeValueRow(v1=q_val, v2=s_val, v3=l_val))
+
+    return rows

@@ -1,10 +1,12 @@
-"""Regenerate 2025 team data using 5th-edition card formats.
+"""Regenerate 2025 team data using authentic card formats.
 
 This script reads the existing team data (from generate_2025_data.py) and
-re-generates the player cards using 5th-edition column structures:
-  * QB: 48-slot pass columns with receiver letters (A-E/INC/INT)
-  * RB: 12-slot run columns with sweep + breakaway
-  * WR/TE: 48-slot reception columns with receiver letter assignment
+re-generates the player cards using authentic Statis Pro Football card layout:
+  * QB: range-based passing (Com/Inc/Int boundaries for Quick/Short/Long),
+        pass-rush ranges, 12-row rushing (N/SG/LG)
+  * RB: 12-row rushing (N/SG/LG) + 12-row pass gain (Q/S/L) + blocks
+  * WR: 12-row pass gain (Q/S/L), mostly blank rushing + blocks
+  * TE: 12-row pass gain (Q/S/L), blank rushing + higher blocks
   * DEF: defender letters (A-M) for FAC blocking-matchup resolution
 
 The output overwrites existing files in engine/data/2025_5e/. Legacy data
@@ -32,7 +34,7 @@ DEFENDER_LETTERS = list("ABCDEFGHIJKLM")
 
 
 def upgrade_team(team_data: dict) -> dict:
-    """Upgrade a team's player cards to 5th-edition format."""
+    """Upgrade a team's player cards to authentic card format."""
     players = team_data.get("players", [])
     new_players = []
 
@@ -48,46 +50,68 @@ def upgrade_team(team_data: dict) -> dict:
         stats = p.get("stats_summary", {})
 
         if pos == "QB":
-            card = gen.generate_qb_card_5e(
+            card = gen.generate_qb_card_authentic(
                 name=p["name"], team=abbr, number=p["number"],
                 comp_pct=stats.get("comp_pct", 0.62),
                 ypa=stats.get("ypa", 7.0),
                 int_rate=stats.get("int_rate", 0.025),
                 sack_rate=stats.get("sack_rate", 0.07),
                 grade=grade,
+                rush_ypc=stats.get("rush_ypc", 3.0),
+                rush_fumble_rate=stats.get("rush_fumble_rate", 0.015),
             )
             new_players.append(card.to_dict())
 
         elif pos == "RB":
-            card = gen.generate_rb_card_5e(
+            # RBs get receiver letters if they're good pass catchers
+            letter = ""
+            if receiver_idx < 5:
+                letter = RECEIVER_LETTERS[receiver_idx]
+                receiver_idx += 1
+            endurance_pass = 2  # Default moderate
+            if stats.get("catch_rate", 0.3) >= 0.5:
+                endurance_pass = 0  # Great pass-catching back
+            elif stats.get("catch_rate", 0.3) >= 0.35:
+                endurance_pass = 1
+            elif stats.get("catch_rate", 0.3) < 0.2:
+                endurance_pass = 4  # Rarely catches
+
+            card = gen.generate_rb_card_authentic(
                 name=p["name"], team=abbr, number=p["number"],
                 ypc=stats.get("ypc", 4.0),
                 fumble_rate=stats.get("fumble_rate", 0.015),
                 grade=grade,
+                catch_rate=stats.get("catch_rate", 0.3),
+                avg_rec_yards=stats.get("avg_yards", 7.0),
+                endurance_pass=endurance_pass,
+                blocks=1,
+                receiver_letter=letter,
             )
             new_players.append(card.to_dict())
 
         elif pos == "WR":
             letter = RECEIVER_LETTERS[receiver_idx] if receiver_idx < 5 else "E"
             receiver_idx += 1
-            card = gen.generate_wr_card_5e(
+            card = gen.generate_wr_card_authentic(
                 name=p["name"], team=abbr, number=p["number"],
                 catch_rate=stats.get("catch_rate", 0.65),
                 avg_yards=stats.get("avg_yards", 11.0),
                 grade=grade,
                 receiver_letter=letter,
+                blocks=-2,
             )
             new_players.append(card.to_dict())
 
         elif pos == "TE":
             letter = RECEIVER_LETTERS[receiver_idx] if receiver_idx < 5 else "E"
             receiver_idx += 1
-            card = gen.generate_te_card_5e(
+            card = gen.generate_te_card_authentic(
                 name=p["name"], team=abbr, number=p["number"],
                 catch_rate=stats.get("catch_rate", 0.60),
                 avg_yards=stats.get("avg_yards", 9.0),
                 grade=grade,
                 receiver_letter=letter,
+                blocks=3,
             )
             new_players.append(card.to_dict())
 
@@ -146,7 +170,7 @@ def main():
         n_players = len(upgraded["players"])
         print(f"  {abbr}: {n_players} players → {output_path}")
 
-    print(f"Done! Generated {len(team_files)} 5th-edition team files.")
+    print(f"Done! Generated {len(team_files)} authentic-format team files.")
 
 
 if __name__ == "__main__":
