@@ -46,7 +46,7 @@ TEAMS = [
     {"abbreviation": "DAL", "city": "Dallas",        "name": "Cowboys",   "conference": "NFC", "division": "East",  "offense_rating": 76, "defense_rating": 78},
     {"abbreviation": "NYG", "city": "New York",      "name": "Giants",    "conference": "NFC", "division": "East",  "offense_rating": 68, "defense_rating": 70},
     {"abbreviation": "PHI", "city": "Philadelphia",  "name": "Eagles",    "conference": "NFC", "division": "East",  "offense_rating": 91, "defense_rating": 88},
-    {"abbreviation": "WAS", "city": "Washington",    "name": "Commanders","conference": "NFC", "division": "East",  "offense_rating": 82, "defense_rating": 76},
+    {"abbreviation": "WSH", "city": "Washington",    "name": "Commanders","conference": "NFC", "division": "East",  "offense_rating": 82, "defense_rating": 76},
     # NFC North
     {"abbreviation": "CHI", "city": "Chicago",       "name": "Bears",     "conference": "NFC", "division": "North", "offense_rating": 72, "defense_rating": 72},
     {"abbreviation": "DET", "city": "Detroit",       "name": "Lions",     "conference": "NFC", "division": "North", "offense_rating": 90, "defense_rating": 79},
@@ -335,7 +335,7 @@ TEAM_PLAYERS = {
                 {"name": "Fletcher Cox",          "number": 91, "pos": "DT",   "grade": "A",  "pass_rush": 82, "coverage": 44, "run_stop": 86},
                 {"name": "Darius Slay",           "number": 24, "pos": "CB",   "grade": "A",  "pass_rush": 48, "coverage": 90, "run_stop": 72}],
     },
-    "WAS": {
+    "WSH": {
         "qb":  [{"name": "Jayden Daniels",        "number": 5,  "grade": "B",  "comp_pct": 0.632, "ypa": 7.5, "int_rate": 0.020, "sack_rate": 0.070}],
         "rb":  [{"name": "Brian Robinson Jr.",    "number": 8,  "grade": "B",  "ypc": 4.2, "fumble_rate": 0.013},
                 {"name": "Antonio Gibson",        "number": 24, "grade": "C",  "ypc": 3.8, "fumble_rate": 0.016}],
