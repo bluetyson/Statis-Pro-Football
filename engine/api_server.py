@@ -254,7 +254,10 @@ def execute_human_defense(game_id: str, request: DefensivePlayCallRequest):
             detail=f"Invalid defensive strategy: {defensive_strategy}. Valid: {sorted(VALID_DEFENSIVE_STRATEGIES)}",
         )
 
-    result = game.execute_play(defense_formation=formation)
+    result = game.execute_play(
+        defense_formation=formation,
+        defensive_strategy=defensive_strategy if defensive_strategy != "NONE" else None,
+    )
 
     return {
         "game_id": game_id,
@@ -619,6 +622,86 @@ def execute_squib_kick(game_id: str):
     result = game.execute_squib_kick()
     return {
         "game_id": game_id,
+        "play_result": _serialize_play_result(result),
+        "state": _serialize_state(game.state),
+    }
+
+
+@app.post("/games/{game_id}/timeout")
+def call_timeout(game_id: str, team: str = "possession"):
+    """Call a timeout for the specified team.
+
+    team: 'home', 'away', or 'possession' (default).
+    """
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+
+    if team == "possession":
+        team = game.state.possession
+
+    success = game.call_timeout(team)
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot call timeout for {team} (no timeouts left or 5E restriction)",
+        )
+    return {
+        "game_id": game_id,
+        "message": f"Timeout called by {team}",
+        "state": _serialize_state(game.state),
+    }
+
+
+class TwoPointConversionRequest(BaseModel):
+    play_type: str = "SHORT_PASS"  # RUN, SHORT_PASS, QUICK_PASS
+    direction: str = "MIDDLE"
+    player_name: str = ""
+
+
+@app.post("/games/{game_id}/two-point-conversion")
+def execute_two_point_conversion(game_id: str, request: TwoPointConversionRequest):
+    """Execute a two-point conversion attempt after a touchdown."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+
+    # Create a play call for the 2-point conversion
+    play_call = PlayCall(
+        play_type=request.play_type.upper(),
+        formation="SHOTGUN",
+        direction=request.direction.upper(),
+        reasoning="Two-point conversion attempt",
+    )
+
+    # Set field position to 2-yard line
+    original_yl = game.state.yard_line
+    game.state.yard_line = 98  # 2 yards from opponent's end zone
+
+    result = game.execute_play(
+        play_call=play_call,
+        player_name=request.player_name if request.player_name else None,
+    )
+
+    # Check if the play gained at least 2 yards
+    if result.yards_gained >= 2 or result.is_touchdown:
+        # Two-point conversion successful
+        if game.state.possession == "home":
+            game.state.score.home += 2
+        else:
+            game.state.score.away += 2
+        game.state.play_log.append("✅ Two-point conversion GOOD!")
+        result_desc = "Two-point conversion successful!"
+    else:
+        game.state.play_log.append("❌ Two-point conversion FAILED")
+        result_desc = "Two-point conversion failed"
+
+    # Restore state for kickoff
+    game.state.yard_line = original_yl
+
+    return {
+        "game_id": game_id,
+        "result": result_desc,
         "play_result": _serialize_play_result(result),
         "state": _serialize_state(game.state),
     }

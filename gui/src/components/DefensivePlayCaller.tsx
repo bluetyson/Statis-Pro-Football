@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { GameState, DefensivePlayCall } from '../types/game';
-import { DEFENSIVE_FORMATIONS, DEFENSIVE_STRATEGIES } from '../types/game';
+import { DEFENSIVE_FORMATIONS, DEFENSIVE_STRATEGIES, DEFENSIVE_PLAYS } from '../types/game';
 
 interface DefensivePlayCallerProps {
   state: GameState;
@@ -25,6 +25,7 @@ export function DefensivePlayCaller({
 }: DefensivePlayCallerProps) {
   const [selectedFormation, setSelectedFormation] = useState<string>('4_3');
   const [selectedStrategy, setSelectedStrategy] = useState<string>('NONE');
+  const [selectedPlay, setSelectedPlay] = useState<string>('PASS_DEFENSE');
 
   const disabled = loading || state.is_over;
 
@@ -32,6 +33,7 @@ export function DefensivePlayCaller({
     onCallDefense({ 
       formation: selectedFormation,
       defensive_strategy: selectedStrategy !== 'NONE' ? selectedStrategy : undefined,
+      defensive_play: selectedPlay,
     });
   };
 
@@ -69,7 +71,7 @@ export function DefensivePlayCaller({
 
       {/* Defensive formation selection */}
       <div className="play-type-section">
-        <label className="section-label">Select Defensive Formation</label>
+        <label className="section-label">Defensive Formation</label>
         <div className="play-type-grid defense-grid">
           {DEFENSIVE_FORMATIONS.map((f) => (
             <button
@@ -92,6 +94,32 @@ export function DefensivePlayCaller({
       {/* Formation description */}
       <div className="formation-info">
         <FormationDescription formation={selectedFormation} />
+      </div>
+
+      {/* 5E Defensive Play Selection (run defense vs pass defense) */}
+      <div className="play-type-section">
+        <label className="section-label">Defensive Play Card (5E)</label>
+        <div className="play-type-grid defense-play-grid">
+          {DEFENSIVE_PLAYS.map((p) => (
+            <button
+              key={p.value}
+              className={`play-type-btn defense-play-btn ${selectedPlay === p.value ? 'selected' : ''}`}
+              style={
+                selectedPlay === p.value
+                  ? { borderColor: '#f59e0b', backgroundColor: '#f59e0b22' }
+                  : {}
+              }
+              onClick={() => setSelectedPlay(p.value)}
+              disabled={disabled}
+              title={p.desc}
+            >
+              {p.icon} {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="formation-desc defense-play-desc">
+          {DEFENSIVE_PLAYS.find(p => p.value === selectedPlay)?.desc ?? ''}
+        </div>
       </div>
 
       {/* Defensive strategy selection (5E rules) */}

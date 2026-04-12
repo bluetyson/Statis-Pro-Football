@@ -229,17 +229,20 @@ class Game:
 
     def execute_play(self, play_call: Optional[PlayCall] = None,
                      defense_formation: Optional[str] = None,
-                     player_name: Optional[str] = None) -> PlayResult:
+                     player_name: Optional[str] = None,
+                     defensive_strategy: Optional[str] = None) -> PlayResult:
         """Execute a single play.
 
         Args:
             play_call: Optional human-specified offensive play call.
             defense_formation: Optional human-specified defensive formation.
             player_name: Optional specific player to use for the play.
-                If provided, overrides the AI defense call.
+            defensive_strategy: Optional human-specified defensive strategy (5E).
         """
         if self.use_5e:
-            return self._execute_play_5e(play_call, defense_formation, player_name=player_name)
+            return self._execute_play_5e(play_call, defense_formation,
+                                         player_name=player_name,
+                                         defensive_strategy=defensive_strategy)
         return self._execute_play_legacy(play_call, defense_formation, player_name=player_name)
 
     def _execute_play_legacy(self, play_call: Optional[PlayCall] = None,

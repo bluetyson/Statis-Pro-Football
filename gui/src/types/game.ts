@@ -33,6 +33,14 @@ export interface PlayResult {
   defense_formation?: string | null;
   fac_card_number?: number | null;
   z_card?: boolean;
+  strategy?: string | null;
+  offensive_play_call?: string | null;
+  defensive_play_call?: string | null;
+  defensive_play?: string | null;
+  passer?: string | null;
+  rusher?: string | null;
+  receiver?: string | null;
+  debug_log?: string[];
 }
 
 export interface DriveResult {
@@ -166,6 +174,7 @@ export interface HumanPlayCall {
 export interface DefensivePlayCall {
   formation: string;
   defensive_strategy?: string;
+  defensive_play?: string;  // 5E defensive play card (PASS_DEFENSE, RUN_DEFENSE_KEY_BACK_1, etc.)
 }
 
 export const DEFENSIVE_FORMATIONS = [
@@ -193,4 +202,14 @@ export const DEFENSIVE_STRATEGIES = [
   { value: 'DOUBLE_COVERAGE', label: 'Double Coverage (-7)' },
   { value: 'TRIPLE_COVERAGE', label: 'Triple Coverage (-15)' },
   { value: 'ALT_DOUBLE_COVERAGE', label: 'Alt Double (2 receivers)' },
+] as const;
+
+export const DEFENSIVE_PLAYS = [
+  { value: 'PASS_DEFENSE', label: 'Pass Defense', icon: '🎯', desc: 'Quick -10 | Short 0 | Long 0' },
+  { value: 'PREVENT_DEFENSE', label: 'Prevent Defense', icon: '🔒', desc: 'Quick -10 | Short -5 | Long -7' },
+  { value: 'RUN_DEFENSE_NO_KEY', label: 'Run Defense (No Key)', icon: '🏃', desc: 'Run +2 modifier' },
+  { value: 'RUN_DEFENSE_KEY_BACK_1', label: 'Run D / Key Back 1', icon: '1️⃣', desc: 'Run +4 if correct back' },
+  { value: 'RUN_DEFENSE_KEY_BACK_2', label: 'Run D / Key Back 2', icon: '2️⃣', desc: 'Run +4 if correct back' },
+  { value: 'RUN_DEFENSE_KEY_BACK_3', label: 'Run D / Key Back 3', icon: '3️⃣', desc: 'Run +4 if correct back' },
+  { value: 'BLITZ', label: 'Blitz', icon: '⚡', desc: 'Short -5 | Long → P.Rush' },
 ] as const;

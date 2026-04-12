@@ -18,6 +18,7 @@ const PLAY_TYPES = [
   { value: 'LONG_PASS', label: '🎯 Long Pass', color: '#8b5cf6' },
   { value: 'QUICK_PASS', label: '⚡ Quick Pass', color: '#06b6d4' },
   { value: 'SCREEN', label: '🖥️ Screen', color: '#f59e0b' },
+  { value: 'END_AROUND', label: '🔄 End-Around', color: '#10b981' },
   { value: 'PUNT', label: '🦵 Punt', color: '#6b7280' },
   { value: 'FG', label: '🥅 Field Goal', color: '#ef4444' },
   { value: 'KNEEL', label: '🧎 Kneel', color: '#374151' },
@@ -74,23 +75,21 @@ export function HumanPlayCaller({
 
   const disabled = loading || state.is_over;
 
-  const isRunPlay = selectedPlay === 'RUN';
+  const isRunPlay = selectedPlay === 'RUN' || selectedPlay === 'END_AROUND';
   const isPassPlay = ['SHORT_PASS', 'LONG_PASS', 'QUICK_PASS', 'SCREEN'].includes(selectedPlay);
   const isSpecialPlay = ['PUNT', 'FG', 'KNEEL'].includes(selectedPlay);
 
   const directions = isRunPlay ? RUN_DIRECTIONS : PASS_DIRECTIONS;
 
   // Get available players based on play type
-  const availablePlayers = personnel ? (
-    isRunPlay ? [
-      ...(personnel.offense_starters['QB'] ? [personnel.offense_starters['QB']] : []),
-      ...personnel.offense_all.filter(p => p.position === 'RB')
-    ] :
-    isPassPlay ? [
-      ...(personnel.offense_starters['QB'] ? [personnel.offense_starters['QB']] : []),
-      ...personnel.offense_receivers
-    ] :
-    []
+  const ballCarriers = personnel ? (
+    personnel.offense_all.filter(p => 
+      p.position === 'RB' || p.position === 'QB' || p.position === 'WR'
+    )
+  ) : [];
+
+  const receiverTargets = personnel ? (
+    personnel.offense_receivers
   ) : [];
 
   const handleCallPlay = () => {
@@ -209,22 +208,38 @@ export function HumanPlayCaller({
         </div>
       )}
 
-      {/* Player selection */}
-      {!isSpecialPlay && availablePlayers.length > 0 && (
+      {/* Player selection — Ball Carrier for runs, Receiver Target for passes */}
+      {!isSpecialPlay && isRunPlay && ballCarriers.length > 0 && (
         <div className="play-option">
-          <label className="section-label">
-            {isRunPlay ? 'Ball Carrier' : 'Quarterback'}
-          </label>
+          <label className="section-label">Ball Carrier</label>
           <select
             className="player-select"
             value={selectedPlayer}
             onChange={(e) => setSelectedPlayer(e.target.value)}
             disabled={disabled}
           >
-            <option value="">Auto (Starter)</option>
-            {availablePlayers.map((p) => (
+            <option value="">Auto (Starter RB)</option>
+            {ballCarriers.map((p) => (
               <option key={p.name} value={p.name}>
-                {p.name} ({p.position}) - {p.grade}
+                {p.name} ({p.position}) - {p.overall_grade}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {!isSpecialPlay && isPassPlay && receiverTargets.length > 0 && (
+        <div className="play-option">
+          <label className="section-label">Receiver Target</label>
+          <select
+            className="player-select"
+            value={selectedPlayer}
+            onChange={(e) => setSelectedPlayer(e.target.value)}
+            disabled={disabled}
+          >
+            <option value="">Auto (FAC card determines)</option>
+            {receiverTargets.map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.name} ({p.position}{p.receiver_letter ? ` [${p.receiver_letter}]` : ''}) - {p.overall_grade}
               </option>
             ))}
           </select>
