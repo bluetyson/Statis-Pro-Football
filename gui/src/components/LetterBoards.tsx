@@ -260,6 +260,7 @@ function defenseFamily(formation?: string): '4_3' | '3_4' | 'NICKEL' | 'GOAL_LIN
   if (formation.startsWith('3_4')) return '3_4';
   if (formation.startsWith('NICKEL')) return 'NICKEL';
   if (formation === 'GOAL_LINE') return 'GOAL_LINE';
+  // Fall back to the base 4-3 shell so unknown values still render a stable board.
   return '4_3';
 }
 
