@@ -307,7 +307,7 @@ class PlayResolver:
 
     def resolve_draw(self, fac_card: FACCard, deck: FACDeck,
                      rusher: PlayerCard, defense_formation: str,
-                     defense_run_stop: int = 50) -> PlayResult:
+                     defense_run_stop: int = 0) -> PlayResult:
         """Resolve a Draw Play strategy.
 
         5E Rules: Inside run to any back/QB.
@@ -342,8 +342,8 @@ class PlayResolver:
                             qb: PlayerCard, receiver: PlayerCard,
                             receivers: list, pass_type: str,
                             defense_formation: str,
-                            defense_coverage: int = 50,
-                            defense_pass_rush: int = 50,
+                            defense_coverage: int = 0,
+                            defense_pass_rush: int = 0,
                             defensive_strategy: str = "NONE",
                             defenders: Optional[List[PlayerCard]] = None) -> PlayResult:
         """Resolve a Play-Action pass strategy.
@@ -658,7 +658,7 @@ class PlayResolver:
 
     def resolve_run(self, dice: DiceResult, rusher: PlayerCard,
                     play_direction: str = "MIDDLE",
-                    defense_run_stop: int = 50,
+                    defense_run_stop: int = 0,
                     defense_formation: str = "4_3",
                     down: int = 0, distance: int = 0,
                     yard_line: int = 0, quarter: int = 0,
@@ -684,15 +684,14 @@ class PlayResolver:
             yards = play_data.get("yards", 0)
             is_td = play_data.get("td", False)
 
-        # Defense run-stop modifier: shifts yards based on rating
-        def_modifier = (eff_run_stop - 50) / 100.0
+        # Defense run-stop modifier: authentic 5E small-number scale
         if result_type in ("GAIN", "OOB"):
-            yards = max(-5, int(yards - def_modifier * 2))
-            # High run-stop can force TFL
-            if eff_run_stop >= 80 and random.random() < (eff_run_stop - 75) / 100.0:
+            yards = max(-5, int(yards - eff_run_stop))
+            # High tackle rating can force TFL
+            if eff_run_stop >= 3 and random.random() < 0.15:
                 yards = min(yards, random.choice([-2, -1, 0]))
-            # High run-stop can force fumble
-            if eff_run_stop >= 85 and result_type == "GAIN" and random.random() < 0.03:
+            # High tackle rating can force fumble
+            if eff_run_stop >= 3 and result_type == "GAIN" and random.random() < 0.03:
                 result_type = "FUMBLE"
 
         # Z-card check
@@ -760,8 +759,8 @@ class PlayResolver:
 
     def resolve_pass(self, dice: DiceResult, qb: PlayerCard,
                      receiver: PlayerCard, pass_length: str = "SHORT",
-                     defense_coverage: int = 50,
-                     defense_pass_rush: int = 50,
+                     defense_coverage: int = 0,
+                     defense_pass_rush: int = 0,
                      defense_formation: str = "4_3",
                      is_blitz_tendency: bool = False,
                      down: int = 0, distance: int = 0,
@@ -778,8 +777,8 @@ class PlayResolver:
         )
 
         # ── Stage 0: Pass-rush check (before QB card lookup) ────────
-        # High pass rush can shift a normal play to SACK/PRESSURE
-        sack_chance = (eff_pass_rush - 50) / 200.0  # 0 at 50, 0.125 at 75, 0.245 at 99
+        # Authentic 5E: pass rush value 0-3, higher = more dangerous
+        sack_chance = eff_pass_rush * 0.08  # 0→0%, 1→8%, 2→16%, 3→24%
         if sack_chance > 0 and random.random() < sack_chance:
             loss = random.choice([-3, -4, -5, -6, -7, -8])
             z_event = self._check_z_card(
@@ -831,17 +830,18 @@ class PlayResolver:
                 rec_td = rec_data.get("td", False)
                 is_td = is_td or rec_td
 
-        # ── Coverage modifier ────────────────────────────────────────
-        cov_modifier = (eff_coverage - 50) / 200.0
+        # ── Coverage modifier (authentic 5E: pass_defense −2 to +4) ──
+        # Positive coverage reduces yards, negative increases them
         if result_type == "COMPLETE":
-            yards = max(0, int(yards * (1 - cov_modifier)))
+            cov_shift = eff_coverage  # Direct yard shift
+            yards = max(0, yards - cov_shift)
             # High coverage can convert completion → incompletion
-            if eff_coverage >= 80 and random.random() < (eff_coverage - 75) / 150.0:
+            if eff_coverage >= 3 and random.random() < 0.10:
                 result_type = "INCOMPLETE"
                 yards = 0
                 is_td = False
             # Very high coverage can convert completion → INT (tipped ball)
-            elif eff_coverage >= 90 and random.random() < 0.03:
+            elif eff_coverage >= 4 and random.random() < 0.03:
                 result_type = "INT"
                 yards = 0
                 is_td = False
@@ -1092,8 +1092,8 @@ class PlayResolver:
                         qb: PlayerCard, receiver: PlayerCard,
                         receivers: List[PlayerCard],
                         pass_type: str = "SHORT",
-                        defense_coverage: int = 50,
-                        defense_pass_rush: int = 50,
+                        defense_coverage: int = 0,
+                        defense_pass_rush: int = 0,
                         defense_formation: str = "4_3",
                         is_blitz_tendency: bool = False,
                         defensive_strategy: str = "NONE",
@@ -1485,11 +1485,10 @@ class PlayResolver:
             yards = random.randint(5, 15) if pass_type != "LONG" else random.randint(15, 30)
             is_td = random.random() < 0.05
 
-        # Coverage modifier
+        # Coverage modifier (authentic 5E: pass_defense −2 to +4)
         eff_cov = effective_coverage(defense_coverage, defense_formation, is_blitz_tendency)
-        cov_modifier = (eff_cov - 50) / 200.0
-        if cov_modifier > 0 and isinstance(yards, int):
-            yards = max(0, int(yards * (1 - cov_modifier)))
+        if eff_cov > 0 and isinstance(yards, int):
+            yards = max(0, yards - eff_cov)
 
         # Rule 10: If pass yards would go past end zone, it's a TD
         # (yard_line not passed to this method, so this is handled by callers
@@ -1617,7 +1616,7 @@ class PlayResolver:
     def resolve_run_5e(self, fac_card: FACCard, deck: FACDeck,
                        rusher: PlayerCard,
                        play_direction: str = "IL",
-                       defense_run_stop: int = 50,
+                       defense_run_stop: int = 0,
                        defense_formation: str = "4_3") -> PlayResult:
         """Resolve a run play using 5th-edition FAC card mechanics.
 
@@ -1690,16 +1689,16 @@ class PlayResolver:
                     except (ValueError, TypeError):
                         yards = random.randint(1, 5)
 
-            # Defense run-stop modifier
-            def_modifier = (eff_run_stop - 50) / 100.0
-            yards = max(-5, int(yards - def_modifier * 2))
-            if eff_run_stop >= 80 and random.random() < (eff_run_stop - 75) / 100.0:
+            # Defense run-stop modifier (authentic 5E: tackle rating −5 to +4)
+            # Positive tackle = defense is better at stopping, reduces yards
+            yards = max(-5, int(yards - eff_run_stop))
+            if eff_run_stop >= 3 and random.random() < 0.15:
                 yards = min(yards, random.choice([-2, -1, 0]))
 
             # 5E Rule: Inside run max loss = 3 yards; no limit on sweep
             yards = self.apply_inside_run_max_loss(yards, play_direction)
 
-            if eff_run_stop >= 85 and random.random() < 0.03:
+            if eff_run_stop >= 3 and random.random() < 0.03:
                 recovery = Charts.roll_fumble_recovery()
                 fumble_yards, fumble_td = Charts.roll_fumble_return()
                 is_turnover = recovery == "DEFENSE"
@@ -1767,13 +1766,12 @@ class PlayResolver:
         yards = play_data.get("yards", 0)
         is_td = play_data.get("td", False)
 
-        # Defense run-stop modifier
-        def_modifier = (eff_run_stop - 50) / 100.0
+        # Defense run-stop modifier (authentic 5E small-number scale)
         if result_type in ("GAIN", "BREAKAWAY"):
-            yards = max(-5, int(yards - def_modifier * 2))
-            if eff_run_stop >= 80 and random.random() < (eff_run_stop - 75) / 100.0:
+            yards = max(-5, int(yards - eff_run_stop))
+            if eff_run_stop >= 3 and random.random() < 0.15:
                 yards = min(yards, random.choice([-2, -1, 0]))
-            if eff_run_stop >= 85 and result_type == "GAIN" and random.random() < 0.03:
+            if eff_run_stop >= 3 and result_type == "GAIN" and random.random() < 0.03:
                 result_type = "FUMBLE"
 
         # ── Out of bounds ────────────────────────────────────────────
@@ -1871,7 +1869,7 @@ class PlayResolver:
     def resolve_end_around(self, fac_card: FACCard, deck: FACDeck,
                            receiver: PlayerCard,
                            defense_formation: str = "4_3",
-                           defense_run_stop: int = 50) -> PlayResult:
+                           defense_run_stop: int = 0) -> PlayResult:
         """Resolve an end-around play (Rule 6).
 
         - Check ER info on FAC card: 'OK' = resolve as run using receiver's

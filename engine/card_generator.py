@@ -394,44 +394,68 @@ class CardGenerator:
 
     def generate_def_card_5e(self, name: str, team: str, number: int, position: str,
                              pass_rush: int, coverage: int, run_stop: int, grade: str,
-                             defender_letter: str = "") -> PlayerCard:
+                             defender_letter: str = "",
+                             intercepts: int = 0, sacks: int = 0) -> PlayerCard:
         """Generate a 5th-edition defensive player card with authentic stats.
 
-        Authentic 5E defensive ratings by position group:
-          DL (DE/DT): tackle_rating, pass_rush_rating
-          LB:         pass_defense_rating, tackle_rating, pass_rush_rating, intercept_range
-          DB (CB/S):  pass_defense_rating, pass_rush_rating, intercept_range (no tackle)
+        Authentic 5E defensive ratings by position group (small-number scale):
+          DL (DE/DT): tackle_rating (-4 to +2), pass_rush_rating (0-3)
+          LB:         pass_defense_rating (-2 to +4), tackle_rating (-5 to +4),
+                      pass_rush_rating (0-3), intercept_range (35-48 low end)
+          DB (CB/S):  pass_defense_rating (-2 to +4), pass_rush_rating (0-3),
+                      intercept_range (35-48 low end)
+
+        Parameters ``pass_rush``, ``coverage``, and ``run_stop`` may be
+        provided on either the legacy 0-100 scale *or* the authentic small
+        scale.  Values > 10 are assumed legacy and auto-converted.
+        ``intercepts`` and ``sacks`` allow direct table-driven assignment.
         """
         card = PlayerCard(
             player_name=name, team=team, position=position,
             number=number, overall_grade=grade,
         )
-        # Legacy fields (kept for backward compat)
-        card.pass_rush_rating = pass_rush
-        card.coverage_rating = coverage
-        card.run_stop_rating = run_stop
         card.defender_letter = defender_letter
+
+        # ── Auto-detect and convert legacy 0-100 values ──────────────
+        if pass_rush > 10:
+            pass_rush = _legacy_to_5e_pass_rush(pass_rush)
+        if coverage > 10:
+            coverage = _legacy_to_5e_pass_defense(coverage)
+        if run_stop > 10:
+            run_stop = _legacy_to_5e_tackle(run_stop, position)
+
+        # ── If caller provided real sack/intercept counts, use tables ─
+        if sacks > 0:
+            pass_rush = _sacks_to_pass_rush(sacks)
+        if intercepts > 0:
+            intercept_low = _intercepts_to_range(intercepts)
+        else:
+            intercept_low = 48  # No interception ability
 
         # Authentic 5E position-specific ratings
         pos = position.upper()
         if pos in ("DE", "DT", "DL", "NT", "EDGE"):
-            # DL: tackle + pass rush
             card.tackle_rating = run_stop
             card.pass_rush_rating = pass_rush
+            card.pass_defense_rating = 0
+            card.intercept_range = 0
         elif pos in ("LB", "OLB", "ILB", "MLB"):
-            # LB: pass defense, tackle, pass rush, intercept range
             card.pass_defense_rating = coverage
             card.tackle_rating = run_stop
             card.pass_rush_rating = pass_rush
-            card.intercept_range = max(0, min(9, (coverage - 50) // 5))  # 0-9 scale
+            card.intercept_range = intercept_low
         elif pos in ("CB", "S", "SS", "FS", "DB"):
-            # DB: pass defense, pass rush, intercept range (no tackle)
             card.pass_defense_rating = coverage
             card.pass_rush_rating = pass_rush
-            card.intercept_range = max(0, min(14, (coverage - 40) // 4))  # 0-14 scale, DBs better
+            card.intercept_range = intercept_low
+            card.tackle_rating = 0  # DBs have no tackle rating in 5E
+
+        # Legacy compat fields (kept on small scale now)
+        card.coverage_rating = coverage
+        card.run_stop_rating = run_stop
 
         card.stats_summary = {
-            "pass_rush_rating": pass_rush,
+            "pass_rush_rating": card.pass_rush_rating,
             "coverage_rating": coverage,
             "run_stop_rating": run_stop,
             "tackle_rating": card.tackle_rating,
@@ -442,16 +466,25 @@ class CardGenerator:
 
     def generate_ol_card(self, name: str, team: str, number: int,
                          position: str, grade: str,
-                         run_block: int = 70, pass_block: int = 70) -> PlayerCard:
+                         run_block: int = 2, pass_block: int = 2) -> PlayerCard:
         """Generate an offensive lineman card (LT, LG, C, RG, RT).
 
-        OL cards have run_block_rating and pass_block_rating used for
-        pass rush resolution and run blocking matchups.
+        Authentic 5E scale:
+          run_block_rating: -1 to +4 (based on team offensive yards/game)
+          pass_block_rating: 0 to +3 (based on team sacks allowed)
+
+        Values > 10 are assumed legacy (0-100) and auto-converted.
         """
         card = PlayerCard(
             player_name=name, team=team, position=position,
             number=number, overall_grade=grade,
         )
+        # Auto-convert legacy 0-100 values
+        if run_block > 10:
+            run_block = _legacy_to_5e_run_block(run_block)
+        if pass_block > 10:
+            pass_block = _legacy_to_5e_pass_block(pass_block)
+
         card.run_block_rating = run_block
         card.pass_block_rating = pass_block
         card.stats_summary = {
@@ -896,3 +929,142 @@ def _make_pass_gain_12rows(
         rows.append(ThreeValueRow(v1=q_val, v2=s_val, v3=l_val))
 
     return rows
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  LEGACY → AUTHENTIC 5E RATING CONVERSIONS
+#
+#  The original Statis Pro Football 5th Edition uses small integer
+#  ratings based on the player-card-creation tables:
+#    Pass Rush: 0–3 (sacks: 0-1→0, 2-3→1, 4-5→2, 6+→3)
+#    Intercept Range: low end 35–48 (3 INT → 47, 12+ INT → 35)
+#    Pass Defense (DB/LB): −2 to +4 (team YPA-based point distribution)
+#    Tackle (LB): −5 to +4
+#    Tackle (DL): −4 to +2
+#    Run Block (OL): −1 to +4
+#    Pass Block (OL): 0 to +3
+# ═══════════════════════════════════════════════════════════════════════
+
+def _sacks_to_pass_rush(sacks: int) -> int:
+    """Convert sack count to authentic 5E Pass Rush rating (0-3)."""
+    if sacks >= 6:
+        return 3
+    if sacks >= 4:
+        return 2
+    if sacks >= 2:
+        return 1
+    return 0
+
+
+def _intercepts_to_range(intercepts: int) -> int:
+    """Convert interception count to authentic 5E Intercept Range low end.
+
+    Returns the *low end* of the intercept range (high end is always 48).
+    A value of 48 means essentially no intercept ability (only on 48).
+    """
+    table = {
+        0: 48, 1: 48, 2: 48, 3: 47, 4: 46, 5: 45,
+        6: 44, 7: 43, 8: 42, 9: 41, 10: 38, 11: 37, 12: 36,
+    }
+    if intercepts > 12:
+        return 35
+    return table.get(intercepts, 48)
+
+
+def _legacy_to_5e_pass_rush(legacy: int) -> int:
+    """Convert a 0-100 pass rush rating to 5E scale (0-3)."""
+    if legacy >= 85:
+        return 3
+    if legacy >= 70:
+        return 2
+    if legacy >= 50:
+        return 1
+    return 0
+
+
+def _legacy_to_5e_pass_defense(legacy: int) -> int:
+    """Convert a 0-100 coverage/pass-defense rating to 5E scale (−2 to +4)."""
+    if legacy >= 90:
+        return 4
+    if legacy >= 80:
+        return 3
+    if legacy >= 70:
+        return 2
+    if legacy >= 60:
+        return 1
+    if legacy >= 50:
+        return 0
+    if legacy >= 40:
+        return -1
+    return -2
+
+
+def _legacy_to_5e_tackle(legacy: int, position: str = "") -> int:
+    """Convert a 0-100 run-stop/tackle rating to 5E scale.
+
+    DL range: −4 to +2.  LB range: −5 to +4.  Default: −5 to +4.
+    """
+    pos = position.upper() if position else ""
+    is_dl = pos in ("DE", "DT", "DL", "NT", "EDGE")
+    if is_dl:
+        # DL: −4 to +2
+        if legacy >= 90:
+            return 2
+        if legacy >= 80:
+            return 1
+        if legacy >= 70:
+            return 0
+        if legacy >= 60:
+            return -1
+        if legacy >= 50:
+            return -2
+        if legacy >= 40:
+            return -3
+        return -4
+    else:
+        # LB (and default): −5 to +4
+        if legacy >= 90:
+            return 4
+        if legacy >= 82:
+            return 3
+        if legacy >= 75:
+            return 2
+        if legacy >= 68:
+            return 1
+        if legacy >= 60:
+            return 0
+        if legacy >= 52:
+            return -1
+        if legacy >= 44:
+            return -2
+        if legacy >= 36:
+            return -3
+        if legacy >= 28:
+            return -4
+        return -5
+
+
+def _legacy_to_5e_run_block(legacy: int) -> int:
+    """Convert a 0-100 run-block rating to 5E scale (−1 to +4)."""
+    if legacy >= 90:
+        return 4
+    if legacy >= 78:
+        return 3
+    if legacy >= 68:
+        return 2
+    if legacy >= 55:
+        return 1
+    if legacy >= 40:
+        return 0
+    return -1
+
+
+def _legacy_to_5e_pass_block(legacy: int) -> int:
+    """Convert a 0-100 pass-block rating to 5E scale (0 to +3)."""
+    if legacy >= 88:
+        return 3
+    if legacy >= 72:
+        return 2
+    if legacy >= 55:
+        return 1
+    return 0

@@ -214,6 +214,11 @@
       "endurance_rushing": 0,
       "pass_gain": [
         [
+          7,
+          9,
+          20
+        ],
+        [
           6,
           9,
           20
@@ -267,11 +272,6 @@
           0,
           5,
           20
-        ],
-        [
-          0,
-          5,
-          20
         ]
       ],
       "endurance_pass": 2,
@@ -292,8 +292,8 @@
       "stats_summary": {
         "ypc": 5.0,
         "fumble_rate": 0.009,
-        "catch_rate": 0.25,
-        "avg_rec_yards": 6.0
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
       },
       "short_pass": {},
       "long_pass": {},
@@ -385,6 +385,11 @@
       "endurance_rushing": 1,
       "pass_gain": [
         [
+          4,
+          6,
+          20
+        ],
+        [
           3,
           5,
           20
@@ -420,7 +425,7 @@
           20
         ],
         [
-          0,
+          -1,
           5,
           20
         ],
@@ -438,15 +443,10 @@
           -3,
           5,
           20
-        ],
-        [
-          -3,
-          5,
-          20
         ]
       ],
       "endurance_pass": 2,
-      "blocks": 0,
+      "blocks": 1,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -463,8 +463,8 @@
       "stats_summary": {
         "ypc": 4.0,
         "fumble_rate": 0.014,
-        "catch_rate": 0.25,
-        "avg_rec_yards": 6.0
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
       },
       "short_pass": {},
       "long_pass": {},
@@ -569,7 +569,7 @@
         ]
       ],
       "endurance_pass": 0,
-      "blocks": -1,
+      "blocks": -2,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -690,7 +690,7 @@
         ]
       ],
       "endurance_pass": 1,
-      "blocks": -1,
+      "blocks": -2,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -847,7 +847,7 @@
       "number": 85,
       "team": "CLE",
       "overall_grade": "A",
-      "receiver_letter": "",
+      "receiver_letter": "E",
       "passing_quick": null,
       "passing_short": null,
       "passing_long": null,
@@ -1406,8 +1406,8 @@
       "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
-      "run_block_rating": 68,
-      "pass_block_rating": 66,
+      "run_block_rating": 2,
+      "pass_block_rating": 1,
       "pass_rush_rating": 50,
       "coverage_rating": 50,
       "run_stop_rating": 50,
@@ -1416,8 +1416,8 @@
       "intercept_range": 0,
       "defender_letter": "",
       "stats_summary": {
-        "run_block_rating": 68,
-        "pass_block_rating": 66
+        "run_block_rating": 2,
+        "pass_block_rating": 1
       },
       "short_pass": {},
       "long_pass": {},
@@ -1453,8 +1453,8 @@
       "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
-      "run_block_rating": 90,
-      "pass_block_rating": 88,
+      "run_block_rating": 4,
+      "pass_block_rating": 3,
       "pass_rush_rating": 50,
       "coverage_rating": 50,
       "run_stop_rating": 50,
@@ -1463,8 +1463,8 @@
       "intercept_range": 0,
       "defender_letter": "",
       "stats_summary": {
-        "run_block_rating": 90,
-        "pass_block_rating": 88
+        "run_block_rating": 4,
+        "pass_block_rating": 3
       },
       "short_pass": {},
       "long_pass": {},
@@ -1500,8 +1500,8 @@
       "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
-      "run_block_rating": 76,
-      "pass_block_rating": 78,
+      "run_block_rating": 2,
+      "pass_block_rating": 2,
       "pass_rush_rating": 50,
       "coverage_rating": 50,
       "run_stop_rating": 50,
@@ -1510,8 +1510,8 @@
       "intercept_range": 0,
       "defender_letter": "",
       "stats_summary": {
-        "run_block_rating": 76,
-        "pass_block_rating": 78
+        "run_block_rating": 2,
+        "pass_block_rating": 2
       },
       "short_pass": {},
       "long_pass": {},
@@ -1547,8 +1547,8 @@
       "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
-      "run_block_rating": 92,
-      "pass_block_rating": 86,
+      "run_block_rating": 4,
+      "pass_block_rating": 2,
       "pass_rush_rating": 50,
       "coverage_rating": 50,
       "run_stop_rating": 50,
@@ -1557,8 +1557,8 @@
       "intercept_range": 0,
       "defender_letter": "",
       "stats_summary": {
-        "run_block_rating": 92,
-        "pass_block_rating": 86
+        "run_block_rating": 4,
+        "pass_block_rating": 2
       },
       "short_pass": {},
       "long_pass": {},
@@ -1594,8 +1594,8 @@
       "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
-      "run_block_rating": 80,
-      "pass_block_rating": 78,
+      "run_block_rating": 3,
+      "pass_block_rating": 2,
       "pass_rush_rating": 50,
       "coverage_rating": 50,
       "run_stop_rating": 50,
@@ -1604,8 +1604,8 @@
       "intercept_range": 0,
       "defender_letter": "",
       "stats_summary": {
-        "run_block_rating": 80,
-        "pass_block_rating": 78
+        "run_block_rating": 3,
+        "pass_block_rating": 2
       },
       "short_pass": {},
       "long_pass": {},
@@ -1643,18 +1643,18 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 96,
-      "coverage_rating": 44,
-      "run_stop_rating": 78,
-      "tackle_rating": 78,
+      "pass_rush_rating": 3,
+      "coverage_rating": -1,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
       "pass_defense_rating": 0,
       "intercept_range": 0,
       "defender_letter": "A",
       "stats_summary": {
-        "pass_rush_rating": 96,
-        "coverage_rating": 44,
-        "run_stop_rating": 78,
-        "tackle_rating": 78,
+        "pass_rush_rating": 3,
+        "coverage_rating": -1,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
         "pass_defense_rating": 0,
         "intercept_range": 0
       },
@@ -1694,20 +1694,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 72,
-      "coverage_rating": 82,
-      "run_stop_rating": 84,
-      "tackle_rating": 84,
-      "pass_defense_rating": 82,
-      "intercept_range": 6,
+      "pass_rush_rating": 2,
+      "coverage_rating": 3,
+      "run_stop_rating": 3,
+      "tackle_rating": 3,
+      "pass_defense_rating": 3,
+      "intercept_range": 48,
       "defender_letter": "B",
       "stats_summary": {
-        "pass_rush_rating": 72,
-        "coverage_rating": 82,
-        "run_stop_rating": 84,
-        "tackle_rating": 84,
-        "pass_defense_rating": 82,
-        "intercept_range": 6
+        "pass_rush_rating": 2,
+        "coverage_rating": 3,
+        "run_stop_rating": 3,
+        "tackle_rating": 3,
+        "pass_defense_rating": 3,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -1745,20 +1745,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 44,
-      "coverage_rating": 80,
-      "run_stop_rating": 68,
+      "pass_rush_rating": 0,
+      "coverage_rating": 3,
+      "run_stop_rating": 1,
       "tackle_rating": 0,
-      "pass_defense_rating": 80,
-      "intercept_range": 10,
+      "pass_defense_rating": 3,
+      "intercept_range": 48,
       "defender_letter": "C",
       "stats_summary": {
-        "pass_rush_rating": 44,
-        "coverage_rating": 80,
-        "run_stop_rating": 68,
+        "pass_rush_rating": 0,
+        "coverage_rating": 3,
+        "run_stop_rating": 1,
         "tackle_rating": 0,
-        "pass_defense_rating": 80,
-        "intercept_range": 10
+        "pass_defense_rating": 3,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -1796,18 +1796,18 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 72,
-      "coverage_rating": 42,
-      "run_stop_rating": 68,
-      "tackle_rating": 68,
+      "pass_rush_rating": 2,
+      "coverage_rating": -1,
+      "run_stop_rating": -1,
+      "tackle_rating": -1,
       "pass_defense_rating": 0,
       "intercept_range": 0,
       "defender_letter": "D",
       "stats_summary": {
-        "pass_rush_rating": 72,
-        "coverage_rating": 42,
-        "run_stop_rating": 68,
-        "tackle_rating": 68,
+        "pass_rush_rating": 2,
+        "coverage_rating": -1,
+        "run_stop_rating": -1,
+        "tackle_rating": -1,
         "pass_defense_rating": 0,
         "intercept_range": 0
       },
@@ -1847,18 +1847,18 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 70,
-      "coverage_rating": 40,
-      "run_stop_rating": 82,
-      "tackle_rating": 82,
+      "pass_rush_rating": 2,
+      "coverage_rating": -1,
+      "run_stop_rating": 1,
+      "tackle_rating": 1,
       "pass_defense_rating": 0,
       "intercept_range": 0,
       "defender_letter": "E",
       "stats_summary": {
-        "pass_rush_rating": 70,
-        "coverage_rating": 40,
-        "run_stop_rating": 82,
-        "tackle_rating": 82,
+        "pass_rush_rating": 2,
+        "coverage_rating": -1,
+        "run_stop_rating": 1,
+        "tackle_rating": 1,
         "pass_defense_rating": 0,
         "intercept_range": 0
       },
@@ -1898,18 +1898,18 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 66,
-      "coverage_rating": 38,
-      "run_stop_rating": 76,
-      "tackle_rating": 76,
+      "pass_rush_rating": 1,
+      "coverage_rating": -2,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
       "pass_defense_rating": 0,
       "intercept_range": 0,
       "defender_letter": "F",
       "stats_summary": {
-        "pass_rush_rating": 66,
-        "coverage_rating": 38,
-        "run_stop_rating": 76,
-        "tackle_rating": 76,
+        "pass_rush_rating": 1,
+        "coverage_rating": -2,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
         "pass_defense_rating": 0,
         "intercept_range": 0
       },
@@ -1949,20 +1949,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 60,
-      "coverage_rating": 72,
-      "run_stop_rating": 82,
-      "tackle_rating": 82,
-      "pass_defense_rating": 72,
-      "intercept_range": 4,
+      "pass_rush_rating": 1,
+      "coverage_rating": 2,
+      "run_stop_rating": 3,
+      "tackle_rating": 3,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
       "defender_letter": "G",
       "stats_summary": {
-        "pass_rush_rating": 60,
-        "coverage_rating": 72,
-        "run_stop_rating": 82,
-        "tackle_rating": 82,
-        "pass_defense_rating": 72,
-        "intercept_range": 4
+        "pass_rush_rating": 1,
+        "coverage_rating": 2,
+        "run_stop_rating": 3,
+        "tackle_rating": 3,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -2000,20 +2000,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 58,
-      "coverage_rating": 66,
-      "run_stop_rating": 76,
-      "tackle_rating": 76,
-      "pass_defense_rating": 66,
-      "intercept_range": 3,
+      "pass_rush_rating": 1,
+      "coverage_rating": 1,
+      "run_stop_rating": 2,
+      "tackle_rating": 2,
+      "pass_defense_rating": 1,
+      "intercept_range": 48,
       "defender_letter": "H",
       "stats_summary": {
-        "pass_rush_rating": 58,
-        "coverage_rating": 66,
-        "run_stop_rating": 76,
-        "tackle_rating": 76,
-        "pass_defense_rating": 66,
-        "intercept_range": 3
+        "pass_rush_rating": 1,
+        "coverage_rating": 1,
+        "run_stop_rating": 2,
+        "tackle_rating": 2,
+        "pass_defense_rating": 1,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -2051,20 +2051,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 42,
-      "coverage_rating": 78,
-      "run_stop_rating": 66,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 0,
       "tackle_rating": 0,
-      "pass_defense_rating": 78,
-      "intercept_range": 9,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
       "defender_letter": "I",
       "stats_summary": {
-        "pass_rush_rating": 42,
-        "coverage_rating": 78,
-        "run_stop_rating": 66,
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 0,
         "tackle_rating": 0,
-        "pass_defense_rating": 78,
-        "intercept_range": 9
+        "pass_defense_rating": 2,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -2102,20 +2102,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 48,
-      "coverage_rating": 76,
-      "run_stop_rating": 72,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 1,
       "tackle_rating": 0,
-      "pass_defense_rating": 76,
-      "intercept_range": 9,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
       "defender_letter": "J",
       "stats_summary": {
-        "pass_rush_rating": 48,
-        "coverage_rating": 76,
-        "run_stop_rating": 72,
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 1,
         "tackle_rating": 0,
-        "pass_defense_rating": 76,
-        "intercept_range": 9
+        "pass_defense_rating": 2,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -2153,20 +2153,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 44,
-      "coverage_rating": 74,
-      "run_stop_rating": 68,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 1,
       "tackle_rating": 0,
-      "pass_defense_rating": 74,
-      "intercept_range": 8,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
       "defender_letter": "K",
       "stats_summary": {
-        "pass_rush_rating": 44,
-        "coverage_rating": 74,
-        "run_stop_rating": 68,
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 1,
         "tackle_rating": 0,
-        "pass_defense_rating": 74,
-        "intercept_range": 8
+        "pass_defense_rating": 2,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -2210,7 +2210,12 @@
         [
           "Sg",
           8,
-          11
+          13
+        ],
+        [
+          4,
+          6,
+          10
         ],
         [
           4,
@@ -2253,11 +2258,6 @@
           10
         ],
         [
-          0,
-          6,
-          10
-        ],
-        [
           -1,
           6,
           10
@@ -2290,7 +2290,7 @@
         "ypa": 6.5,
         "int_rate": 0.03,
         "sack_rate": 0.083,
-        "rush_ypc": 2.5
+        "rush_ypc": 3.0
       },
       "short_pass": {},
       "long_pass": {},
@@ -2334,6 +2334,11 @@
         [
           "Sg",
           8,
+          11
+        ],
+        [
+          4,
+          6,
           10
         ],
         [
@@ -2362,11 +2367,6 @@
           10
         ],
         [
-          1,
-          6,
-          10
-        ],
-        [
           0,
           6,
           10
@@ -2387,7 +2387,7 @@
           10
         ],
         [
-          -1,
+          -2,
           6,
           10
         ]
@@ -2414,7 +2414,7 @@
         "ypa": 6.2,
         "int_rate": 0.039,
         "sack_rate": 0.099,
-        "rush_ypc": 2.5
+        "rush_ypc": 3.0
       },
       "short_pass": {},
       "long_pass": {},
@@ -2506,6 +2506,11 @@
       "endurance_rushing": 1,
       "pass_gain": [
         [
+          4,
+          6,
+          20
+        ],
+        [
           3,
           5,
           20
@@ -2541,7 +2546,7 @@
           20
         ],
         [
-          0,
+          -1,
           5,
           20
         ],
@@ -2559,15 +2564,10 @@
           -3,
           5,
           20
-        ],
-        [
-          -3,
-          5,
-          20
         ]
       ],
       "endurance_pass": 2,
-      "blocks": 0,
+      "blocks": 1,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -2584,8 +2584,8 @@
       "stats_summary": {
         "ypc": 3.9,
         "fumble_rate": 0.014,
-        "catch_rate": 0.25,
-        "avg_rec_yards": 6.0
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
       },
       "short_pass": {},
       "long_pass": {},
@@ -2677,6 +2677,11 @@
       "endurance_rushing": 1,
       "pass_gain": [
         [
+          4,
+          6,
+          20
+        ],
+        [
           3,
           5,
           20
@@ -2712,7 +2717,7 @@
           20
         ],
         [
-          0,
+          -1,
           5,
           20
         ],
@@ -2730,15 +2735,10 @@
           -3,
           5,
           20
-        ],
-        [
-          -3,
-          5,
-          20
         ]
       ],
       "endurance_pass": 2,
-      "blocks": 0,
+      "blocks": 1,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -2755,8 +2755,8 @@
       "stats_summary": {
         "ypc": 4.0,
         "fumble_rate": 0.014,
-        "catch_rate": 0.25,
-        "avg_rec_yards": 6.0
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
       },
       "short_pass": {},
       "long_pass": {},
@@ -2848,7 +2848,7 @@
       "endurance_rushing": 1,
       "pass_gain": [
         [
-          1,
+          2,
           5,
           20
         ],
@@ -2858,7 +2858,7 @@
           20
         ],
         [
-          0,
+          1,
           5,
           20
         ],
@@ -2909,7 +2909,7 @@
         ]
       ],
       "endurance_pass": 2,
-      "blocks": 0,
+      "blocks": 1,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -2926,8 +2926,8 @@
       "stats_summary": {
         "ypc": 3.4,
         "fumble_rate": 0.014,
-        "catch_rate": 0.25,
-        "avg_rec_yards": 6.0
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
       },
       "short_pass": {},
       "long_pass": {},
@@ -3019,7 +3019,7 @@
       "endurance_rushing": 1,
       "pass_gain": [
         [
-          1,
+          2,
           5,
           20
         ],
@@ -3029,7 +3029,7 @@
           20
         ],
         [
-          0,
+          1,
           5,
           20
         ],
@@ -3080,7 +3080,7 @@
         ]
       ],
       "endurance_pass": 2,
-      "blocks": 0,
+      "blocks": 1,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -3097,8 +3097,8 @@
       "stats_summary": {
         "ypc": 3.5,
         "fumble_rate": 0.02,
-        "catch_rate": 0.25,
-        "avg_rec_yards": 6.0
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
       },
       "short_pass": {},
       "long_pass": {},
@@ -3118,7 +3118,7 @@
       "number": 80,
       "team": "CLE",
       "overall_grade": "C",
-      "receiver_letter": "",
+      "receiver_letter": "E",
       "passing_quick": null,
       "passing_short": null,
       "passing_long": null,
@@ -3239,7 +3239,7 @@
       "number": 81,
       "team": "CLE",
       "overall_grade": "D",
-      "receiver_letter": "",
+      "receiver_letter": "E",
       "passing_quick": null,
       "passing_short": null,
       "passing_long": null,
@@ -3360,7 +3360,7 @@
       "number": 82,
       "team": "CLE",
       "overall_grade": "C",
-      "receiver_letter": "",
+      "receiver_letter": "E",
       "passing_quick": null,
       "passing_short": null,
       "passing_long": null,
@@ -3445,7 +3445,7 @@
         ]
       ],
       "endurance_pass": 2,
-      "blocks": 2,
+      "blocks": 3,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -3481,7 +3481,7 @@
       "number": 83,
       "team": "CLE",
       "overall_grade": "D",
-      "receiver_letter": "",
+      "receiver_letter": "E",
       "passing_quick": null,
       "passing_short": null,
       "passing_long": null,
@@ -3566,7 +3566,7 @@
         ]
       ],
       "endurance_pass": 2,
-      "blocks": 2,
+      "blocks": 3,
       "fg_chart": {},
       "xp_rate": 0.95,
       "avg_distance": 44.0,
@@ -3618,8 +3618,8 @@
       "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
-      "run_block_rating": 65,
-      "pass_block_rating": 59,
+      "run_block_rating": 1,
+      "pass_block_rating": 1,
       "pass_rush_rating": 50,
       "coverage_rating": 50,
       "run_stop_rating": 50,
@@ -3628,8 +3628,8 @@
       "intercept_range": 0,
       "defender_letter": "",
       "stats_summary": {
-        "run_block_rating": 65,
-        "pass_block_rating": 59
+        "run_block_rating": 1,
+        "pass_block_rating": 1
       },
       "short_pass": {},
       "long_pass": {},
@@ -3665,8 +3665,8 @@
       "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
-      "run_block_rating": 61,
-      "pass_block_rating": 63,
+      "run_block_rating": 1,
+      "pass_block_rating": 1,
       "pass_rush_rating": 50,
       "coverage_rating": 50,
       "run_stop_rating": 50,
@@ -3675,8 +3675,8 @@
       "intercept_range": 0,
       "defender_letter": "",
       "stats_summary": {
-        "run_block_rating": 61,
-        "pass_block_rating": 63
+        "run_block_rating": 1,
+        "pass_block_rating": 1
       },
       "short_pass": {},
       "long_pass": {},
@@ -3712,8 +3712,8 @@
       "xp_rate": 0.95,
       "avg_distance": 44.0,
       "inside_20_rate": 0.35,
-      "run_block_rating": 63,
-      "pass_block_rating": 60,
+      "run_block_rating": 1,
+      "pass_block_rating": 1,
       "pass_rush_rating": 50,
       "coverage_rating": 50,
       "run_stop_rating": 50,
@@ -3722,8 +3722,8 @@
       "intercept_range": 0,
       "defender_letter": "",
       "stats_summary": {
-        "run_block_rating": 63,
-        "pass_block_rating": 60
+        "run_block_rating": 1,
+        "pass_block_rating": 1
       },
       "short_pass": {},
       "long_pass": {},
@@ -3761,18 +3761,18 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 55,
-      "coverage_rating": 38,
-      "run_stop_rating": 55,
-      "tackle_rating": 55,
+      "pass_rush_rating": 1,
+      "coverage_rating": -2,
+      "run_stop_rating": -2,
+      "tackle_rating": -2,
       "pass_defense_rating": 0,
       "intercept_range": 0,
       "defender_letter": "L",
       "stats_summary": {
-        "pass_rush_rating": 55,
-        "coverage_rating": 38,
-        "run_stop_rating": 55,
-        "tackle_rating": 55,
+        "pass_rush_rating": 1,
+        "coverage_rating": -2,
+        "run_stop_rating": -2,
+        "tackle_rating": -2,
         "pass_defense_rating": 0,
         "intercept_range": 0
       },
@@ -3812,18 +3812,18 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 69,
-      "coverage_rating": 38,
-      "run_stop_rating": 67,
-      "tackle_rating": 67,
+      "pass_rush_rating": 1,
+      "coverage_rating": -2,
+      "run_stop_rating": -1,
+      "tackle_rating": -1,
       "pass_defense_rating": 0,
       "intercept_range": 0,
       "defender_letter": "M",
       "stats_summary": {
-        "pass_rush_rating": 69,
-        "coverage_rating": 38,
-        "run_stop_rating": 67,
-        "tackle_rating": 67,
+        "pass_rush_rating": 1,
+        "coverage_rating": -2,
+        "run_stop_rating": -1,
+        "tackle_rating": -1,
         "pass_defense_rating": 0,
         "intercept_range": 0
       },
@@ -3863,20 +3863,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 52,
-      "coverage_rating": 53,
-      "run_stop_rating": 57,
-      "tackle_rating": 57,
-      "pass_defense_rating": 53,
-      "intercept_range": 0,
-      "defender_letter": "N",
+      "pass_rush_rating": 1,
+      "coverage_rating": 0,
+      "run_stop_rating": -1,
+      "tackle_rating": -1,
+      "pass_defense_rating": 0,
+      "intercept_range": 48,
+      "defender_letter": "",
       "stats_summary": {
-        "pass_rush_rating": 52,
-        "coverage_rating": 53,
-        "run_stop_rating": 57,
-        "tackle_rating": 57,
-        "pass_defense_rating": 53,
-        "intercept_range": 0
+        "pass_rush_rating": 1,
+        "coverage_rating": 0,
+        "run_stop_rating": -1,
+        "tackle_rating": -1,
+        "pass_defense_rating": 0,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -3914,20 +3914,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 50,
-      "coverage_rating": 56,
-      "run_stop_rating": 71,
-      "tackle_rating": 71,
-      "pass_defense_rating": 56,
-      "intercept_range": 1,
-      "defender_letter": "O",
+      "pass_rush_rating": 1,
+      "coverage_rating": 0,
+      "run_stop_rating": 1,
+      "tackle_rating": 1,
+      "pass_defense_rating": 0,
+      "intercept_range": 48,
+      "defender_letter": "",
       "stats_summary": {
-        "pass_rush_rating": 50,
-        "coverage_rating": 56,
-        "run_stop_rating": 71,
-        "tackle_rating": 71,
-        "pass_defense_rating": 56,
-        "intercept_range": 1
+        "pass_rush_rating": 1,
+        "coverage_rating": 0,
+        "run_stop_rating": 1,
+        "tackle_rating": 1,
+        "pass_defense_rating": 0,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -3965,20 +3965,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 54,
-      "coverage_rating": 62,
-      "run_stop_rating": 65,
-      "tackle_rating": 65,
-      "pass_defense_rating": 62,
-      "intercept_range": 2,
-      "defender_letter": "P",
+      "pass_rush_rating": 1,
+      "coverage_rating": 1,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 1,
+      "intercept_range": 48,
+      "defender_letter": "",
       "stats_summary": {
-        "pass_rush_rating": 54,
-        "coverage_rating": 62,
-        "run_stop_rating": 65,
-        "tackle_rating": 65,
-        "pass_defense_rating": 62,
-        "intercept_range": 2
+        "pass_rush_rating": 1,
+        "coverage_rating": 1,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 1,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -4016,20 +4016,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 42,
-      "coverage_rating": 48,
-      "run_stop_rating": 63,
-      "tackle_rating": 63,
-      "pass_defense_rating": 48,
-      "intercept_range": 0,
-      "defender_letter": "Q",
+      "pass_rush_rating": 0,
+      "coverage_rating": -1,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": -1,
+      "intercept_range": 48,
+      "defender_letter": "",
       "stats_summary": {
-        "pass_rush_rating": 42,
-        "coverage_rating": 48,
-        "run_stop_rating": 63,
-        "tackle_rating": 63,
-        "pass_defense_rating": 48,
-        "intercept_range": 0
+        "pass_rush_rating": 0,
+        "coverage_rating": -1,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": -1,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -4067,20 +4067,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 47,
-      "coverage_rating": 63,
-      "run_stop_rating": 63,
-      "tackle_rating": 63,
-      "pass_defense_rating": 63,
-      "intercept_range": 2,
-      "defender_letter": "R",
+      "pass_rush_rating": 0,
+      "coverage_rating": 1,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 1,
+      "intercept_range": 48,
+      "defender_letter": "",
       "stats_summary": {
-        "pass_rush_rating": 47,
-        "coverage_rating": 63,
-        "run_stop_rating": 63,
-        "tackle_rating": 63,
-        "pass_defense_rating": 63,
-        "intercept_range": 2
+        "pass_rush_rating": 0,
+        "coverage_rating": 1,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 1,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -4118,20 +4118,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 36,
-      "coverage_rating": 58,
-      "run_stop_rating": 61,
+      "pass_rush_rating": 0,
+      "coverage_rating": 0,
+      "run_stop_rating": 0,
       "tackle_rating": 0,
-      "pass_defense_rating": 58,
-      "intercept_range": 4,
-      "defender_letter": "S",
+      "pass_defense_rating": 0,
+      "intercept_range": 48,
+      "defender_letter": "",
       "stats_summary": {
-        "pass_rush_rating": 36,
-        "coverage_rating": 58,
-        "run_stop_rating": 61,
+        "pass_rush_rating": 0,
+        "coverage_rating": 0,
+        "run_stop_rating": 0,
         "tackle_rating": 0,
-        "pass_defense_rating": 58,
-        "intercept_range": 4
+        "pass_defense_rating": 0,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -4169,20 +4169,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 46,
-      "coverage_rating": 65,
-      "run_stop_rating": 61,
+      "pass_rush_rating": 0,
+      "coverage_rating": 1,
+      "run_stop_rating": 0,
       "tackle_rating": 0,
-      "pass_defense_rating": 65,
-      "intercept_range": 6,
-      "defender_letter": "T",
+      "pass_defense_rating": 1,
+      "intercept_range": 48,
+      "defender_letter": "",
       "stats_summary": {
-        "pass_rush_rating": 46,
-        "coverage_rating": 65,
-        "run_stop_rating": 61,
+        "pass_rush_rating": 0,
+        "coverage_rating": 1,
+        "run_stop_rating": 0,
         "tackle_rating": 0,
-        "pass_defense_rating": 65,
-        "intercept_range": 6
+        "pass_defense_rating": 1,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},
@@ -4220,20 +4220,20 @@
       "inside_20_rate": 0.35,
       "run_block_rating": 0,
       "pass_block_rating": 0,
-      "pass_rush_rating": 38,
-      "coverage_rating": 67,
-      "run_stop_rating": 54,
+      "pass_rush_rating": 0,
+      "coverage_rating": 1,
+      "run_stop_rating": -1,
       "tackle_rating": 0,
-      "pass_defense_rating": 67,
-      "intercept_range": 6,
-      "defender_letter": "U",
+      "pass_defense_rating": 1,
+      "intercept_range": 48,
+      "defender_letter": "",
       "stats_summary": {
-        "pass_rush_rating": 38,
-        "coverage_rating": 67,
-        "run_stop_rating": 54,
+        "pass_rush_rating": 0,
+        "coverage_rating": 1,
+        "run_stop_rating": -1,
         "tackle_rating": 0,
-        "pass_defense_rating": 67,
-        "intercept_range": 6
+        "pass_defense_rating": 1,
+        "intercept_range": 48
       },
       "short_pass": {},
       "long_pass": {},

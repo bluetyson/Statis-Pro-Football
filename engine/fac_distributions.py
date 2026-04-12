@@ -713,26 +713,26 @@ def run_number(tens: int, ones: int) -> int:
 
 # Formation modifiers: {formation: {pass_rush_mod, coverage_mod, run_stop_mod}}
 FORMATION_MODIFIERS: Dict[str, Dict[str, int]] = {
-    "4_3":          {"pass_rush": 0,   "coverage": 0,   "run_stop": 0},
-    "3_4":          {"pass_rush": -5,  "coverage": 5,   "run_stop": 5},
-    "4_3_COVER2":   {"pass_rush": -5,  "coverage": 10,  "run_stop": -5},
-    "3_4_ZONE":     {"pass_rush": -5,  "coverage": 10,  "run_stop": 0},
-    "4_3_BLITZ":    {"pass_rush": 15,  "coverage": -10, "run_stop": 5},
-    "NICKEL_ZONE":  {"pass_rush": -5,  "coverage": 15,  "run_stop": -10},
-    "NICKEL_BLITZ": {"pass_rush": 15,  "coverage": -5,  "run_stop": -5},
-    "NICKEL_COVER2":{"pass_rush": -5,  "coverage": 10,  "run_stop": -5},
-    "GOAL_LINE":    {"pass_rush": 5,   "coverage": -15, "run_stop": 20},
+    "4_3":          {"pass_rush": 0,  "coverage": 0,  "run_stop": 0},
+    "3_4":          {"pass_rush": 0,  "coverage": 0,  "run_stop": 0},
+    "4_3_COVER2":   {"pass_rush": 0,  "coverage": 1,  "run_stop": 0},
+    "3_4_ZONE":     {"pass_rush": 0,  "coverage": 1,  "run_stop": 0},
+    "4_3_BLITZ":    {"pass_rush": 1,  "coverage": -1, "run_stop": 0},
+    "NICKEL_ZONE":  {"pass_rush": 0,  "coverage": 1,  "run_stop": -1},
+    "NICKEL_BLITZ": {"pass_rush": 1,  "coverage": 0,  "run_stop": 0},
+    "NICKEL_COVER2":{"pass_rush": 0,  "coverage": 1,  "run_stop": 0},
+    "GOAL_LINE":    {"pass_rush": 0,  "coverage": -1, "run_stop": 1},
 }
 
 # 5E Defensive Play modifiers (keyed by DefensivePlay enum values)
 DEFENSIVE_PLAY_MODIFIERS: Dict[str, Dict[str, int]] = {
-    "PASS_DEFENSE":          {"pass_rush": 0,   "coverage": 5,   "run_stop": -5},
-    "PREVENT_DEFENSE":       {"pass_rush": -5,  "coverage": 10,  "run_stop": -10},
-    "RUN_DEFENSE_NO_KEY":    {"pass_rush": 0,   "coverage": -5,  "run_stop": 5},
-    "RUN_DEFENSE_KEY_BACK_1":{"pass_rush": 0,   "coverage": -5,  "run_stop": 10},
-    "RUN_DEFENSE_KEY_BACK_2":{"pass_rush": 0,   "coverage": -5,  "run_stop": 10},
-    "RUN_DEFENSE_KEY_BACK_3":{"pass_rush": 0,   "coverage": -5,  "run_stop": 10},
-    "BLITZ":                 {"pass_rush": 15,  "coverage": -10, "run_stop": 0},
+    "PASS_DEFENSE":          {"pass_rush": 0,  "coverage": 1,  "run_stop": 0},
+    "PREVENT_DEFENSE":       {"pass_rush": 0,  "coverage": 1,  "run_stop": -1},
+    "RUN_DEFENSE_NO_KEY":    {"pass_rush": 0,  "coverage": 0,  "run_stop": 1},
+    "RUN_DEFENSE_KEY_BACK_1":{"pass_rush": 0,  "coverage": 0,  "run_stop": 1},
+    "RUN_DEFENSE_KEY_BACK_2":{"pass_rush": 0,  "coverage": 0,  "run_stop": 1},
+    "RUN_DEFENSE_KEY_BACK_3":{"pass_rush": 0,  "coverage": 0,  "run_stop": 1},
+    "BLITZ":                 {"pass_rush": 1,  "coverage": -1, "run_stop": 0},
 }
 
 
@@ -748,25 +748,34 @@ def get_defensive_play_modifier(defensive_play: str) -> Dict[str, int]:
 
 def effective_pass_rush(base_rating: int, formation: str,
                         is_blitz_tendency: bool = False) -> int:
-    """Compute effective pass-rush rating with formation + blitz bonus."""
+    """Compute effective pass-rush rating with formation + blitz bonus.
+
+    Uses authentic 5E small-number scale (0-3 base + modifiers).
+    """
     mod = get_formation_modifier(formation)
     rating = base_rating + mod["pass_rush"]
     if is_blitz_tendency:
-        rating += 10  # BLITZ tendency on FAC dice adds extra rush
-    return max(0, min(99, rating))
+        rating += 1  # Blitz tendency adds +1 pass rush
+    return max(0, rating)
 
 
 def effective_coverage(base_rating: int, formation: str,
                        is_blitz_tendency: bool = False) -> int:
-    """Compute effective coverage rating with formation + blitz penalty."""
+    """Compute effective coverage (pass defense) rating with formation + blitz penalty.
+
+    Uses authentic 5E small-number scale (−2 to +4 base + modifiers).
+    """
     mod = get_formation_modifier(formation)
     rating = base_rating + mod["coverage"]
     if is_blitz_tendency:
-        rating -= 5  # Blitzing weakens coverage
-    return max(0, min(99, rating))
+        rating -= 1  # Blitzing weakens coverage by 1
+    return rating
 
 
 def effective_run_stop(base_rating: int, formation: str) -> int:
-    """Compute effective run-stop rating with formation modifier."""
+    """Compute effective run-stop (tackle) rating with formation modifier.
+
+    Uses authentic 5E small-number scale (−5 to +4 base + modifiers).
+    """
     mod = get_formation_modifier(formation)
-    return max(0, min(99, base_rating + mod["run_stop"]))
+    return base_rating + mod["run_stop"]

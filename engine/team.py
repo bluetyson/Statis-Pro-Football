@@ -46,8 +46,8 @@ class Team:
     losses: int = 0
     ties: int = 0
 
-    offense_rating: int = 75
-    defense_rating: int = 75
+    offense_rating: int = 0
+    defense_rating: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -71,8 +71,8 @@ class Team:
             conference=data.get("conference", "AFC"),
             division=data.get("division", "East"),
         )
-        team.offense_rating = data.get("offense_rating", 75)
-        team.defense_rating = data.get("defense_rating", 75)
+        team.offense_rating = data.get("offense_rating", 0)
+        team.defense_rating = data.get("defense_rating", 0)
         record = data.get("record", {})
         team.wins = record.get("wins", 0)
         team.losses = record.get("losses", 0)
