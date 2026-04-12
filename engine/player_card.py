@@ -231,10 +231,22 @@ class PlayerCard:
     avg_distance: float = 44.0
     inside_20_rate: float = 0.35
 
+    # ── Offensive Line ────────────────────────────────────────────────
+    run_block_rating: int = 0   # OL run-blocking grade (0-99)
+    pass_block_rating: int = 0  # OL pass-blocking grade (0-99)
+
     # ── Defense ───────────────────────────────────────────────────────
+    # Legacy generic ratings (kept for backward compat; use 5E fields below)
     pass_rush_rating: int = 50
     coverage_rating: int = 50
     run_stop_rating: int = 50
+    # Authentic 5E defensive ratings (position-specific):
+    #   DL:  tackle_rating, pass_rush_rating
+    #   LB:  pass_defense_rating, tackle_rating, pass_rush_rating, intercept_range
+    #   DB:  pass_defense_rating, pass_rush_rating, intercept_range (no tackle)
+    tackle_rating: int = 0
+    pass_defense_rating: int = 0
+    intercept_range: int = 0  # 0 = no intercept ability
     defender_letter: str = ""  # A-M defensive player letter for FAC matchups
 
     stats_summary: Dict[str, Any] = field(default_factory=dict)
@@ -323,10 +335,16 @@ class PlayerCard:
             "xp_rate": self.xp_rate,
             "avg_distance": self.avg_distance,
             "inside_20_rate": self.inside_20_rate,
+            # Offensive Line
+            "run_block_rating": self.run_block_rating,
+            "pass_block_rating": self.pass_block_rating,
             # Defense
             "pass_rush_rating": self.pass_rush_rating,
             "coverage_rating": self.coverage_rating,
             "run_stop_rating": self.run_stop_rating,
+            "tackle_rating": self.tackle_rating,
+            "pass_defense_rating": self.pass_defense_rating,
+            "intercept_range": self.intercept_range,
             "defender_letter": self.defender_letter,
             "stats_summary": self.stats_summary,
             # Legacy columns
@@ -389,10 +407,17 @@ class PlayerCard:
         card.avg_distance = data.get("avg_distance", 44.0)
         card.inside_20_rate = data.get("inside_20_rate", 0.35)
 
+        # Offensive Line
+        card.run_block_rating = data.get("run_block_rating", 0)
+        card.pass_block_rating = data.get("pass_block_rating", 0)
+
         # Defense
         card.pass_rush_rating = data.get("pass_rush_rating", 50)
         card.coverage_rating = data.get("coverage_rating", 50)
         card.run_stop_rating = data.get("run_stop_rating", 50)
+        card.tackle_rating = data.get("tackle_rating", 0)
+        card.pass_defense_rating = data.get("pass_defense_rating", 0)
+        card.intercept_range = data.get("intercept_range", 0)
         card.defender_letter = data.get("defender_letter", "")
 
         card.stats_summary = data.get("stats_summary", {})

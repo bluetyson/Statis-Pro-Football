@@ -49,7 +49,7 @@ class NewGameRequest(BaseModel):
 class HumanPlayCallRequest(BaseModel):
     play_type: str  # RUN, SHORT_PASS, LONG_PASS, QUICK_PASS, SCREEN, PUNT, FG, KNEEL
     direction: str = "MIDDLE"  # LEFT, RIGHT, MIDDLE, IL, IR, SL, SR, DEEP_LEFT, DEEP_RIGHT
-    formation: str = "SHOTGUN"  # SHOTGUN, UNDER_CENTER, I_FORM, TRIPS, etc.
+    formation: str = "UNDER_CENTER"  # UNDER_CENTER, SHOTGUN, I_FORM, TRIPS, etc.
 
 
 class DefensivePlayCallRequest(BaseModel):

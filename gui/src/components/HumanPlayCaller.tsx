@@ -59,7 +59,7 @@ export function HumanPlayCaller({
 }: HumanPlayCallerProps) {
   const [selectedPlay, setSelectedPlay] = useState<string>('RUN');
   const [selectedDirection, setSelectedDirection] = useState<string>('MIDDLE');
-  const [selectedFormation, setSelectedFormation] = useState<string>('SHOTGUN');
+  const [selectedFormation, setSelectedFormation] = useState<string>('UNDER_CENTER');
 
   const disabled = loading || state.is_over;
 
