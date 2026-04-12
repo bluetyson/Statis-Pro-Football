@@ -72,6 +72,7 @@ class HumanPlayCallRequest(BaseModel):
     direction: str = "MIDDLE"  # LEFT, RIGHT, MIDDLE, IL, IR, SL, SR, DEEP_LEFT, DEEP_RIGHT
     formation: str = "UNDER_CENTER"  # UNDER_CENTER, SHOTGUN, I_FORM, TRIPS, etc.
     strategy: Optional[str] = None  # FLOP, SNEAK, DRAW, PLAY_ACTION (5E strategies)
+    player_name: Optional[str] = None  # Specific player to use (QB/RB/WR name)
 
 
 class DefensivePlayCallRequest(BaseModel):

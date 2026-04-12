@@ -89,6 +89,7 @@ export function GameBoard({
           {isInteractive && isHumanTurn ? (
             <HumanPlayCaller
               state={state}
+              personnel={personnel}
               loading={loading}
               onCallPlay={onExecuteHumanPlay}
               onSimulateDrive={onSimulateDrive}

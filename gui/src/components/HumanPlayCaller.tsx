@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import type { GameState, HumanPlayCall } from '../types/game';
+import type { GameState, HumanPlayCall, PersonnelData } from '../types/game';
 import { OFFENSIVE_STRATEGIES } from '../types/game';
 
 interface HumanPlayCallerProps {
   state: GameState;
+  personnel: PersonnelData | null;
   loading: boolean;
   onCallPlay: (call: HumanPlayCall) => void;
   onSimulateDrive: () => void;
@@ -52,6 +53,7 @@ function ordinal(n: number) {
 
 export function HumanPlayCaller({
   state,
+  personnel,
   loading,
   onCallPlay,
   onSimulateDrive,
@@ -62,6 +64,7 @@ export function HumanPlayCaller({
   const [selectedDirection, setSelectedDirection] = useState<string>('MIDDLE');
   const [selectedFormation, setSelectedFormation] = useState<string>('UNDER_CENTER');
   const [selectedStrategy, setSelectedStrategy] = useState<string>('NONE');
+  const [selectedPlayer, setSelectedPlayer] = useState<string>('');
 
   const disabled = loading || state.is_over;
 
@@ -71,12 +74,26 @@ export function HumanPlayCaller({
 
   const directions = isRunPlay ? RUN_DIRECTIONS : PASS_DIRECTIONS;
 
+  // Get available players based on play type
+  const availablePlayers = personnel ? (
+    isRunPlay ? [
+      ...(personnel.offense_starters['QB'] ? [personnel.offense_starters['QB']] : []),
+      ...personnel.offense_all.filter(p => p.position === 'RB')
+    ] :
+    isPassPlay ? [
+      ...(personnel.offense_starters['QB'] ? [personnel.offense_starters['QB']] : []),
+      ...personnel.offense_receivers
+    ] :
+    []
+  ) : [];
+
   const handleCallPlay = () => {
     onCallPlay({
       play_type: selectedPlay,
       direction: isSpecialPlay ? 'MIDDLE' : selectedDirection,
       formation: isSpecialPlay ? 'SHOTGUN' : selectedFormation,
       strategy: selectedStrategy !== 'NONE' ? selectedStrategy : undefined,
+      player_name: selectedPlayer || undefined,
     });
   };
 
@@ -183,6 +200,28 @@ export function HumanPlayCaller({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Player selection */}
+      {!isSpecialPlay && availablePlayers.length > 0 && (
+        <div className="play-option">
+          <label className="section-label">
+            {isRunPlay ? 'Ball Carrier' : 'Quarterback'}
+          </label>
+          <select
+            className="player-select"
+            value={selectedPlayer}
+            onChange={(e) => setSelectedPlayer(e.target.value)}
+            disabled={disabled}
+          >
+            <option value="">Auto (Starter)</option>
+            {availablePlayers.map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.name} ({p.position}) - {p.grade}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

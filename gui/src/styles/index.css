@@ -1038,6 +1038,22 @@ body {
   cursor: not-allowed;
 }
 
+.player-select {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.player-select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .btn-lg {
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
