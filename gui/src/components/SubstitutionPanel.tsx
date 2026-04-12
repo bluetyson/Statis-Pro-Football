@@ -7,7 +7,7 @@ interface SubstitutionPanelProps {
   onSubstitute: (position: string, playerOut: string, playerIn: string) => void;
 }
 
-const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'P'];
+const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'P', 'DL', 'LB', 'DB'];
 
 export function SubstitutionPanel({ personnel, loading, onSubstitute }: SubstitutionPanelProps) {
   const [selectedPos, setSelectedPos] = useState<string>('QB');
@@ -15,12 +15,24 @@ export function SubstitutionPanel({ personnel, loading, onSubstitute }: Substitu
 
   if (!personnel) return null;
 
-  const allPlayers = personnel.offense_all;
+  const DEF_POSITIONS = new Set(['DL', 'LB', 'DB', 'DE', 'DT', 'NT', 'CB', 'S', 'SS', 'FS', 'OLB', 'ILB', 'MLB']);
+  const isDefPos = DEF_POSITIONS.has(selectedPos);
+  const allPlayers = isDefPos ? personnel.defense_all : personnel.offense_all;
+
+  // Map the UI position groups to actual position values
+  const posGroupMap: Record<string, string[]> = {
+    'DL': ['DE', 'DT', 'DL', 'NT'],
+    'LB': ['LB', 'OLB', 'ILB', 'MLB'],
+    'DB': ['CB', 'S', 'SS', 'FS', 'DB'],
+  };
+  const posMatch = posGroupMap[selectedPos] ?? [selectedPos];
   const posPlayers = allPlayers.filter(
-    (p) => p.position.toUpperCase() === selectedPos,
+    (p) => posMatch.includes(p.position.toUpperCase()),
   );
 
-  const starter = personnel.offense_starters[selectedPos];
+  const starter = isDefPos
+    ? posPlayers.length > 0 ? posPlayers[0] : null
+    : personnel.offense_starters[selectedPos] ?? null;
 
   const handleSub = (benchPlayer: PlayerBrief) => {
     if (!starter) return;

@@ -4,11 +4,11 @@ Implements the FAC-card-driven resolution system:
 
   Pass plays (5th edition):
     1. Draw FAC card
-    2. Check ER field for sack
-    3. Check receiver target field (QK/SH/LG) for override
-    4. PN → QB card → receiver letter / INC / INT
-    5. If receiver letter → same PN → Receiver card → yards
-    6. Screen uses FAC card SC field directly
+    2. Check QK/SH/LG receiver target field — "P.Rush" triggers sack check
+       (ER field is for run plays only, NOT pass plays)
+    3. PN → QB card → receiver letter / INC / INT
+    4. If receiver letter → same PN → Receiver card → yards
+    5. Screen uses FAC card SC field directly
 
   Run plays (5th edition):
     1. Draw FAC card
@@ -62,6 +62,7 @@ class PlayResult:
     offensive_play_call: Optional[str] = None   # Display string for offensive call
     defensive_play_call: Optional[str] = None   # Display string for defensive call
     defensive_play: Optional[str] = None        # DefensivePlay value used
+    debug_log: List[str] = field(default_factory=list)  # Step-by-step resolution log
 
 
 class BigPlayDefense:
@@ -1155,30 +1156,31 @@ class PlayResolver:
                                two_minute_offense: bool = False) -> PlayResult:
         """Inner pass resolution after Z-card handling.
 
-        Authentic resolution:
-          1. Check ER (sack) on FAC card
-          2. Check receiver target on FAC card
+        Authentic 5E resolution:
+          1. Check QK/SH/LG receiver target field on FAC card
+          2. If "P.Rush" → check QB pass rush ranges for sack/scramble/INC/COM
           3. Screen passes use FAC SC field directly
           4. PN → QB card passing ranges → COM / INC / INT
           5. If COM → RUN NUMBER → receiver's pass-gain Q/S/L → yards
+
+        NOTE: The ER (End Run) field is for run plays only; it does NOT
+        cause sacks on pass plays.  Pass-play sacks come exclusively
+        from the "P.Rush" code in the QK/SH/LG receiver-target field.
         """
+        log: List[str] = []
+        log.append(f"[FAC] Card #{fac_card.card_number}: RN={fac_card.run_number} PN={fac_card.pass_number} ER={fac_card.end_run}")
+        log.append(f"[PASS] Type={pass_type}, QB={qb.player_name}, Target={receiver.player_name}")
+        log.append(f"[DEF] Formation={defense_formation}, Coverage={defense_coverage}, PassRush={defense_pass_rush}, Strategy={defensive_strategy}")
 
-        # ── Step 1: Check ER (pass rush / sack) ─────────────────────
-        sack_yards = fac_card.sack_yards
-        if sack_yards is not None:
-            return PlayResult(
-                play_type="PASS", yards_gained=sack_yards,
-                result="SACK",
-                description=f"{qb.player_name} is sacked for {abs(sack_yards)} yard loss!",
-                passer=qb.player_name, z_card_event=z_event,
-            )
-
-        # ── Step 1b: Check receiver target for P.Rush ────────────────
+        # ── Step 1: Check receiver target for P.Rush ─────────────────
         target_field = fac_card.get_receiver_target(pass_type)
+        log.append(f"[TARGET] FAC {pass_type} target field = '{target_field}'")
         if target_field == "P.Rush":
+            log.append("[P.RUSH] Pass rush triggered by FAC card")
             # Pass rush result → check QB's pass_rush ranges
             if qb.pass_rush:
                 pn = fac_card.pass_num_int or random.randint(1, 48)
+                log.append(f"[P.RUSH] PN={pn}, QB pass_rush ranges: sack_max={qb.pass_rush.sack_max}, runs_max={qb.pass_rush.runs_max}, com_max={qb.pass_rush.com_max}")
 
                 # Rule 2: Apply pass rush modifier to sack range
                 pr_modifier = self.calculate_pass_rush_modifier(
@@ -1186,39 +1188,40 @@ class PlayResolver:
                 )
                 adjusted_pn = pn
                 if pr_modifier != 0:
-                    # Positive modifier extends sack range (worse for QB)
                     adjusted_pn = max(1, min(48, pn - pr_modifier))
+                    log.append(f"[P.RUSH] PR modifier={pr_modifier}, adjusted PN={adjusted_pn}")
 
                 # Rule 3: Blitz pass rush override
                 if is_blitz_tendency:
-                    # Blitzing players use value of 2 regardless of printed
                     blitz_pr = self.get_blitz_pass_rush_value()
                     blitz_mod = self.calculate_pass_rush_modifier(
                         blitz_pr * 2, getattr(qb, 'pass_block_rating', 0)
                     )
                     adjusted_pn = max(1, min(48, pn - blitz_mod))
+                    log.append(f"[P.RUSH] Blitz override: blitz_mod={blitz_mod}, adjusted PN={adjusted_pn}")
 
                 pr_result = qb.pass_rush.resolve(adjusted_pn)
+                log.append(f"[P.RUSH] Result = {pr_result}")
                 if pr_result == "SACK":
-                    loss = -(pn // 3 + 1)  # Sack yards from PN
+                    loss = -(pn // 3 + 1)
                     loss = max(loss, -8)
-                    return PlayResult(
+                    r = PlayResult(
                         play_type="PASS", yards_gained=loss,
                         result="SACK",
                         description=f"{qb.player_name} sacked on pass rush! {abs(loss)} yard loss.",
                         passer=qb.player_name, z_card_event=z_event,
                         pass_number_used=pn,
                     )
+                    r.debug_log = log
+                    return r
                 elif pr_result == "RUNS":
-                    # Rule 5: QB scramble N→SG→LG chain
                     run_num = fac_card.run_num_int or random.randint(1, 12)
+                    log.append(f"[SCRAMBLE] QB scrambles, RN={run_num}")
                     if qb.rushing:
                         row = qb.get_rushing_row(run_num)
                         yards = row.v1
-                        # N→SG chain: if N gives "Sg", look up SG column
                         if isinstance(yards, str) and yards == "Sg":
                             yards = row.v2
-                            # SG→LG chain: if SG gives further special, use LG
                             if isinstance(yards, str):
                                 yards = row.v3
                                 if isinstance(yards, str):
@@ -1234,7 +1237,8 @@ class PlayResolver:
                     else:
                         yards = random.randint(-2, 5)
                     is_td = random.random() < 0.03
-                    return PlayResult(
+                    log.append(f"[SCRAMBLE] Yards={yards}, TD={is_td}")
+                    r = PlayResult(
                         play_type="PASS", yards_gained=yards,
                         result="TD" if is_td else "GAIN",
                         is_touchdown=is_td,
@@ -1243,48 +1247,63 @@ class PlayResolver:
                         pass_number_used=pn,
                         run_number_used=run_num,
                     )
+                    r.debug_log = log
+                    return r
                 elif pr_result == "INC":
-                    return PlayResult(
+                    r = PlayResult(
                         play_type="PASS", yards_gained=0, result="INCOMPLETE",
                         description=f"{qb.player_name} hurried, pass incomplete",
                         passer=qb.player_name, z_card_event=z_event,
                         pass_number_used=pn,
                     )
+                    r.debug_log = log
+                    return r
+                log.append(f"[P.RUSH] COM despite rush — continue to pass resolution")
                 # pr_result == "COM" → pass completed despite rush, continue
             else:
                 loss = random.choice([-3, -4, -5, -6])
-                return PlayResult(
+                log.append(f"[P.RUSH] No QB pass_rush ranges, default sack {loss} yards")
+                r = PlayResult(
                     play_type="PASS", yards_gained=loss,
                     result="SACK",
                     description=f"{qb.player_name} sacked on pass rush! {abs(loss)} yard loss.",
                     passer=qb.player_name, z_card_event=z_event,
                 )
+                r.debug_log = log
+                return r
 
         # ── Step 2: Screen pass — use FAC SC field directly ──────────
         if pass_type == "SCREEN":
-            return self._resolve_screen_5e(
+            log.append(f"[SCREEN] SC field = '{fac_card.screen}'")
+            r = self._resolve_screen_5e(
                 fac_card, qb, receiver, z_event,
                 receivers=receivers,
                 defense_formation=defense_formation,
             )
+            r.debug_log = log
+            return r
 
         # ── Step 3: Determine actual receiver target ─────────────────
         actual_receiver = self._resolve_receiver_target(
             fac_card, pass_type, receiver, receivers,
         )
+        log.append(f"[RECEIVER] Resolved target: {actual_receiver.player_name if actual_receiver else 'NONE (thrown away)'}")
 
         # Rule 8: If targeted position is unoccupied, throw the ball away
         if actual_receiver is None:
-            return PlayResult(
+            r = PlayResult(
                 play_type="PASS", yards_gained=0, result="INCOMPLETE",
                 description=f"{qb.player_name} throws the ball away - no receiver at targeted position",
                 passer=qb.player_name, z_card_event=z_event,
             )
+            r.debug_log = log
+            return r
 
         # ── Step 4: PN → QB card passing ranges → COM/INC/INT ────────
         pn = fac_card.pass_num_int
         if pn is None:
             pn = random.randint(1, 48)
+        log.append(f"[QB CARD] PN={pn}, pass_type={pass_type}")
 
         # Apply defensive strategy modifiers (5E Rule 12-13)
         strategy_modifier = 0
@@ -1293,22 +1312,20 @@ class PlayResolver:
         elif defensive_strategy == "TRIPLE_COVERAGE" and defenders:
             strategy_modifier = self.resolve_triple_coverage(actual_receiver, defenders)
         elif defensive_strategy == "ALT_DOUBLE_COVERAGE" and defenders:
-            # Alternative double coverage: -7 to two receivers
             strategy_modifier = self.resolve_double_coverage(actual_receiver, defenders)
         
-        # Apply two-minute offense restrictions (5E Rule)
-        # Non-screen passes: -4 to completion range
         if two_minute_offense and pass_type != "SCREEN":
             strategy_modifier -= 4
         
-        # Adjust PN based on strategy modifier (negative modifier = harder to complete)
-        # Strategy modifiers reduce completion range, so we shift PN upward
+        if strategy_modifier != 0:
+            log.append(f"[QB CARD] Strategy modifier={strategy_modifier}, PN adjusted from {pn} to {min(48, pn + abs(strategy_modifier)) if strategy_modifier < 0 else pn}")
         if strategy_modifier < 0:
             pn = min(48, pn + abs(strategy_modifier))
 
         # Check authentic range-based passing first
         if qb.passing_short or qb.passing_long or qb.passing_quick:
             qb_result = qb.resolve_passing(pass_type, pn)
+            log.append(f"[QB CARD] Authentic passing ranges → result={qb_result}")
         else:
             # Legacy: fall back to old slot-based columns
             if pass_type == "LONG":
@@ -1320,40 +1337,45 @@ class PlayResolver:
 
             if not qb_column:
                 comp = random.random() < 0.62
+                log.append(f"[QB CARD] No QB column, random completion={comp}")
                 if comp:
                     yards = random.randint(5, 15)
-                    return PlayResult(
+                    r = PlayResult(
                         play_type="PASS", yards_gained=yards, result="COMPLETE",
                         description=f"{qb.player_name} completes to {actual_receiver.player_name} for {yards} yards",
                         passer=qb.player_name, receiver=actual_receiver.player_name,
                         z_card_event=z_event,
                         pass_number_used=pn,
                     )
-                return PlayResult(
+                    r.debug_log = log
+                    return r
+                r = PlayResult(
                     play_type="PASS", yards_gained=0, result="INCOMPLETE",
                     description=f"{qb.player_name} pass incomplete to {actual_receiver.player_name}",
                     passer=qb.player_name, receiver=actual_receiver.player_name,
                     z_card_event=z_event,
                     pass_number_used=pn,
                 )
+                r.debug_log = log
+                return r
 
             pn_str = str(pn)
             qb_data = qb_column.get(pn_str, {"result": "INC", "yards": 0, "td": False})
             qb_result_raw = qb_data.get("result", "INC")
-            # Map old results to COM/INC/INT
             if qb_result_raw in ("INT",):
                 qb_result = "INT"
             elif qb_result_raw in ("INC", "INCOMPLETE"):
                 qb_result = "INC"
             else:
-                qb_result = "COM"  # Any receiver letter or COMPLETE = completion
+                qb_result = "COM"
+            log.append(f"[QB CARD] Legacy: raw={qb_result_raw}, mapped={qb_result}")
 
         # ── INT result ───────────────────────────────────────────────
         if qb_result == "INT":
-            # Calculate Point of Interception per 5E rules
             rn_for_poi = fac_card.run_num_int or random.randint(1, 12)
             int_yards, int_td = Charts.roll_int_return()
-            return PlayResult(
+            log.append(f"[INT] Interception! Return yards={int_yards}, TD={int_td}")
+            r = PlayResult(
                 play_type="PASS", yards_gained=0,
                 result="INT", turnover=True, turnover_type="INT",
                 description=(
@@ -1365,20 +1387,22 @@ class PlayResolver:
                 pass_number_used=pn,
                 run_number_used=rn_for_poi,
             )
+            r.debug_log = log
+            return r
 
         # ── INC result — check for INC-range interception ────────────
         if qb_result == "INC":
-            # 5E Rule: If PN within defender's Intercept Range → INT
-            # intercept_range is the LOW end (e.g. 43 means 43-48)
+            log.append(f"[INC] Incomplete pass, checking defender intercept ranges")
             if hasattr(actual_receiver, 'intercept_range') and actual_receiver.intercept_range:
                 int_range = actual_receiver.intercept_range
+                log.append(f"[INC] Defender intercept range = {int_range}")
                 if isinstance(int_range, int) and int_range <= 48:
-                    # Authentic 5E: range is int_range to 48
                     if int_range <= pn <= 48:
                         rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
                         defender_pos = getattr(actual_receiver, 'position', 'DB')
                         int_yards, int_td = Charts.roll_int_return_5e(rn_for_ret, defender_pos)
-                        return PlayResult(
+                        log.append(f"[INC→INT] PN {pn} in intercept range [{int_range}-48]! INT!")
+                        r = PlayResult(
                             play_type="PASS", yards_gained=0,
                             result="INT", turnover=True, turnover_type="INT",
                             description=(
@@ -1390,11 +1414,13 @@ class PlayResolver:
                             pass_number_used=pn,
                             run_number_used=rn_for_ret,
                         )
+                        r.debug_log = log
+                        return r
                 elif isinstance(int_range, (list, tuple)) and len(int_range) == 2:
-                    # Legacy format: [low, high] range
                     if int_range[0] <= pn <= int_range[1]:
                         int_yards, int_td = Charts.roll_int_return()
-                        return PlayResult(
+                        log.append(f"[INC→INT] PN {pn} in legacy range [{int_range[0]}-{int_range[1]}]! INT!")
+                        r = PlayResult(
                             play_type="PASS", yards_gained=0,
                             result="INT", turnover=True, turnover_type="INT",
                             description=(
@@ -1405,12 +1431,14 @@ class PlayResolver:
                             z_card_event=z_event,
                             pass_number_used=pn,
                         )
-            # 5E Rule: PN 48 + defender has "48?" → flip new PN, 1-24=INT, 25-48=INC
+                        r.debug_log = log
+                        return r
             if pn == 48:
                 new_pn = random.randint(1, 48)
+                log.append(f"[INC] PN=48 special check: new PN={new_pn}")
                 if new_pn <= 24:
                     int_yards, int_td = Charts.roll_int_return()
-                    return PlayResult(
+                    r = PlayResult(
                         play_type="PASS", yards_gained=0,
                         result="INT", turnover=True, turnover_type="INT",
                         description=(
@@ -1421,28 +1449,31 @@ class PlayResolver:
                         z_card_event=z_event,
                         pass_number_used=pn,
                     )
-            return PlayResult(
+                    r.debug_log = log
+                    return r
+            r = PlayResult(
                 play_type="PASS", yards_gained=0, result="INCOMPLETE",
                 description=f"{qb.player_name} pass incomplete to {actual_receiver.player_name}",
                 passer=qb.player_name, receiver=actual_receiver.player_name,
                 z_card_event=z_event,
                 pass_number_used=pn,
             )
+            r.debug_log = log
+            return r
 
         # ── COM result — Stage 2: RUN NUMBER → receiver pass gain ────
-        # Use the RUN NUMBER from the FAC card to look up yards on receiver's card
         run_num = fac_card.run_num_int
         if run_num is None:
             run_num = random.randint(1, 12)
+        log.append(f"[COM] Completion! RN={run_num}, receiver={actual_receiver.player_name}")
 
         target_receiver = actual_receiver
-        # If old-style QB card had receiver letters, look up that receiver
         if not (qb.passing_short or qb.passing_long or qb.passing_quick):
-            # Legacy path: receiver might be encoded in qb_result_raw
             if qb_result_raw in RECEIVER_LETTERS:
                 found = self._find_receiver_by_letter(qb_result_raw, receivers)
                 if found:
                     target_receiver = found
+                    log.append(f"[COM] Legacy receiver redirect → {target_receiver.player_name}")
 
         # Look up pass gain on receiver's card (Q/S/L columns)
         if target_receiver.pass_gain:
@@ -1452,11 +1483,12 @@ class PlayResolver:
             elif pass_type == "LONG":
                 yards = row.v3
             else:
-                yards = row.v2  # Short pass
+                yards = row.v2
+            log.append(f"[REC CARD] Row {run_num}: Q={row.v1} S={row.v2} L={row.v3} → yards={yards}")
 
-            # Rule 11: Dropped passes — blank/0/None = dropped (incomplete)
             if yards is None or yards == 0 or yards == "":
-                return PlayResult(
+                log.append(f"[REC CARD] Dropped pass (blank/0)")
+                r = PlayResult(
                     play_type="PASS", yards_gained=0, result="INCOMPLETE",
                     description=f"{qb.player_name} pass dropped by {target_receiver.player_name}",
                     passer=qb.player_name, receiver=target_receiver.player_name,
@@ -1464,11 +1496,13 @@ class PlayResolver:
                     pass_number_used=pn,
                     run_number_used=run_num,
                 )
+                r.debug_log = log
+                return r
 
-            # Handle string values like "Lg" (long gain / big play)
             if isinstance(yards, str):
                 if yards == "Lg":
                     yards = random.randint(25, 60)
+                    log.append(f"[REC CARD] 'Lg' → big play {yards} yards")
                 else:
                     try:
                         yards = int(yards)
@@ -1476,7 +1510,6 @@ class PlayResolver:
                         yards = random.randint(5, 15)
             is_td = random.random() < (0.06 if pass_type == "LONG" else 0.04)
         elif target_receiver.short_reception or target_receiver.long_reception:
-            # Legacy fallback: use old reception columns
             pn_str = str(pn)
             if pass_type == "LONG":
                 rec_column = target_receiver.long_reception
@@ -1485,8 +1518,9 @@ class PlayResolver:
 
             if rec_column:
                 rec_data = rec_column.get(pn_str, {"result": "CATCH", "yards": 8, "td": False})
+                log.append(f"[REC CARD] Legacy column: {rec_data}")
                 if rec_data.get("result") in ("INC", "INCOMPLETE"):
-                    return PlayResult(
+                    r = PlayResult(
                         play_type="PASS", yards_gained=0, result="INCOMPLETE",
                         description=f"{qb.player_name} pass dropped by {target_receiver.player_name}",
                         passer=qb.player_name, receiver=target_receiver.player_name,
@@ -1494,24 +1528,25 @@ class PlayResolver:
                         pass_number_used=pn,
                         run_number_used=run_num,
                     )
+                    r.debug_log = log
+                    return r
                 yards = rec_data.get("yards", 8)
                 is_td = rec_data.get("td", False)
             else:
                 yards = random.randint(5, 15) if pass_type != "LONG" else random.randint(15, 30)
                 is_td = random.random() < 0.05
         else:
-            # No receiver card data at all
             yards = random.randint(5, 15) if pass_type != "LONG" else random.randint(15, 30)
             is_td = random.random() < 0.05
+            log.append(f"[REC CARD] No receiver data, random yards={yards}")
 
-        # Coverage modifier (authentic 5E: pass_defense −2 to +4)
+        # Coverage modifier
         eff_cov = effective_coverage(defense_coverage, defense_formation, is_blitz_tendency)
         if eff_cov > 0 and isinstance(yards, int):
+            old_yards = yards
             yards = max(0, yards - eff_cov)
+            log.append(f"[COVERAGE] eff_cov={eff_cov}: {old_yards} → {yards} yards")
 
-        # Rule 10: If pass yards would go past end zone, it's a TD
-        # (yard_line not passed to this method, so this is handled by callers
-        #  but we mark any very-large-yard play as a likely TD)
         if isinstance(yards, int) and yards >= 99:
             is_td = True
 
@@ -1519,8 +1554,9 @@ class PlayResolver:
             desc = f"{qb.player_name} completes to {target_receiver.player_name} for a TOUCHDOWN!"
         else:
             desc = f"{qb.player_name} completes to {target_receiver.player_name} for {yards} yard{'s' if yards != 1 else ''}"
+        log.append(f"[RESULT] {desc}")
 
-        return PlayResult(
+        r = PlayResult(
             play_type="PASS", yards_gained=yards,
             result="TD" if is_td else "COMPLETE",
             is_touchdown=is_td,
@@ -1530,6 +1566,8 @@ class PlayResolver:
             pass_number_used=pn,
             run_number_used=run_num,
         )
+        r.debug_log = log
+        return r
 
     def _resolve_screen_5e(self, fac_card: FACCard, qb: PlayerCard,
                            receiver: PlayerCard,

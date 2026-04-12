@@ -1660,3 +1660,110 @@ body {
   text-align: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+/* ─── Debug Log Panel ─────────────────────────────────────────── */
+
+.debug-log-panel {
+  margin-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.debug-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 4px 0;
+  opacity: 0.7;
+}
+
+.debug-toggle:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.debug-log-entries {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.debug-entry {
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.debug-entry.debug-sack {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.debug-entry.debug-int {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.debug-entry.debug-com {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.debug-entry.debug-inc {
+  color: #6b7280;
+}
+
+/* ─── Play Call Badges ────────────────────────────────────────── */
+
+.last-play-calls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+
+.play-call-badge {
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.play-call-badge.off-call {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.play-call-badge.def-call {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ─── Defensive Play Grid ─────────────────────────────────────── */
+
+.defense-play-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px;
+}
+
+.defense-play-btn {
+  font-size: 0.75rem !important;
+  padding: 6px 8px !important;
+}
+
+.defense-play-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  padding: 4px 0;
+  text-align: center;
+  font-style: italic;
+}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { GameState, PlayResult, DriveResult, PersonnelData, HumanPlayCall, DefensivePlayCall, GameMode } from '../types/game';
 import { Scoreboard } from './Scoreboard';
 import { PlayCaller } from './PlayCaller';
@@ -15,6 +16,32 @@ import type { DiceRollResult } from '../types/game';
 function formatDefenseFormation(formation?: string | null): string {
   if (!formation) return '';
   return formation.replace(/_/g, ' ');
+}
+
+function DebugLogPanel({ log }: { log: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="debug-log-panel">
+      <button className="debug-toggle" onClick={() => setExpanded(!expanded)}>
+        🔍 {expanded ? 'Hide' : 'Show'} Resolution Details ({log.length} steps)
+      </button>
+      {expanded && (
+        <div className="debug-log-entries">
+          {log.map((entry, i) => (
+            <div key={i} className={`debug-entry ${
+              entry.includes('[SACK]') || entry.includes('[P.RUSH]') ? 'debug-sack' :
+              entry.includes('[INT]') ? 'debug-int' :
+              entry.includes('[COM]') ? 'debug-com' :
+              entry.includes('[INC]') ? 'debug-inc' :
+              ''
+            }`}>
+              {entry}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface GameBoardProps {
@@ -139,11 +166,24 @@ export function GameBoard({
                   {lastPlay.defense_formation && <span>{formatDefenseFormation(lastPlay.defense_formation)}</span>}
                 </div>
               )}
+              {(lastPlay.offensive_play_call || lastPlay.defensive_play_call) && (
+                <div className="last-play-calls">
+                  {lastPlay.offensive_play_call && <span className="play-call-badge off-call">OFF: {lastPlay.offensive_play_call}</span>}
+                  {lastPlay.defensive_play_call && <span className="play-call-badge def-call">DEF: {lastPlay.defensive_play_call}</span>}
+                </div>
+              )}
               <div className="last-play-meta">
                 <span>{lastPlay.play_type}</span>
                 <span>{lastPlay.yards >= 0 ? '+' : ''}{lastPlay.yards} yds</span>
                 <span className="play-result-badge">{lastPlay.result}</span>
+                {lastPlay.passer && <span>QB: {lastPlay.passer}</span>}
+                {lastPlay.receiver && <span>→ {lastPlay.receiver}</span>}
+                {lastPlay.rusher && <span>🏃 {lastPlay.rusher}</span>}
               </div>
+              {/* Debug log (collapsible) */}
+              {lastPlay.debug_log && lastPlay.debug_log.length > 0 && (
+                <DebugLogPanel log={lastPlay.debug_log} />
+              )}
             </div>
           )}
 
