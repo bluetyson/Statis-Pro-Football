@@ -880,6 +880,7 @@ body {
 .mc-fill-rush { background: #3b82f6; }
 .mc-fill-cov { background: #22c55e; }
 .mc-fill-stop { background: #f59e0b; }
+.mc-fill-int { background: #a855f7; }
 
 .mc-rv {
   font-size: 0.55rem;

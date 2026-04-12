@@ -102,10 +102,17 @@ export interface PlayerBrief {
   overall_grade: string;
   receiver_letter: string;
   defender_letter: string;
-  // Defensive ratings
+  // Offensive Line ratings
+  run_block_rating: number;
+  pass_block_rating: number;
+  // Legacy defensive ratings
   pass_rush_rating: number;
   coverage_rating: number;
   run_stop_rating: number;
+  // Authentic 5E defensive ratings
+  tackle_rating: number;
+  pass_defense_rating: number;
+  intercept_range: number;
   // QB passing ranges
   passing_quick: { com_max: number; inc_max: number } | null;
   passing_short: { com_max: number; inc_max: number } | null;
@@ -133,6 +140,7 @@ export interface PersonnelData {
   defense_team: string;
   offense_starters: Record<string, PlayerBrief>;
   offense_receivers: PlayerBrief[];
+  offense_line: PlayerBrief[];
   defense_players: PlayerBrief[];
   defense_line: PlayerBrief[];
   linebackers: PlayerBrief[];

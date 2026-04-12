@@ -395,19 +395,68 @@ class CardGenerator:
     def generate_def_card_5e(self, name: str, team: str, number: int, position: str,
                              pass_rush: int, coverage: int, run_stop: int, grade: str,
                              defender_letter: str = "") -> PlayerCard:
-        """Generate a 5th-edition defensive player card with a defender letter."""
+        """Generate a 5th-edition defensive player card with authentic stats.
+
+        Authentic 5E defensive ratings by position group:
+          DL (DE/DT): tackle_rating, pass_rush_rating
+          LB:         pass_defense_rating, tackle_rating, pass_rush_rating, intercept_range
+          DB (CB/S):  pass_defense_rating, pass_rush_rating, intercept_range (no tackle)
+        """
         card = PlayerCard(
             player_name=name, team=team, position=position,
             number=number, overall_grade=grade,
         )
+        # Legacy fields (kept for backward compat)
         card.pass_rush_rating = pass_rush
         card.coverage_rating = coverage
         card.run_stop_rating = run_stop
         card.defender_letter = defender_letter
+
+        # Authentic 5E position-specific ratings
+        pos = position.upper()
+        if pos in ("DE", "DT", "DL", "NT", "EDGE"):
+            # DL: tackle + pass rush
+            card.tackle_rating = run_stop
+            card.pass_rush_rating = pass_rush
+        elif pos in ("LB", "OLB", "ILB", "MLB"):
+            # LB: pass defense, tackle, pass rush, intercept range
+            card.pass_defense_rating = coverage
+            card.tackle_rating = run_stop
+            card.pass_rush_rating = pass_rush
+            card.intercept_range = max(0, min(9, (coverage - 50) // 5))  # 0-9 scale
+        elif pos in ("CB", "S", "SS", "FS", "DB"):
+            # DB: pass defense, pass rush, intercept range (no tackle)
+            card.pass_defense_rating = coverage
+            card.pass_rush_rating = pass_rush
+            card.intercept_range = max(0, min(14, (coverage - 40) // 4))  # 0-14 scale, DBs better
+
         card.stats_summary = {
             "pass_rush_rating": pass_rush,
             "coverage_rating": coverage,
             "run_stop_rating": run_stop,
+            "tackle_rating": card.tackle_rating,
+            "pass_defense_rating": card.pass_defense_rating,
+            "intercept_range": card.intercept_range,
+        }
+        return card
+
+    def generate_ol_card(self, name: str, team: str, number: int,
+                         position: str, grade: str,
+                         run_block: int = 70, pass_block: int = 70) -> PlayerCard:
+        """Generate an offensive lineman card (LT, LG, C, RG, RT).
+
+        OL cards have run_block_rating and pass_block_rating used for
+        pass rush resolution and run blocking matchups.
+        """
+        card = PlayerCard(
+            player_name=name, team=team, position=position,
+            number=number, overall_grade=grade,
+        )
+        card.run_block_rating = run_block
+        card.pass_block_rating = pass_block
+        card.stats_summary = {
+            "run_block_rating": run_block,
+            "pass_block_rating": pass_block,
         }
         return card
 

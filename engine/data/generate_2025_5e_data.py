@@ -123,6 +123,16 @@ def upgrade_team(team_data: dict) -> dict:
             # Punter — unchanged, copy as-is
             new_players.append(p)
 
+        elif pos in ("LT", "LG", "C", "RG", "RT", "OL"):
+            # Offensive lineman — copy with OL ratings
+            card = gen.generate_ol_card(
+                name=p["name"], team=abbr, number=p["number"],
+                position=pos, grade=grade,
+                run_block=stats.get("run_block_rating", p.get("run_block_rating", 70)),
+                pass_block=stats.get("pass_block_rating", p.get("pass_block_rating", 70)),
+            )
+            new_players.append(card.to_dict())
+
         elif pos in ("DL", "DE", "DT", "LB", "CB", "S", "DEF"):
             letter = DEFENDER_LETTERS[defender_idx] if defender_idx < 13 else ""
             defender_idx += 1

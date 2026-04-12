@@ -49,7 +49,7 @@ class NewGameRequest(BaseModel):
 class HumanPlayCallRequest(BaseModel):
     play_type: str  # RUN, SHORT_PASS, LONG_PASS, QUICK_PASS, SCREEN, PUNT, FG, KNEEL
     direction: str = "MIDDLE"  # LEFT, RIGHT, MIDDLE, IL, IR, SL, SR, DEEP_LEFT, DEEP_RIGHT
-    formation: str = "SHOTGUN"  # SHOTGUN, UNDER_CENTER, I_FORM, TRIPS, etc.
+    formation: str = "UNDER_CENTER"  # UNDER_CENTER, SHOTGUN, I_FORM, TRIPS, etc.
 
 
 class DefensivePlayCallRequest(BaseModel):
@@ -320,10 +320,17 @@ def get_personnel(game_id: str):
             "overall_grade": p.overall_grade,
             "receiver_letter": getattr(p, "receiver_letter", ""),
             "defender_letter": getattr(p, "defender_letter", ""),
-            # Defensive ratings
+            # Offensive Line ratings
+            "run_block_rating": getattr(p, "run_block_rating", 0),
+            "pass_block_rating": getattr(p, "pass_block_rating", 0),
+            # Defensive ratings (legacy)
             "pass_rush_rating": getattr(p, "pass_rush_rating", 0),
             "coverage_rating": getattr(p, "coverage_rating", 0),
             "run_stop_rating": getattr(p, "run_stop_rating", 0),
+            # Authentic 5E defensive ratings
+            "tackle_rating": getattr(p, "tackle_rating", 0),
+            "pass_defense_rating": getattr(p, "pass_defense_rating", 0),
+            "intercept_range": getattr(p, "intercept_range", 0),
             # QB passing ranges
             "passing_quick": p.passing_quick.to_dict() if getattr(p, "passing_quick", None) else None,
             "passing_short": p.passing_short.to_dict() if getattr(p, "passing_short", None) else None,
@@ -359,6 +366,9 @@ def get_personnel(game_id: str):
     for te in offense_team.roster.tes[:1]:
         offense_receivers.append(_player_brief(te))
 
+    # Offensive line
+    offense_line = [_player_brief(p) for p in offense_team.roster.offensive_line[:5]]
+
     defense_players = [_player_brief(p) for p in defense_team.roster.defenders[:11]]
 
     # Group defenders by position for board layout (DL/LB/DB rows)
@@ -384,6 +394,7 @@ def get_personnel(game_id: str):
         "defense_team": defense_team.abbreviation,
         "offense_starters": offense_starters,
         "offense_receivers": offense_receivers,
+        "offense_line": offense_line,
         "defense_players": defense_players,
         "defense_line": defense_line,
         "linebackers": linebackers,

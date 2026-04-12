@@ -123,6 +123,17 @@ class StatsFetcher:
 
         return ratings
 
+    def get_ol_ratings(self, grade: str) -> Dict[str, int]:
+        """Get run-block and pass-block ratings for an offensive lineman."""
+        tier = GRADE_TO_TIER.get(grade, "avg")
+        base_ratings = {
+            "elite": {"run_block": 92, "pass_block": 90},
+            "good":  {"run_block": 80, "pass_block": 78},
+            "avg":   {"run_block": 68, "pass_block": 66},
+            "below": {"run_block": 55, "pass_block": 52},
+        }
+        return base_ratings[tier].copy()
+
     def load_team_data(self, team_abbr: str, season: int = 2025) -> Optional[Dict]:
         """Load team data from JSON file."""
         filepath = os.path.join(self.data_dir, str(season), f"{team_abbr}.json")

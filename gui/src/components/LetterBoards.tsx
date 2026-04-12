@@ -6,6 +6,11 @@ interface LetterBoardsProps {
   possession: string;
 }
 
+/** Scale intercept_range (0-14) to a 0-100% bar width. */
+function intRangeBarWidth(ir: number): string {
+  return `${Math.min(ir * 10, 100)}%`;
+}
+
 /* ─── Compact inline card for a single player ─────────────────── */
 
 function MiniCard({ player, isDefender }: { player: PlayerBrief; isDefender?: boolean }) {
@@ -127,31 +132,106 @@ function MiniCard({ player, isDefender }: { player: PlayerBrief; isDefender?: bo
         </div>
       )}
 
-      {/* Defender: ratings */}
+      {/* Defender: authentic 5E position-specific ratings */}
       {isDefender && (
         <div className="mc-data mc-def-ratings">
-          <div className="mc-rating">
-            <span className="mc-rl">Rush</span>
-            <div className="mc-bar"><div className="mc-fill mc-fill-rush" style={{ width: `${player.pass_rush_rating}%` }} /></div>
-            <span className="mc-rv">{player.pass_rush_rating}</span>
-          </div>
-          <div className="mc-rating">
-            <span className="mc-rl">Cov</span>
-            <div className="mc-bar"><div className="mc-fill mc-fill-cov" style={{ width: `${player.coverage_rating}%` }} /></div>
-            <span className="mc-rv">{player.coverage_rating}</span>
-          </div>
-          <div className="mc-rating">
-            <span className="mc-rl">Stop</span>
-            <div className="mc-bar"><div className="mc-fill mc-fill-stop" style={{ width: `${player.run_stop_rating}%` }} /></div>
-            <span className="mc-rv">{player.run_stop_rating}</span>
-          </div>
+          {/* DL: tackle + pass rush */}
+          {['DE', 'DT', 'DL', 'NT'].includes(player.position.toUpperCase()) && (
+            <>
+              <div className="mc-rating">
+                <span className="mc-rl">Tackle</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-stop" style={{ width: `${player.tackle_rating}%` }} /></div>
+                <span className="mc-rv">{player.tackle_rating}</span>
+              </div>
+              <div className="mc-rating">
+                <span className="mc-rl">P.Rush</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-rush" style={{ width: `${player.pass_rush_rating}%` }} /></div>
+                <span className="mc-rv">{player.pass_rush_rating}</span>
+              </div>
+            </>
+          )}
+          {/* LB: pass defense, tackle, pass rush, intercept range */}
+          {['LB', 'OLB', 'ILB', 'MLB'].includes(player.position.toUpperCase()) && (
+            <>
+              <div className="mc-rating">
+                <span className="mc-rl">P.Def</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-cov" style={{ width: `${player.pass_defense_rating}%` }} /></div>
+                <span className="mc-rv">{player.pass_defense_rating}</span>
+              </div>
+              <div className="mc-rating">
+                <span className="mc-rl">Tackle</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-stop" style={{ width: `${player.tackle_rating}%` }} /></div>
+                <span className="mc-rv">{player.tackle_rating}</span>
+              </div>
+              <div className="mc-rating">
+                <span className="mc-rl">P.Rush</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-rush" style={{ width: `${player.pass_rush_rating}%` }} /></div>
+                <span className="mc-rv">{player.pass_rush_rating}</span>
+              </div>
+              <div className="mc-rating">
+                <span className="mc-rl">Int</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-int" style={{ width: intRangeBarWidth(player.intercept_range) }} /></div>
+                <span className="mc-rv">{player.intercept_range}</span>
+              </div>
+            </>
+          )}
+          {/* DB: pass defense, pass rush, intercept range (no tackle) */}
+          {['CB', 'S', 'SS', 'FS', 'DB'].includes(player.position.toUpperCase()) && (
+            <>
+              <div className="mc-rating">
+                <span className="mc-rl">P.Def</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-cov" style={{ width: `${player.pass_defense_rating}%` }} /></div>
+                <span className="mc-rv">{player.pass_defense_rating}</span>
+              </div>
+              <div className="mc-rating">
+                <span className="mc-rl">P.Rush</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-rush" style={{ width: `${player.pass_rush_rating}%` }} /></div>
+                <span className="mc-rv">{player.pass_rush_rating}</span>
+              </div>
+              <div className="mc-rating">
+                <span className="mc-rl">Int</span>
+                <div className="mc-bar"><div className="mc-fill mc-fill-int" style={{ width: intRangeBarWidth(player.intercept_range) }} /></div>
+                <span className="mc-rv">{player.intercept_range}</span>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-/* ─── Offensive Line placeholder slot ─────────────────────────── */
+/* ─── Offensive Line card with block ratings ─────────────────── */
+
+function OLCard({ player }: { player: PlayerBrief }) {
+  const gradeClass =
+    player.overall_grade === 'A' ? 'grade-a' :
+    player.overall_grade === 'B' ? 'grade-b' :
+    player.overall_grade === 'D' ? 'grade-d' : 'grade-c';
+
+  return (
+    <div className="mini-card mini-card-ol">
+      <div className="mini-card-header">
+        <span className="mc-pos">{player.position}</span>
+        <span className="mc-num">#{player.number}</span>
+        <span className={`mc-grade ${gradeClass}`}>{player.overall_grade}</span>
+      </div>
+      <div className="mc-name">{player.name}</div>
+      <div className="mc-data mc-def-ratings">
+        <div className="mc-rating">
+          <span className="mc-rl">Run</span>
+          <div className="mc-bar"><div className="mc-fill mc-fill-rush" style={{ width: `${player.run_block_rating}%` }} /></div>
+          <span className="mc-rv">{player.run_block_rating}</span>
+        </div>
+        <div className="mc-rating">
+          <span className="mc-rl">Pass</span>
+          <div className="mc-bar"><div className="mc-fill mc-fill-cov" style={{ width: `${player.pass_block_rating}%` }} /></div>
+          <span className="mc-rv">{player.pass_block_rating}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function OLSlot({ label }: { label: string }) {
   return (
@@ -187,16 +267,23 @@ export function LetterBoards({ personnel }: LetterBoardsProps) {
 
         {!collapsed.off && (
           <>
-            {/* Row 1: Offensive Line (position labels only) */}
+            {/* Row 1: Offensive Line */}
             <div className="board-row board-row-label">
               <span className="row-label-text">LINE</span>
             </div>
             <div className="board-row board-row-ol">
-              <OLSlot label="LT" />
-              <OLSlot label="LG" />
-              <OLSlot label="C" />
-              <OLSlot label="RG" />
-              <OLSlot label="RT" />
+              {personnel.offense_line && personnel.offense_line.length > 0
+                ? personnel.offense_line.map((p, i) => (
+                    <OLCard key={`ol-${i}`} player={p} />
+                  ))
+                : <>
+                    <OLSlot label="LT" />
+                    <OLSlot label="LG" />
+                    <OLSlot label="C" />
+                    <OLSlot label="RG" />
+                    <OLSlot label="RT" />
+                  </>
+              }
             </div>
 
             {/* Row 2: Backfield + Receivers */}

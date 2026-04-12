@@ -15,6 +15,7 @@ class Roster:
     tes: List[PlayerCard] = field(default_factory=list)
     kickers: List[PlayerCard] = field(default_factory=list)
     punters: List[PlayerCard] = field(default_factory=list)
+    offensive_line: List[PlayerCard] = field(default_factory=list)
     defenders: List[PlayerCard] = field(default_factory=list)
 
     def get_starter(self, position: str) -> Optional[PlayerCard]:
@@ -27,7 +28,8 @@ class Roster:
 
     def all_players(self) -> List[PlayerCard]:
         return (self.qbs + self.rbs + self.wrs + self.tes +
-                self.kickers + self.punters + self.defenders)
+                self.kickers + self.punters + self.offensive_line +
+                self.defenders)
 
 
 @dataclass
@@ -92,6 +94,8 @@ class Team:
                 roster.kickers.append(card)
             elif pos == "P":
                 roster.punters.append(card)
+            elif pos in ("LT", "LG", "C", "RG", "RT", "OL"):
+                roster.offensive_line.append(card)
             else:
                 roster.defenders.append(card)
         team.roster = roster
