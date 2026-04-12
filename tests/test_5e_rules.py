@@ -762,6 +762,25 @@ class TestSolitaireRules:
         assert result == "3_4_ZONE"
 
 
+class TestSolitaireZCardRemoval:
+    """Test solitaire Z card removal."""
+
+    def test_solitaire_deck_has_fewer_z_cards(self):
+        from engine.fac_deck import FACDeck
+        normal = FACDeck(seed=42)
+        solitaire = FACDeck(seed=42, solitaire=True)
+        normal_z = sum(1 for c in normal._draw_pile if c.is_z_card)
+        sol_z = sum(1 for c in solitaire._draw_pile if c.is_z_card)
+        assert sol_z == normal_z - 1
+        assert solitaire.cards_remaining == normal.cards_remaining - 1
+
+    def test_non_solitaire_has_all_z_cards(self):
+        from engine.fac_deck import FACDeck
+        deck = FACDeck(seed=42, solitaire=False)
+        z_count = sum(1 for c in deck._draw_pile if c.is_z_card)
+        assert z_count == 13
+
+
 class TestTimeoutRestriction:
     """Test timeout restriction (only after plays > 10s)."""
 

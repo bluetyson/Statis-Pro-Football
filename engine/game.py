@@ -110,7 +110,9 @@ class Game:
         self.home_team = home_team
         self.away_team = away_team
         self.dice = FastActionDice()
-        self.deck = FACDeck(seed=seed)  # 5th-edition FAC deck
+        # 5E Solitaire: remove 1 Z card when both teams are AI-controlled
+        is_solitaire = solitaire_home and solitaire_away
+        self.deck = FACDeck(seed=seed, solitaire=is_solitaire)
         self.use_5e = use_5e
         self.resolver = PlayResolver()
         self.ai = SolitaireAI()

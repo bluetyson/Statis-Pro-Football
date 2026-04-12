@@ -108,7 +108,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 - [x] **Screen Pass Resolution**: Special procedure — `resolve_screen_5e()` exists
 - [x] **Screen Pass Details**: Must be to a back (never TE/WR); use SC on FAC; if COM, use rushing N column; BV/TV never used; defense modifies Run Number — `_resolve_screen_5e()` redirects to RB, uses SC field, applies rushing column
 - [x] **Screen Pass Multiplier**: Some FAC have ×½, ×2, ×1½ multiplier on screen — `FACCard.screen_result` parses multipliers; `_resolve_screen_5e()` applies them
-- [ ] **Long Pass within 20 Restriction**: No long pass inside opponent's 20 — Enforced: `engine/game.py:_execute_play_5e()` auto-converts to short pass (see earlier entry)
+- [x] **Long Pass within 20 Restriction**: No long pass inside opponent's 20 — Enforced: `engine/game.py:_execute_play_5e()` auto-converts to short pass
 - [x] **Passes Can't Go Past End Zone**: Any catch beyond end line = TD — Implemented in pass resolution: `yards >= 99` sets `is_td = True`
 - [ ] **FL#1 vs FL#2 Rules**: FAC "flanker" always means FL#1; pass to unused RB slot goes to FL#2 — Not implemented; no flanker designation system
 
@@ -194,7 +194,7 @@ The engine now matches the 5E rules specification:
 ## INTERCEPTION RETURN TABLE (Page 4)
 
 - [x] **Return Yardage by Position**: Line/LB/DB columns with Run Number lookup — `engine/charts.py:roll_int_return()` provides return yards
-- [ ] **Exact Table Values**: RN1: 5/30/TD; RN2: 10/20/50; etc. — Simplified; uses weighted random rather than exact table
+- [x] **Exact Table Values**: RN1: 5/30/TD; RN2: 10/20/50; etc. — `engine/charts.py:INT_RETURN_TABLE_5E` has exact values from 5E rules (Line/LB/DB columns)
 
 ---
 
@@ -274,7 +274,7 @@ The engine now matches the 5E rules specification:
 - [x] **Two-Minute Offense Restrictions**: Run/screen yardage halved (TD and negative unaffected); non-screen passes -4 to completion range; even RN = OOB, odd RN = in bounds — `engine/game.py:_apply_two_minute_yardage()` and `engine/play_resolver.py` applies -4 completion modifier
 - [x] **Two-Minute Offense Eligibility**: 4th quarter, prior to 2:00, only if trailing by 20+ points — `engine/game.py:_is_two_minute_offense()` checks all conditions
 - [x] **Half Cannot End on Defensive Penalty**: Additional play if half ends on defensive penalty — `engine/game.py:_advance_time()` checks for defensive penalty at half end and grants untimed play
-- [ ] **Half May End on Offensive Penalty**: Allowed — Not specifically checked
+- [x] **Half May End on Offensive Penalty**: Allowed — Default behavior (no special handling needed)
 
 ---
 
@@ -344,7 +344,7 @@ The engine now matches the 5E rules specification:
 ## SOLITAIRE PLAY (Pages 7-8)
 
 - [x] **Solitaire Concept**: Offense by player, defense by FAC — `engine/solitaire.py`
-- [ ] **Remove One Z Card**: Solitaire removes 1 Z card from deck — Not implemented
+- [x] **Remove One Z Card**: Solitaire removes 1 Z card from deck — `engine/fac_deck.py:FACDeck(solitaire=True)` removes 1 Z card on initialization; `engine/game.py` passes `solitaire=True` when both teams are AI-controlled
 - [x] **No Two Screen/Quick in Succession**: Cannot call two screen or two quick passes in a row — `engine/solitaire.py:SolitaireAI.enforce_no_consecutive_screen_quick()` converts second consecutive screen/quick to SHORT_PASS
 - [x] **Solitaire Defense Determination**: Flip FAC, read Solitaire section with 5 situation numbers — `engine/solitaire.py:call_play_5e()` uses SOLO field
 - [x] **Situation 1**: 1st down plays — Implemented
@@ -385,7 +385,7 @@ The engine now matches the 5E rules specification:
 
 ## INTERCEPTION TABLE (Page 5)
 
-- [ ] **12-Entry Table**: Screen/Quick/Short/Long columns; Run Number 1-12 → defensive box letter — Simplified; interception assigned to generic defender rather than specific box
+- [x] **12-Entry Table**: Screen/Quick/Short/Long columns; Run Number 1-12 → defensive box letter — `engine/charts.py:INT_RETURN_TABLE_5E` has full 12-entry table with Line/LB/DB columns; `roll_int_return_5e()` resolves by defender position
 
 ---
 
@@ -445,8 +445,8 @@ The engine now matches the 5E rules specification:
 
 - [x] **12-Row Rushing Tables**: N/SG/LG for each Run Number 1-12 — `rushing` (List[ThreeValueRow])
 - [x] **Based on Yards Per Rush Average**: Tables for 1.0 to 10.0+ — `_make_rushing_12rows()` generates based on YPC
-- [ ] **Game Use Rating (Endurance)**: 0 (workhorse) to 4 (seldom used) — `endurance_rushing` field exists but not enforced
-- [ ] **Blocking Rating**: Varies 3 to -2 — `blocks` field exists
+- [x] **Game Use Rating (Endurance)**: 0 (workhorse) to 4 (seldom used) — `endurance_rushing` field on PlayerCard; enforced via `check_endurance_violation()`, `check_endurance_3_possession()`, `check_endurance_4_quarter()`
+- [x] **Blocking Rating**: Varies 3 to -2 — `blocks` field on PlayerCard; used in `resolve_bv_tv_battle()` and `resolve_blocking_back()`
 
 ---
 
@@ -464,18 +464,19 @@ The engine now matches the 5E rules specification:
 
 | Category | Implemented | Partial | Not Implemented | Total |
 |----------|-------------|---------|-----------------|-------|
-| Core Play Resolution | 32 | 4 | 2 | 38 |
+| Core Play Resolution | 33 | 4 | 1 | 38 |
 | FAC Cards | 5 | 0 | 0 | 5 |
 | Displays & Formations | 2 | 1 | 5 | 8 |
 | Strategies | 7 | 0 | 0 | 7 |
 | Kicking | 14 | 0 | 1 | 15 |
-| Timing | 13 | 0 | 0 | 13 |
+| Timing | 14 | 0 | 0 | 14 |
 | Z Cards & Specials | 7 | 1 | 2 | 10 |
 | Optional Rules | 11 | 0 | 1 | 12 |
-| Solitaire | 9 | 0 | 1 | 10 |
-| Player Cards/Rosters | 15 | 0 | 4 | 19 |
+| Solitaire | 10 | 0 | 0 | 10 |
+| Player Cards/Rosters | 17 | 0 | 2 | 19 |
 | Big Play Defense | 5 | 0 | 0 | 5 |
-| **TOTAL** | **120** | **6** | **16** | **142** |
+| Interception Table | 2 | 0 | 0 | 2 |
+| **TOTAL** | **127** | **6** | **12** | **145** |
 
 ### Priority Gaps (Most Impact on Gameplay Accuracy)
 

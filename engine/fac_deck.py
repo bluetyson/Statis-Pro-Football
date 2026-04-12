@@ -355,10 +355,12 @@ class FACDeck:
             deck.reshuffle()  # or auto-reshuffles on next draw
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: Optional[int] = None, solitaire: bool = False):
         self._rng = random.Random(seed)
         self._draw_pile: List[FACCard] = []
         self._discard_pile: List[FACCard] = []
+        # 5E Solitaire Rule: remove 1 Z card from the deck
+        self._remove_z_count = 1 if solitaire else 0
         self.reshuffle()
 
     @property
@@ -373,6 +375,16 @@ class FACDeck:
         """Restore all 109 cards and shuffle."""
         self._draw_pile = list(_DECK_TEMPLATE)
         self._discard_pile = []
+        # Remove Z cards for solitaire mode
+        if self._remove_z_count > 0:
+            z_removed = 0
+            new_pile = []
+            for card in self._draw_pile:
+                if card.is_z_card and z_removed < self._remove_z_count:
+                    z_removed += 1
+                else:
+                    new_pile.append(card)
+            self._draw_pile = new_pile
         self._rng.shuffle(self._draw_pile)
 
     def draw(self) -> FACCard:
