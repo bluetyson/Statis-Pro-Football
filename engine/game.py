@@ -1075,6 +1075,111 @@ class Game:
         self._change_possession(new_yl)
         return result
 
+    # ── 5E: Fake punt ────────────────────────────────────────────────
+
+    def execute_fake_punt(self) -> PlayResult:
+        """Execute a fake punt per 5E rules (once per game)."""
+        punter = self.get_punter()
+        if not punter:
+            return PlayResult("PUNT", -10, "GAIN",
+                              description="Fake punt failed — no punter found")
+        result = self.resolver.resolve_fake_punt(self.deck, punter)
+        self.state.play_log.append(f"FAKE PUNT: {result.description}")
+        if result.turnover:
+            self._handle_turnover(result)
+        elif result.is_touchdown or result.result == "TD":
+            self._score_touchdown()
+            kickoff = self.resolver.resolve_kickoff()
+            self.state.play_log.append(kickoff.description)
+            new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+            self._change_possession(new_yl)
+        else:
+            self._advance_down(result.yards_gained)
+            if self.state.down > 4:
+                self._turnover_on_downs()
+        time_used = self._calculate_time(result)
+        self._advance_time(time_used)
+        return result
+
+    # ── 5E: Fake field goal ──────────────────────────────────────────
+
+    def execute_fake_field_goal(self) -> PlayResult:
+        """Execute a fake field goal per 5E rules (once per game, not in final 2 min)."""
+        qb = self.get_qb()
+        if not qb:
+            return PlayResult("FG", -10, "GAIN",
+                              description="Fake FG failed — no holder found")
+        minutes_remaining = self.state.time_remaining / 60.0
+        result = self.resolver.resolve_fake_field_goal(
+            self.deck, qb, minutes_remaining
+        )
+        self.state.play_log.append(f"FAKE FG: {result.description}")
+        if result.turnover:
+            self._handle_turnover(result)
+        elif result.is_touchdown or result.result == "TD":
+            self._score_touchdown()
+            kickoff = self.resolver.resolve_kickoff()
+            self.state.play_log.append(kickoff.description)
+            new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+            self._change_possession(new_yl)
+        else:
+            self._advance_down(result.yards_gained)
+            if self.state.down > 4:
+                self._turnover_on_downs()
+        time_used = self._calculate_time(result)
+        self._advance_time(time_used)
+        return result
+
+    # ── 5E: Coffin corner punt ───────────────────────────────────────
+
+    def execute_coffin_corner_punt(self, deduction: int = 15) -> PlayResult:
+        """Execute a coffin corner punt with declared yardage deduction (10-25)."""
+        punter = self.get_punter()
+        if not punter:
+            return PlayResult("PUNT", 30, "PUNT",
+                              description="Punt 30 yards (no punter card)")
+        result = self.resolver.resolve_coffin_corner_punt(punter, self.deck, deduction)
+        self.state.play_log.append(f"COFFIN CORNER: {result.description}")
+        punt_net = result.yards_gained
+        new_yl = max(1, min(99, 100 - self.state.yard_line - punt_net))
+        self._change_possession(new_yl)
+        time_used = self._calculate_time(result)
+        self._advance_time(time_used)
+        return result
+
+    # ── 5E: All-out punt rush ────────────────────────────────────────
+
+    def execute_all_out_punt_rush(self) -> PlayResult:
+        """Execute an all-out punt rush (defensive call)."""
+        punter = self.get_punter()
+        if not punter:
+            return PlayResult("PUNT", 30, "PUNT",
+                              description="Punt 30 yards (no punter card)")
+        result = self.resolver.resolve_all_out_punt_rush(punter, self.deck)
+        self.state.play_log.append(f"ALL-OUT RUSH: {result.description}")
+        if result.result == "BLOCKED_PUNT":
+            # Ball stays at scrimmage - 5 yards behind
+            yards_behind = abs(result.yards_gained)
+            new_yl = max(1, self.state.yard_line - yards_behind)
+            self.state.yard_line = new_yl
+            self.state.down = 1
+            self.state.distance = 10
+            # Defensive team recovers at spot
+            self._change_possession(100 - new_yl)
+        elif result.penalty and result.is_first_down:
+            # Roughing the punter — kicking team keeps ball
+            self.state.yard_line = min(99, self.state.yard_line + result.yards_gained)
+            self.state.down = 1
+            self.state.distance = 10
+        else:
+            # Hurried punt — normal change of possession
+            punt_net = result.yards_gained
+            new_yl = max(1, min(99, 100 - self.state.yard_line - punt_net))
+            self._change_possession(new_yl)
+        time_used = self._calculate_time(result)
+        self._advance_time(time_used)
+        return result
+
     # ── 5E: Two-minute offense time adjustment ───────────────────────
 
     def _is_two_minute_offense(self) -> bool:

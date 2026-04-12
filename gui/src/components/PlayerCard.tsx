@@ -14,6 +14,7 @@ const GRADE_COLORS: Record<string, string> = {
 
 export function PlayerCardView({ card }: PlayerCardProps) {
   const gradeColor = GRADE_COLORS[card.overall_grade] ?? '#6b7280';
+  const extCard = card as Record<string, unknown>;
 
   return (
     <div className="player-card">
@@ -29,7 +30,7 @@ export function PlayerCardView({ card }: PlayerCardProps) {
       </div>
 
       {/* QB Passing Ranges */}
-      {card.position === 'QB' && (card as Record<string, unknown>).passing_quick && (
+      {card.position === 'QB' && extCard.passing_quick && (
         <div className="card-section">
           <div className="section-title">Passing Ranges (1-48)</div>
           <table className="card-data-table">
@@ -39,7 +40,7 @@ export function PlayerCardView({ card }: PlayerCardProps) {
             <tbody>
               {['Quick', 'Short', 'Long'].map((label) => {
                 const key = `passing_${label.toLowerCase()}` as keyof typeof card;
-                const ranges = (card as Record<string, unknown>)[key] as { com_max: number; inc_max: number } | null;
+                const ranges = extCard[key] as { com_max: number; inc_max: number } | null;
                 if (!ranges) return null;
                 return (
                   <tr key={label}>
@@ -52,20 +53,33 @@ export function PlayerCardView({ card }: PlayerCardProps) {
               })}
             </tbody>
           </table>
+          {extCard.pass_rush && (
+            <div className="card-sub-info">
+              PR: Sack 1-{(extCard.pass_rush as { sack_max: number }).sack_max} |
+              Runs {(extCard.pass_rush as { sack_max: number; runs_max: number }).sack_max + 1}-{(extCard.pass_rush as { runs_max: number }).runs_max} |
+              COM {(extCard.pass_rush as { runs_max: number; com_max: number }).runs_max + 1}-{(extCard.pass_rush as { com_max: number }).com_max}
+            </div>
+          )}
+          {extCard.qb_endurance && (
+            <div className="card-sub-info">QB Endurance: {extCard.qb_endurance as string}</div>
+          )}
         </div>
       )}
 
       {/* Rushing Table */}
-      {(card as Record<string, unknown>).rushing && Array.isArray((card as Record<string, unknown>).rushing) &&
-       ((card as Record<string, unknown>).rushing as unknown[]).length > 0 && (
+      {extCard.rushing && Array.isArray(extCard.rushing) &&
+       (extCard.rushing as unknown[]).length > 0 && (
         <div className="card-section">
           <div className="section-title">Rushing (N/SG/LG)</div>
+          {typeof extCard.endurance_rushing === 'number' && (
+            <div className="card-sub-info">Endurance: {extCard.endurance_rushing as number}</div>
+          )}
           <table className="card-data-table">
             <thead>
               <tr><th>#</th><th>N</th><th>SG</th><th>LG</th></tr>
             </thead>
             <tbody>
-              {((card as Record<string, unknown>).rushing as (number[] | null)[]).map((row, i) => (
+              {(extCard.rushing as (number[] | null)[]).map((row, i) => (
                 <tr key={i}>
                   <td>{i + 1}</td>
                   <td>{row ? row[0] : '—'}</td>
@@ -79,16 +93,19 @@ export function PlayerCardView({ card }: PlayerCardProps) {
       )}
 
       {/* Pass Gain Table */}
-      {(card as Record<string, unknown>).pass_gain && Array.isArray((card as Record<string, unknown>).pass_gain) &&
-       ((card as Record<string, unknown>).pass_gain as unknown[]).length > 0 && (
+      {extCard.pass_gain && Array.isArray(extCard.pass_gain) &&
+       (extCard.pass_gain as unknown[]).length > 0 && (
         <div className="card-section">
           <div className="section-title">Pass Gain (Q/S/L)</div>
+          {typeof extCard.endurance_pass === 'number' && extCard.endurance_pass !== 0 && (
+            <div className="card-sub-info">Endurance: {extCard.endurance_pass as number}</div>
+          )}
           <table className="card-data-table">
             <thead>
               <tr><th>#</th><th>Q</th><th>S</th><th>L</th></tr>
             </thead>
             <tbody>
-              {((card as Record<string, unknown>).pass_gain as (number[] | null)[]).map((row, i) => (
+              {(extCard.pass_gain as (number[] | null)[]).map((row, i) => (
                 <tr key={i}>
                   <td>{i + 1}</td>
                   <td>{row ? row[0] : '—'}</td>
@@ -98,6 +115,68 @@ export function PlayerCardView({ card }: PlayerCardProps) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Blocking Value */}
+      {typeof extCard.blocks === 'number' && extCard.blocks !== 0 && (
+        <div className="card-section">
+          <div className="card-sub-info">
+            Blocking Value: {(extCard.blocks as number) > 0 ? '+' : ''}{extCard.blocks as number}
+          </div>
+        </div>
+      )}
+
+      {/* Defensive Ratings (5E) */}
+      {card.pass_rush_rating !== undefined && card.position !== 'QB' &&
+       ['DE', 'DT', 'DL', 'NT', 'LB', 'OLB', 'ILB', 'MLB', 'CB', 'S', 'SS', 'FS', 'DB'].includes(card.position) && (
+        <div className="card-section">
+          <div className="section-title">Defensive Ratings (5E)</div>
+          <div className="def-rating-grid">
+            {typeof extCard.tackle_rating === 'number' && (
+              <div className="def-rating-item">
+                <span className="def-label">Tackle</span>
+                <span className="def-value">{extCard.tackle_rating as number}</span>
+              </div>
+            )}
+            <div className="def-rating-item">
+              <span className="def-label">Pass Rush</span>
+              <span className="def-value">{card.pass_rush_rating}</span>
+            </div>
+            {typeof extCard.pass_defense_rating === 'number' && (extCard.pass_defense_rating as number) !== 0 && (
+              <div className="def-rating-item">
+                <span className="def-label">Pass Defense</span>
+                <span className="def-value">{extCard.pass_defense_rating as number}</span>
+              </div>
+            )}
+            {typeof extCard.intercept_range === 'number' && (extCard.intercept_range as number) !== 0 && (
+              <div className="def-rating-item">
+                <span className="def-label">Intercept Range</span>
+                <span className="def-value">{extCard.intercept_range as number}-48</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* OL Blocking Ratings */}
+      {['LT', 'LG', 'C', 'RG', 'RT', 'OL'].includes(card.position) && (
+        <div className="card-section">
+          <div className="section-title">Blocking Ratings</div>
+          <div className="def-rating-grid">
+            {typeof extCard.run_block_rating === 'number' && (
+              <div className="def-rating-item">
+                <span className="def-label">Run Block</span>
+                <span className="def-value">{extCard.run_block_rating as number}</span>
+              </div>
+            )}
+            {typeof extCard.pass_block_rating === 'number' && (
+              <div className="def-rating-item">
+                <span className="def-label">Pass Block</span>
+                <span className="def-value">{extCard.pass_block_rating as number}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

@@ -490,3 +490,5 @@ The engine now matches the 5E rules specification:
 8. ~~**Onside Kicks / Squib Kicks**~~ ✅ COMPLETE — Both implemented
 9. ~~**Run Number Modifiers**~~ ✅ COMPLETE — Key on back (+4), no key (+2), wrong key/pass/prevent/blitz (0) all implemented
 10. ~~**Two-Minute Offense Restrictions**~~ ✅ COMPLETE — Yardage halving and completion range penalties implemented
+11. ~~**Fake Punt / Fake FG**~~ ✅ COMPLETE — Both implemented with API endpoints and game methods
+12. ~~**Coffin Corner / All-Out Punt Rush**~~ ✅ COMPLETE — Both implemented with API endpoints and game methods

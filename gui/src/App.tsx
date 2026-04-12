@@ -25,6 +25,13 @@ export default function App() {
     simulateGame,
     rollDice,
     substitutePlayer,
+    callTimeout,
+    executeFakePunt,
+    executeFakeFG,
+    executeCoffinCorner,
+    executeOnsideKick,
+    executeSquibKick,
+    executeTwoPointConversion,
     downloadGameLog,
     resetError,
     isHumanTurn,
@@ -98,6 +105,13 @@ export default function App() {
                 onSimulateGame={simulateGame}
                 onRollDice={rollDice}
                 onSubstitute={substitutePlayer}
+                onCallTimeout={callTimeout}
+                onFakePunt={executeFakePunt}
+                onFakeFG={executeFakeFG}
+                onCoffinCorner={executeCoffinCorner}
+                onOnsideKick={executeOnsideKick}
+                onSquibKick={executeSquibKick}
+                onTwoPointConversion={executeTwoPointConversion}
                 onDownloadGameLog={downloadGameLog}
                 onNewGame={handleNewGame}
               />
