@@ -1136,6 +1136,15 @@ body {
   color: var(--text);
 }
 
+.fac-description {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .fac-card-placeholder {
   background: var(--bg-card);
   border: 1px dashed var(--border);
@@ -1143,6 +1152,44 @@ body {
   padding: 1rem;
   text-align: center;
   color: var(--text-muted);
+}
+
+/* Game Stats */
+.game-stats {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  margin: 1rem 0;
+}
+
+.stats-header {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .btn-lg {

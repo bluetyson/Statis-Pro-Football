@@ -58,8 +58,8 @@ This document tracks the implementation status of 5E rules and features in the R
 - [x] **Possession** — Current team with ball shown
 - [x] **Play Log** — Recent plays displayed in GameLog component
 - [x] **Timeout Display** — Shows remaining timeouts for possessing team
-- [ ] **Drive Summary** — No drive stats (plays, yards, time)
-- [ ] **Team Stats** — No cumulative game stats display
+- [x] **Drive Summary** — Basic stats displayed (quarter, time, plays, timeouts)
+- [x] **Team Stats** — Basic game stats displayed in GameStats component
 - [ ] **Player Stats** — No individual player stats tracking
 - [ ] **Penalty Summary** — No penalty tracking display
 - [ ] **Turnover Summary** — No turnover count display
@@ -69,7 +69,7 @@ This document tracks the implementation status of 5E rules and features in the R
 - [x] **Offensive Strategies** — UI added for Flop, Sneak, Draw, Play-Action
 - [x] **Defensive Strategies** — UI added for Double/Triple Coverage
 - [x] **FAC Card Display** — Shows RUN#/PASS# and Z-card indicator after each play
-- [ ] **Run Number / Pass Number** — Not displayed after play
+- [x] **Run Number / Pass Number** — Displayed in FAC card after each play
 - [ ] **Z-Card Events** — No special indication when Z-card drawn
 - [ ] **BV vs TV Battle** — No display of blocking/tackling matchup
 - [ ] **Point of Interception** — Not calculated/displayed

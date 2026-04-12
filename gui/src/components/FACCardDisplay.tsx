@@ -46,6 +46,11 @@ export function FACCardDisplay({ lastPlay }: FACCardDisplayProps) {
           <span className="fac-result">{lastPlay.result}</span>
           <span className="fac-yards">{lastPlay.yards > 0 ? '+' : ''}{lastPlay.yards} yds</span>
         </div>
+        {lastPlay.description && (
+          <div className="fac-description">
+            {lastPlay.description}
+          </div>
+        )}
       </div>
     </div>
   );
