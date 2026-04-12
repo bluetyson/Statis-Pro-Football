@@ -68,7 +68,7 @@ This document tracks the implementation status of 5E rules and features in the R
 
 - [x] **Offensive Strategies** — UI added for Flop, Sneak, Draw, Play-Action
 - [x] **Defensive Strategies** — UI added for Double/Triple Coverage
-- [ ] **FAC Card Display** — No visual representation of drawn FAC card
+- [x] **FAC Card Display** — Shows RUN#/PASS# and Z-card indicator after each play
 - [ ] **Run Number / Pass Number** — Not displayed after play
 - [ ] **Z-Card Events** — No special indication when Z-card drawn
 - [ ] **BV vs TV Battle** — No display of blocking/tackling matchup
@@ -132,14 +132,14 @@ This document tracks the implementation status of 5E rules and features in the R
 | Special Teams | 2 | 0 | 7 | 9 |
 | Roster Management | 0 | 0 | 6 | 6 |
 | Game State Display | 6 | 0 | 5 | 11 |
-| 5E Features | 2 | 0 | 9 | 11 |
+| 5E Features | 3 | 0 | 8 | 11 |
 | Player Cards | 2 | 0 | 7 | 9 |
 | AI Behavior | 2 | 0 | 5 | 7 |
 | Game Flow | 4 | 0 | 5 | 9 |
 | Visual Enhancements | 1 | 0 | 6 | 7 |
-| **TOTAL** | **30** | **0** | **57** | **87** |
+| **TOTAL** | **31** | **0** | **56** | **87** |
 
-**Completion: 34% (30/87)**
+**Completion: 36% (31/87)**
 
 ### Priority Improvements
 
