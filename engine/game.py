@@ -121,6 +121,10 @@ class Game:
             home_team=home_team.abbreviation,
             away_team=away_team.abbreviation,
         )
+        # 5E: Track defensive penalty for half-cannot-end rule
+        self._last_play_had_defensive_penalty: bool = False
+        # 5E: Track last play time consumption for timeout restriction
+        self._last_play_time: int = 0
 
         self.state.possession = random.choice(["home", "away"])
         self.state.play_log.append(f"Coin flip: {self.state.possession} team receives")
@@ -468,7 +472,51 @@ class Game:
             self.state.down = 1
             self.state.distance = 10
 
-    # 5th-edition clock constants (seconds consumed per play type)
+        # Track defensive penalty for half-cannot-end rule
+        if "DEF" in ptype or ptype in ("ROUGHING_PASSER", "FACE_MASK",
+            "PASS_INTERFERENCE_DEF", "ENCROACHMENT", "HOLDING_DEF",
+            "ROUGHING_KICKER", "ILLEGAL_CONTACT", "UNNECESSARY_ROUGHNESS"):
+            self._last_play_had_defensive_penalty = True
+        else:
+            self._last_play_had_defensive_penalty = False
+
+    # ── 5E Timeout Rules ─────────────────────────────────────────────
+
+    def call_timeout(self, team: str = "offense") -> bool:
+        """Call a timeout.  5E Rule: only after plays that take > 10 seconds.
+
+        Returns True if timeout was successfully called.
+        """
+        # 5E restriction: timeout only after plays consuming > 10 seconds
+        if self._last_play_time <= self.TIME_CLOCK_STOP:
+            self.state.play_log.append(
+                "⏱ Timeout denied — only allowed after plays using > 10 seconds"
+            )
+            return False
+
+        if team == "offense":
+            which = "home" if self.state.possession == "home" else "away"
+        else:
+            which = "away" if self.state.possession == "home" else "home"
+
+        if which == "home" and self.state.timeouts_home > 0:
+            self.state.timeouts_home -= 1
+            self.state.play_log.append(
+                f"⏱ Timeout called by home team ({self.state.timeouts_home} remaining)"
+            )
+            return True
+        elif which == "away" and self.state.timeouts_away > 0:
+            self.state.timeouts_away -= 1
+            self.state.play_log.append(
+                f"⏱ Timeout called by away team ({self.state.timeouts_away} remaining)"
+            )
+            return True
+        self.state.play_log.append("⏱ No timeouts remaining!")
+        return False
+
+    # ── 5E: Possession-change timing ─────────────────────────────────
+
+    TIME_POSSESSION_CHANGE = 10  # Possession change plays use 10 seconds
     # Per 5E rules page 4 Timing Table:
     TIME_STANDARD_PLAY = 40   # Run, complete pass, sack — 40 seconds
     TIME_CLOCK_STOP = 10      # Incomplete pass, OOB, injury, penalty, TD — 10 seconds
@@ -490,26 +538,41 @@ class Game:
           * Kneel                        → 40 seconds
         """
         if result.result in ("TOUCHBACK", "XP_GOOD", "XP_MISS"):
-            return self.TIME_ZERO
-        if result.play_type == "PUNT" or result.play_type == "KICKOFF":
-            return self.TIME_PUNT_KICK
-        if result.play_type == "FG" or result.result in ("FG_GOOD", "FG_MISS"):
-            return self.TIME_FIELD_GOAL
-        if result.penalty:
-            return self.TIME_CLOCK_STOP
-        if result.out_of_bounds:
-            return self.TIME_CLOCK_STOP
-        if result.result == "INCOMPLETE":
-            return self.TIME_CLOCK_STOP
-        if result.is_touchdown or result.result == "TD":
-            return self.TIME_CLOCK_STOP
-        if result.play_type == "KNEEL":
-            return self.TIME_KNEEL
-        # Run, complete pass, sack, and all other plays
-        return self.TIME_STANDARD_PLAY
+            time = self.TIME_ZERO
+        elif result.play_type == "PUNT" or result.play_type == "KICKOFF":
+            time = self.TIME_PUNT_KICK
+        elif result.play_type == "FG" or result.result in ("FG_GOOD", "FG_MISS"):
+            time = self.TIME_FIELD_GOAL
+        elif result.penalty:
+            time = self.TIME_CLOCK_STOP
+        elif result.out_of_bounds:
+            time = self.TIME_CLOCK_STOP
+        elif result.result == "INCOMPLETE":
+            time = self.TIME_CLOCK_STOP
+        elif result.is_touchdown or result.result == "TD":
+            time = self.TIME_CLOCK_STOP
+        elif result.play_type == "KNEEL":
+            time = self.TIME_KNEEL
+        else:
+            time = self.TIME_STANDARD_PLAY
+        # Track for timeout restriction rule
+        self._last_play_time = time
+        return time
 
     def _advance_time(self, seconds: int) -> None:
         self.state.time_remaining -= seconds
+
+        # 5E Rule: Half cannot end on a defensive penalty
+        # If time expires and the last play had a defensive penalty,
+        # the offense gets one more untimed play
+        if self.state.time_remaining <= 0 and self.state.quarter in (2, 4):
+            if self._last_play_had_defensive_penalty:
+                self.state.time_remaining = 1  # Allow one more play
+                self.state.play_log.append(
+                    "⏱ Half cannot end on a defensive penalty — untimed play"
+                )
+                self._last_play_had_defensive_penalty = False
+                return
 
         if self.state.time_remaining <= 0:
             self.state.quarter += 1

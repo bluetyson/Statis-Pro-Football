@@ -1368,11 +1368,30 @@ class PlayResolver:
 
         # ── INC result — check for INC-range interception ────────────
         if qb_result == "INC":
-            # 5E Rule: If PN in INC range AND within defender's Intercept Range
-            # → interception instead of incomplete
+            # 5E Rule: If PN within defender's Intercept Range → INT
+            # intercept_range is the LOW end (e.g. 43 means 43-48)
             if hasattr(actual_receiver, 'intercept_range') and actual_receiver.intercept_range:
                 int_range = actual_receiver.intercept_range
-                if isinstance(int_range, (list, tuple)) and len(int_range) == 2:
+                if isinstance(int_range, int) and int_range <= 48:
+                    # Authentic 5E: range is int_range to 48
+                    if int_range <= pn <= 48:
+                        rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
+                        defender_pos = getattr(actual_receiver, 'position', 'DB')
+                        int_yards, int_td = Charts.roll_int_return_5e(rn_for_ret, defender_pos)
+                        return PlayResult(
+                            play_type="PASS", yards_gained=0,
+                            result="INT", turnover=True, turnover_type="INT",
+                            description=(
+                                f"{qb.player_name} pass intercepted by defender in coverage!"
+                                f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
+                            ),
+                            passer=qb.player_name, receiver=actual_receiver.player_name,
+                            z_card_event=z_event,
+                            pass_number_used=pn,
+                            run_number_used=rn_for_ret,
+                        )
+                elif isinstance(int_range, (list, tuple)) and len(int_range) == 2:
+                    # Legacy format: [low, high] range
                     if int_range[0] <= pn <= int_range[1]:
                         int_yards, int_td = Charts.roll_int_return()
                         return PlayResult(
@@ -2297,3 +2316,163 @@ class PlayResolver:
             result="FG_GOOD" if made else "FG_NO_GOOD",
             description=f"{kicker.player_name} {'makes' if made else 'misses'} {distance}-yard field goal",
         )
+
+    # ── Rule 11: Dropped Passes ──────────────────────────────────────
+
+    @staticmethod
+    def check_dropped_pass(run_number: int, receiver: PlayerCard) -> bool:
+        """Check if a completed pass is dropped (Rule 11).
+
+        In 5E, when the RN equals the receiver's game-use rating,
+        the pass is dropped (becomes incomplete).
+        """
+        game_use = getattr(receiver, 'endurance_rushing', None)
+        if game_use is not None and game_use >= 3 and run_number == game_use:
+            return True
+        return False
+
+    # ── Rule 5: Screen Pass Run Number Modifiers ─────────────────────
+
+    @staticmethod
+    def get_screen_run_modifier(defense_formation: str) -> int:
+        """Return run number modifier for screen passes (Rule 5).
+
+        Screen passes use the same modifiers as running plays:
+          Run Defense: +2 (no key), +4 (key on back)
+          Pass/Prevent: 0
+          Blitz: 0
+        """
+        form = defense_formation.lower() if defense_formation else ""
+        if "blitz" in form:
+            return 0
+        pass_forms = ("pass", "4_3_cover2", "nickel_zone", "nickel_cover2",
+                      "prevent", "3_4_zone")
+        if form in pass_forms or "prevent" in form:
+            return 0
+        # Run defense formations
+        return 2
+
+    # ── Rule 14: Within-20 Completion Modifier ───────────────────────
+
+    @staticmethod
+    def get_within_20_completion_modifier(yard_line: int) -> int:
+        """Return completion range modifier when inside opponent's 20 (Rule 14).
+
+        5E Rule: When inside the 20, Long passes have their completion
+        range reduced by -5 (compressed field).
+        """
+        if yard_line >= 80:
+            return -5
+        return 0
+
+    # ── Z Card Ignore Rules ──────────────────────────────────────────
+
+    @staticmethod
+    def should_ignore_z_card(play_context: str) -> bool:
+        """Return True if Z cards should be ignored in this context.
+
+        5E Rule: Z cards are ignored on:
+          - Onside kicks
+          - Extra points (XP)
+          - Fumble recovery plays
+          - Field goal attempts
+          - After touchdowns
+          - Incomplete passes (no fumble possible)
+        """
+        ignore_contexts = (
+            "ONSIDE_KICK", "XP", "EXTRA_POINT",
+            "FUMBLE_RECOVERY", "FG", "FIELD_GOAL",
+            "TOUCHDOWN", "TD", "INCOMPLETE",
+        )
+        return play_context.upper() in ignore_contexts
+
+    # ── Fumble Home Field Rule ───────────────────────────────────────
+
+    @staticmethod
+    def apply_fumble_home_field(is_home_team: bool, fumble_roll: int) -> str:
+        """Apply 5E home field advantage on fumble recovery.
+
+        The home team gets a +1 bonus on fumble recovery rolls.
+        Roll is 1-8: 1-4 = OFFENSE recovers, 5-8 = DEFENSE.
+        Home team bonus shifts the threshold.
+        """
+        if is_home_team:
+            # Home team (offense) recovers on 1-5 instead of 1-4
+            return "OFFENSE" if fumble_roll <= 5 else "DEFENSE"
+        return "OFFENSE" if fumble_roll <= 4 else "DEFENSE"
+
+    # ── Extra Pass Blocking (Optional Rule) ──────────────────────────
+
+    @staticmethod
+    def resolve_extra_pass_blocking(ol_pass_block_sum: int,
+                                     dl_pass_rush_sum: int,
+                                     extra_blocker_bv: int = 0) -> int:
+        """Resolve extra pass blocking (Optional Rule).
+
+        When a RB stays in to block, add their BV to the OL pass block sum.
+        Returns the net pass rush modifier.
+        """
+        total_block = ol_pass_block_sum + extra_blocker_bv
+        return (dl_pass_rush_sum - total_block) * 2
+
+    # ── Endurance 3 & 4 Rules ────────────────────────────────────────
+
+    def check_endurance_3_possession(self, player_name: str,
+                                      used_this_possession: set) -> bool:
+        """Check if a player with endurance 3 can be used (once per possession)."""
+        return player_name not in used_this_possession
+
+    def check_endurance_4_quarter(self, player_name: str,
+                                   used_this_quarter: set) -> bool:
+        """Check if a player with endurance 4 can be used (once per quarter)."""
+        return player_name not in used_this_quarter
+
+    # ── QB Endurance (A/B/C) ─────────────────────────────────────────
+
+    @staticmethod
+    def get_qb_endurance_modifier(qb: PlayerCard) -> int:
+        """Return completion range modifier for QB endurance.
+
+        5E QB Endurance:
+          A = no penalty (workhorse)
+          B = -2 to completion in 4th quarter
+          C = -4 to completion in 4th quarter
+        """
+        endurance = getattr(qb, 'endurance_passing', 'A')
+        if endurance == 'B':
+            return -2
+        if endurance == 'C':
+            return -4
+        return 0
+
+    # ── Endurance on Check-off Passes ────────────────────────────────
+
+    @staticmethod
+    def get_checkoff_endurance_modifier(receiver: PlayerCard) -> int:
+        """Return modifier for check-off passes to a receiver.
+
+        5E Rule: Endurance affects check-off passes — if receiver has
+        endurance >= 3, -3 to completion range on check-off.
+        """
+        endurance = getattr(receiver, 'endurance_rushing', 0)
+        if endurance >= 3:
+            return -3
+        return 0
+
+    # ── OL/CB/S Out of Position (Optional Rule) ─────────────────────
+
+    @staticmethod
+    def check_out_of_position_penalty(player: PlayerCard,
+                                       assigned_position: str) -> int:
+        """Return penalty for playing out of position (Optional Rule).
+
+        OL playing wrong slot: -1 to blocking value
+        CB/S playing wrong position: -1 to pass defense
+        """
+        natural_pos = getattr(player, 'position', '')
+        if natural_pos != assigned_position:
+            if natural_pos in ('LT', 'LG', 'C', 'RG', 'RT'):
+                return -1  # OL out of position
+            if natural_pos in ('CB', 'S', 'SS', 'FS'):
+                return -1  # DB out of position
+        return 0

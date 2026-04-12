@@ -107,6 +107,9 @@ class SolitaireAI:
 
     def __init__(self):
         self.dice = FastActionDice()
+        # 5E Solitaire rules tracking
+        self._last_play_type: str = ""      # Track last play type
+        self._z_card_removed: bool = False  # Whether one Z card removed for solitaire
 
     def call_play(self, situation: GameSituation,
                   dice_result: Optional[DiceResult] = None) -> PlayCall:
@@ -389,6 +392,40 @@ class SolitaireAI:
             strategy = random.choice([OffensiveStrategy.NONE, OffensiveStrategy.PLAY_ACTION])
 
         return (play, strategy, player)
+
+    # ── 5th-Edition Solitaire Specific Rules ─────────────────────────
+
+    def enforce_no_consecutive_screen_quick(self, play_call: PlayCall) -> PlayCall:
+        """5E Solitaire Rule: No two screen/quick passes in succession.
+
+        If the last play was SCREEN or QUICK_PASS and this play is also
+        SCREEN or QUICK_PASS, convert it to SHORT_PASS.
+        """
+        screen_quick = ("SCREEN", "QUICK_PASS")
+        if self._last_play_type in screen_quick and play_call.play_type in screen_quick:
+            play_call = PlayCall(
+                play_type="SHORT_PASS",
+                formation=play_call.formation,
+                direction=play_call.direction,
+                reasoning=f"Converted from {play_call.play_type} (no consecutive screen/quick)",
+                strategy=play_call.strategy,
+            )
+        self._last_play_type = play_call.play_type
+        return play_call
+
+    @staticmethod
+    def convert_prevent_within_20(situation: GameSituation,
+                                  defense_formation: str) -> str:
+        """5E Solitaire Rule: Within 20, convert Prevent Defense to Pass Defense.
+
+        When the offense is inside the opponent's 20-yard line, Prevent
+        Defense is ineffective and should be converted to Pass Defense.
+        """
+        if situation.yard_line >= 80 and defense_formation in (
+            "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE",
+        ):
+            return "4_3_COVER2"  # Convert to pass defense formation
+        return defense_formation
 
 
 def _solo_code_to_5e_play(code: str, situation: GameSituation
