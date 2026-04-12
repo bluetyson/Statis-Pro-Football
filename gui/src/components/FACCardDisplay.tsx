@@ -48,6 +48,7 @@ export function FACCardDisplay({ lastPlay }: FACCardDisplayProps) {
         </div>
         {lastPlay.description && (
           <div className="fac-description">
+            {lastPlay.z_card && <span className="z-indicator">⚠️ Z-CARD EVENT: </span>}
             {lastPlay.description}
           </div>
         )}

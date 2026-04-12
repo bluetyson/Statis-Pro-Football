@@ -1145,6 +1145,11 @@ body {
   line-height: 1.4;
 }
 
+.z-indicator {
+  color: var(--red);
+  font-weight: 700;
+}
+
 .fac-card-placeholder {
   background: var(--bg-card);
   border: 1px dashed var(--border);
@@ -1167,6 +1172,24 @@ body {
   font-weight: 700;
   margin-bottom: 0.5rem;
   color: var(--accent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.two-minute-badge {
+  background: var(--red);
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .stats-grid {

@@ -70,11 +70,11 @@ This document tracks the implementation status of 5E rules and features in the R
 - [x] **Defensive Strategies** — UI added for Double/Triple Coverage
 - [x] **FAC Card Display** — Shows RUN#/PASS# and Z-card indicator after each play
 - [x] **Run Number / Pass Number** — Displayed in FAC card after each play
-- [ ] **Z-Card Events** — No special indication when Z-card drawn
+- [x] **Z-Card Events** — Z-card indicator shown in FAC card display with warning icon
 - [ ] **BV vs TV Battle** — No display of blocking/tackling matchup
 - [ ] **Point of Interception** — Not calculated/displayed
 - [ ] **Two-Minute Offense** — No UI to declare two-minute offense
-- [ ] **Two-Minute Warning** — No visual indication at 2:00 mark
+- [x] **Two-Minute Warning** — Visual indication with pulsing badge at 2:00 mark
 
 ## Player Cards
 

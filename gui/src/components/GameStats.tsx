@@ -7,10 +7,14 @@ interface GameStatsProps {
 export function GameStats({ state }: GameStatsProps) {
   // Calculate basic stats from play log
   const totalPlays = state.last_plays?.length || 0;
+  const isTwoMinuteWarning = (state.quarter === 2 || state.quarter === 4) && state.time_remaining <= 120;
   
   return (
     <div className="game-stats">
-      <div className="stats-header">Game Stats</div>
+      <div className="stats-header">
+        Game Stats
+        {isTwoMinuteWarning && <span className="two-minute-badge">⏰ 2:00 WARNING</span>}
+      </div>
       <div className="stats-grid">
         <div className="stat-item">
           <span className="stat-label">Quarter</span>
