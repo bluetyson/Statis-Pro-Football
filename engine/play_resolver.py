@@ -56,6 +56,9 @@ class PlayResult:
     run_number_used: Optional[int] = None
     pass_number_used: Optional[int] = None
     defense_formation: Optional[str] = None
+    strategy: Optional[str] = None  # Offensive strategy used (FLOP, SNEAK, DRAW, PLAY_ACTION)
+    injury_player: Optional[str] = None  # Player injured this play
+    injury_duration: Optional[int] = None  # Injury duration in plays
 
 
 class PlayResolver:
@@ -63,6 +66,366 @@ class PlayResolver:
 
     def __init__(self):
         self.charts = Charts()
+        # Track endurance: {player_name: consecutive_plays_directed}
+        self._endurance_tracker: Dict[str, int] = {}
+        # Track injuries: {player_name: plays_remaining}
+        self._injury_tracker: Dict[str, int] = {}
+        # Track end-around usage: {player_name: bool}
+        self._end_around_used: Dict[str, bool] = {}
+
+    # ── Endurance tracking ───────────────────────────────────────────
+
+    def track_endurance(self, player_name: str) -> None:
+        """Record that a play was directed at this player."""
+        self._endurance_tracker[player_name] = (
+            self._endurance_tracker.get(player_name, 0) + 1
+        )
+
+    def reset_endurance(self, player_name: str) -> None:
+        """Reset consecutive-play count (play was NOT directed at player)."""
+        self._endurance_tracker[player_name] = 0
+
+    def check_endurance_violation(self, player: PlayerCard) -> Optional[str]:
+        """Check if directing a play at this player violates endurance rules.
+
+        5E Endurance Rules:
+          0 = unlimited (workhorse)
+          1 = cannot be directed on consecutive plays
+          2 = two preceding plays must not be directed at him
+          3 = once per current possession
+          4 = once per quarter
+
+        Returns description of penalty if violated, None if OK.
+        """
+        endurance = getattr(player, 'endurance_rushing', None)
+        if endurance is None or endurance == 0:
+            return None
+        consecutive = self._endurance_tracker.get(player.player_name, 0)
+        if endurance == 1 and consecutive >= 1:
+            return "endurance_1"
+        if endurance == 2 and consecutive >= 2:
+            return "endurance_2"
+        if endurance >= 3 and consecutive >= 1:
+            return f"endurance_{endurance}"
+        return None
+
+    def apply_endurance_penalty(self, player: PlayerCard, play_type: str,
+                                run_number: int = 0,
+                                completion_range: int = 0) -> tuple:
+        """Apply endurance violation penalty.
+
+        Run: +2 to Run Number
+        Pass: -5 to completion range
+
+        Returns (modified_run_number, modified_completion_adj).
+        """
+        violation = self.check_endurance_violation(player)
+        if violation is None:
+            return run_number, completion_range
+        if play_type == "RUN":
+            return run_number + 2, completion_range
+        return run_number, completion_range - 5
+
+    # ── Injury tracking ──────────────────────────────────────────────
+
+    def resolve_injury_duration(self, pn: int) -> int:
+        """Determine injury duration from Pass Number per 5E Injury Table.
+
+        PN 1-10  → 2 plays
+        PN 11-20 → 4 plays
+        PN 21-30 → 6 plays
+        PN 31-35 → rest of quarter (~15 plays)
+        PN 36-43 → rest of game (~60 plays)
+        PN 44-48 → rest of game + more (~99 plays)
+        """
+        if pn <= 10:
+            return 2
+        elif pn <= 20:
+            return 4
+        elif pn <= 30:
+            return 6
+        elif pn <= 35:
+            return 15  # rest of quarter approximation
+        elif pn <= 43:
+            return 60  # rest of game
+        else:
+            return 99  # rest of game + more
+
+    def injure_player(self, player_name: str, duration: int) -> None:
+        """Record an injury for a player."""
+        self._injury_tracker[player_name] = duration
+
+    def tick_injuries(self) -> None:
+        """Decrement injury counters by 1 play."""
+        to_remove = []
+        for name in self._injury_tracker:
+            self._injury_tracker[name] -= 1
+            if self._injury_tracker[name] <= 0:
+                to_remove.append(name)
+        for name in to_remove:
+            del self._injury_tracker[name]
+
+    def is_injured(self, player_name: str) -> bool:
+        """Check if a player is currently injured."""
+        return self._injury_tracker.get(player_name, 0) > 0
+
+    # ── Play restriction checks ──────────────────────────────────────
+
+    @staticmethod
+    def check_long_pass_restriction(yard_line: int) -> bool:
+        """No long pass when scrimmage is within opponent's 20 (yard_line >= 80).
+
+        Returns True if long pass is BLOCKED.
+        """
+        return yard_line >= 80
+
+    @staticmethod
+    def check_screen_pass_restriction(yard_line: int) -> bool:
+        """No screen pass within 5-yard line (yard_line >= 95).
+
+        Returns True if screen pass is BLOCKED.
+        """
+        return yard_line >= 95
+
+    @staticmethod
+    def apply_inside_run_max_loss(yards: int, play_direction: str) -> int:
+        """Inside runs have a maximum loss of 3 yards per 5E rules.
+
+        Sweeps have no loss limit.
+        """
+        if play_direction in ("IL", "IR", "INSIDE", "MIDDLE", "LEFT"):
+            return max(yards, -3)
+        return yards  # Sweeps have no limit
+
+    # ── Offensive strategies ─────────────────────────────────────────
+
+    def resolve_flop(self, qb: PlayerCard) -> PlayResult:
+        """Resolve a QB Flop (QB Dive) strategy.
+
+        5E Rules: Inside run to QB; automatic -1 yard; no FAC flip, no fumble.
+        """
+        return PlayResult(
+            play_type="RUN", yards_gained=-1, result="GAIN",
+            description=f"{qb.player_name} dives for -1 yard (Flop)",
+            rusher=qb.player_name, strategy="FLOP",
+        )
+
+    def resolve_sneak(self, qb: PlayerCard, deck: FACDeck) -> PlayResult:
+        """Resolve a QB Sneak strategy.
+
+        5E Rules: Inside run to QB; flip FAC; even PN = +1 yard, odd PN = 0.
+        """
+        fac_card = deck.draw()
+        pn = fac_card.pass_num_int or random.randint(1, 48)
+        yards = 1 if pn % 2 == 0 else 0
+        return PlayResult(
+            play_type="RUN", yards_gained=yards, result="GAIN",
+            description=f"{qb.player_name} sneaks for {yards} yard{'s' if yards != 1 else ''} (Sneak)",
+            rusher=qb.player_name, strategy="SNEAK",
+            pass_number_used=pn,
+        )
+
+    def resolve_draw(self, fac_card: FACCard, deck: FACDeck,
+                     rusher: PlayerCard, defense_formation: str,
+                     defense_run_stop: int = 50) -> PlayResult:
+        """Resolve a Draw Play strategy.
+
+        5E Rules: Inside run to any back/QB.
+          vs Run Defense: +2 to Run Number (in addition to normal modifiers)
+          vs Pass/Prevent: -2 to Run Number
+          vs Blitz: -4 to Run Number
+        """
+        # Draw play modifier
+        draw_mod = 0
+        form_lower = defense_formation.lower()
+        if "blitz" in form_lower or form_lower == "blz":
+            draw_mod = -4
+        elif form_lower in ("pass", "4_3_cover2", "nickel_zone", "nickel_cover2",
+                            "prevent", "3_4_zone"):
+            draw_mod = -2
+        else:
+            draw_mod = 2  # vs Run Defense
+
+        # Resolve as inside run with draw modifier applied to RN
+        result = self.resolve_run_5e(
+            fac_card, deck, rusher, "IL",
+            defense_run_stop=defense_run_stop,
+            defense_formation=defense_formation,
+        )
+        # Apply draw RN modifier to yards (approximation: each RN point ≈ 1 yard)
+        result.yards_gained += draw_mod
+        result.strategy = "DRAW"
+        result.description += f" (Draw play, RN modifier {draw_mod:+d})"
+        return result
+
+    def resolve_play_action(self, fac_card: FACCard, deck: FACDeck,
+                            qb: PlayerCard, receiver: PlayerCard,
+                            receivers: list, pass_type: str,
+                            defense_formation: str,
+                            defense_coverage: int = 50,
+                            defense_pass_rush: int = 50) -> PlayResult:
+        """Resolve a Play-Action pass strategy.
+
+        5E Rules: Short/Long pass only.
+          vs Run Defense: +5 to completion range
+          vs Pass Defense: -5 to completion range
+          vs Prevent: -10 to completion range
+        """
+        # Play-action modifier to completion range
+        pa_mod = 0
+        form_lower = defense_formation.lower()
+        if "blitz" in form_lower:
+            pa_mod = 0
+        elif form_lower in ("4_3", "3_4"):
+            pa_mod = 5  # vs Run Defense
+        elif form_lower in ("4_3_cover2", "nickel_zone", "nickel_cover2"):
+            pa_mod = -5  # vs Pass Defense
+        elif "prevent" in form_lower or form_lower == "3_4_zone":
+            pa_mod = -10  # vs Prevent Defense
+        else:
+            pa_mod = 5  # default vs Run
+
+        # Adjust defense coverage for play-action effect
+        adjusted_coverage = max(0, defense_coverage - pa_mod)
+
+        result = self.resolve_pass_5e(
+            fac_card, deck, qb, receiver, receivers,
+            pass_type=pass_type,
+            defense_coverage=adjusted_coverage,
+            defense_pass_rush=defense_pass_rush,
+            defense_formation=defense_formation,
+        )
+        result.strategy = "PLAY_ACTION"
+        result.description += f" (Play-action, completion modifier {pa_mod:+d})"
+        return result
+
+    # ── BV vs TV blocking battle ─────────────────────────────────────
+
+    @staticmethod
+    def resolve_bv_tv_battle(blocker_bv: int, defender_tv: int,
+                             empty_box: bool = False,
+                             two_defenders: bool = False) -> int:
+        """Resolve Blocking Value vs Tackle Value battle per 5E rules.
+
+        Returns yard modifier:
+          - Positive = offense wins (add BV)
+          - Negative = defense wins (subtract TV)
+          - Zero = no modification
+
+        Special cases:
+          - Two defenders in box: TV = -4 regardless of printed values
+          - Empty defensive box: +2 yards bonus
+          - BV vs empty box: Add BV only, no +2 bonus
+        """
+        if empty_box:
+            if blocker_bv != 0:
+                return blocker_bv  # Add BV only, no +2
+            return 2  # Empty box +2
+
+        effective_tv = -4 if two_defenders else defender_tv
+        diff = blocker_bv - effective_tv
+        if diff > 0:
+            return blocker_bv  # Offense wins: add BV
+        elif diff < 0:
+            return -effective_tv  # Defense wins: subtract TV
+        return 0  # Tied: no modification
+
+    # ── Onside kick ──────────────────────────────────────────────────
+
+    def resolve_onside_kick(self, deck: FACDeck,
+                            onside_defense: bool = False) -> PlayResult:
+        """Resolve an onside kick per 5E rules.
+
+        Normal: PN 1-11 = kicking team recovers at 50; 12-48 = receiving at 50
+        With onside defense: PN 1-7 kicking / 8-48 receiving
+        """
+        fac_card = deck.draw()
+        pn = fac_card.pass_num_int or random.randint(1, 48)
+
+        threshold = 7 if onside_defense else 11
+        kicking_recovers = pn <= threshold
+
+        if kicking_recovers:
+            return PlayResult(
+                play_type="KICKOFF", yards_gained=50, result="ONSIDE_RECOVERED",
+                description=f"Onside kick recovered by kicking team at the 50! (PN {pn})",
+                pass_number_used=pn,
+            )
+        return PlayResult(
+            play_type="KICKOFF", yards_gained=50, result="ONSIDE_RECEIVING",
+            description=f"Onside kick recovered by receiving team at the 50. (PN {pn})",
+            pass_number_used=pn,
+        )
+
+    # ── Squib kick ───────────────────────────────────────────────────
+
+    def resolve_squib_kick(self, deck: FACDeck) -> PlayResult:
+        """Resolve a squib kick per 5E rules.
+
+        Normal kickoff + 15 yards to return start + 1 to return Run Number (12 stays 12).
+        """
+        result = self.resolve_kickoff()
+        if result.result == "TOUCHBACK":
+            # Squib kicks are less likely to reach end zone
+            result.result = "GAIN"
+            result.yards_gained = 35  # ~35 yard line
+            result.description = "Squib kick returned to the 35"
+        else:
+            # +15 yards to return start (better field position for returner)
+            result.yards_gained = min(99, result.yards_gained + 15)
+            result.description = f"Squib kick returned to the {result.yards_gained}"
+        return result
+
+    # ── Point of Interception calculation ────────────────────────────
+
+    @staticmethod
+    def calculate_point_of_interception(pass_type: str,
+                                        run_number: int,
+                                        yard_line: int) -> int:
+        """Calculate Point of Interception per 5E rules.
+
+        Screen: RN / 2
+        Quick:  RN
+        Short:  RN × 2
+        Long:   RN × 4
+
+        Returns the yard line where interception occurs.
+        """
+        if pass_type == "SCREEN":
+            poi_yards = run_number // 2
+        elif pass_type == "QUICK":
+            poi_yards = run_number
+        elif pass_type == "SHORT":
+            poi_yards = run_number * 2
+        else:  # LONG
+            poi_yards = run_number * 4
+
+        interception_yl = min(100, yard_line + poi_yards)
+        # If past goal line, touchback at 20
+        if interception_yl >= 100:
+            return 20  # Touchback
+        return 100 - interception_yl  # Convert to defensive yard line
+
+    # ── Half-distance penalty ────────────────────────────────────────
+
+    @staticmethod
+    def apply_half_distance_penalty(penalty_yards: int,
+                                    yard_line: int,
+                                    is_offense_penalty: bool) -> int:
+        """Apply half-distance-to-goal rule for penalties.
+
+        15y penalty inside 20, or 10y penalty inside 10 = half distance.
+        """
+        if is_offense_penalty:
+            # Penalty moves offense back toward own end zone
+            if yard_line <= penalty_yards:
+                return max(1, yard_line // 2)
+        else:
+            # Defensive penalty inside own 20
+            distance_to_goal = 100 - yard_line
+            if distance_to_goal <= penalty_yards:
+                return max(1, distance_to_goal // 2)
+        return penalty_yards
 
     # ── Z-card helper ────────────────────────────────────────────────
 
@@ -466,11 +829,20 @@ class PlayResolver:
     # ══════════════════════════════════════════════════════════════════
 
     def _resolve_z_card(self, deck: FACDeck) -> Optional[Dict[str, Any]]:
-        """Resolve a Z-card event by drawing the next non-Z card."""
+        """Resolve a Z-card event by drawing the next non-Z card.
+
+        For injuries, also determines duration per the 5E Injury Table.
+        """
         next_card = deck.draw_non_z()
         z_info = next_card.parse_z_result()
         if z_info["type"] == "NONE":
             return None
+        # 5E Injury Table: Use the pass number to determine injury duration
+        if z_info["type"] == "INJURY":
+            inj_pn = next_card.pass_num_int or random.randint(1, 48)
+            duration = self.resolve_injury_duration(inj_pn)
+            z_info["injury_duration"] = duration
+            z_info["injury_pn"] = inj_pn
         return z_info
 
     def _find_receiver_by_letter(self, letter: str,
@@ -684,6 +1056,8 @@ class PlayResolver:
 
         # ── INT result ───────────────────────────────────────────────
         if qb_result == "INT":
+            # Calculate Point of Interception per 5E rules
+            rn_for_poi = fac_card.run_num_int or random.randint(1, 12)
             int_yards, int_td = Charts.roll_int_return()
             return PlayResult(
                 play_type="PASS", yards_gained=0,
@@ -695,10 +1069,45 @@ class PlayResolver:
                 passer=qb.player_name, receiver=actual_receiver.player_name,
                 z_card_event=z_event,
                 pass_number_used=pn,
+                run_number_used=rn_for_poi,
             )
 
-        # ── INC result ───────────────────────────────────────────────
+        # ── INC result — check for INC-range interception ────────────
         if qb_result == "INC":
+            # 5E Rule: If PN in INC range AND within defender's Intercept Range
+            # → interception instead of incomplete
+            if hasattr(actual_receiver, 'intercept_range') and actual_receiver.intercept_range:
+                int_range = actual_receiver.intercept_range
+                if isinstance(int_range, (list, tuple)) and len(int_range) == 2:
+                    if int_range[0] <= pn <= int_range[1]:
+                        int_yards, int_td = Charts.roll_int_return()
+                        return PlayResult(
+                            play_type="PASS", yards_gained=0,
+                            result="INT", turnover=True, turnover_type="INT",
+                            description=(
+                                f"{qb.player_name} pass intercepted by defender in coverage!"
+                                f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
+                            ),
+                            passer=qb.player_name, receiver=actual_receiver.player_name,
+                            z_card_event=z_event,
+                            pass_number_used=pn,
+                        )
+            # 5E Rule: PN 48 + defender has "48?" → flip new PN, 1-24=INT, 25-48=INC
+            if pn == 48:
+                new_pn = random.randint(1, 48)
+                if new_pn <= 24:
+                    int_yards, int_td = Charts.roll_int_return()
+                    return PlayResult(
+                        play_type="PASS", yards_gained=0,
+                        result="INT", turnover=True, turnover_type="INT",
+                        description=(
+                            f"{qb.player_name} pass intercepted on PN 48 check! (new PN {new_pn})"
+                            f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
+                        ),
+                        passer=qb.player_name, receiver=actual_receiver.player_name,
+                        z_card_event=z_event,
+                        pass_number_used=pn,
+                    )
             return PlayResult(
                 play_type="PASS", yards_gained=0, result="INCOMPLETE",
                 description=f"{qb.player_name} pass incomplete to {actual_receiver.player_name}",
@@ -935,6 +1344,10 @@ class PlayResolver:
             yards = max(-5, int(yards - def_modifier * 2))
             if eff_run_stop >= 80 and random.random() < (eff_run_stop - 75) / 100.0:
                 yards = min(yards, random.choice([-2, -1, 0]))
+
+            # 5E Rule: Inside run max loss = 3 yards; no limit on sweep
+            yards = self.apply_inside_run_max_loss(yards, play_direction)
+
             if eff_run_stop >= 85 and random.random() < 0.03:
                 recovery = Charts.roll_fumble_recovery()
                 fumble_yards, fumble_td = Charts.roll_fumble_return()
@@ -951,8 +1364,8 @@ class PlayResolver:
                     run_number_used=used_run_num,
                 )
 
-            # Out of bounds
-            if is_oob:
+            # Out of bounds — 5E Rule: inside runs may never end out of bounds
+            if is_oob and play_direction not in ("IL", "IR", "INSIDE", "MIDDLE", "LEFT"):
                 desc = f"{rusher.player_name} runs {play_direction} for {yards} yards, out of bounds"
                 return PlayResult(
                     play_type="RUN", yards_gained=yards,

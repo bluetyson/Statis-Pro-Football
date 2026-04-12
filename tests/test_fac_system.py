@@ -409,7 +409,7 @@ class TestOOBAndClock:
         assert oob_found, "Should get at least one OOB result in 500 plays"
 
     def test_oob_result_stops_clock(self):
-        """OOB plays should use clock-stop time (5 seconds)."""
+        """OOB plays should use clock-stop time (10 seconds per 5E rules)."""
         from engine.game import Game
         home = Team.load("KC", 2025)
         away = Team.load("BUF", 2025)
@@ -421,8 +421,8 @@ class TestOOBAndClock:
             out_of_bounds=True, description="Run OOB",
         )
         time_used = game._calculate_time(oob_result)
-        # 5th-edition: OOB stops clock → 5 seconds
-        assert time_used == 5
+        # 5th-edition Timing Table: OOB → 10 seconds
+        assert time_used == 10
 
     def test_run_play_uses_more_time(self):
         from engine.game import Game
@@ -432,8 +432,8 @@ class TestOOBAndClock:
 
         run_result = PlayResult(play_type="RUN", yards_gained=5, result="GAIN")
         time_used = game._calculate_time(run_result)
-        # 5th-edition: standard play → 30 seconds
-        assert time_used == 30
+        # 5th-edition Timing Table: Run → 40 seconds
+        assert time_used == 40
 
     def test_incomplete_pass_uses_clock_stop_time(self):
         from engine.game import Game
@@ -443,8 +443,8 @@ class TestOOBAndClock:
 
         inc_result = PlayResult(play_type="PASS", yards_gained=0, result="INCOMPLETE")
         time_used = game._calculate_time(inc_result)
-        # 5th-edition: incomplete → clock stops → 5 seconds
-        assert time_used == 5
+        # 5th-edition Timing Table: Incomplete → 10 seconds
+        assert time_used == 10
 
     def test_complete_pass_uses_standard_time(self):
         from engine.game import Game
@@ -454,8 +454,8 @@ class TestOOBAndClock:
 
         com_result = PlayResult(play_type="PASS", yards_gained=12, result="COMPLETE")
         time_used = game._calculate_time(com_result)
-        # 5th-edition: complete pass → 30 seconds
-        assert time_used == 30
+        # 5th-edition Timing Table: Complete pass → 40 seconds
+        assert time_used == 40
 
     def test_kneel_uses_maximum_time(self):
         from engine.game import Game
@@ -479,8 +479,8 @@ class TestOOBAndClock:
             penalty={"type": "HOLDING_OFF", "yards": 10},
         )
         time_used = game._calculate_time(pen_result)
-        # 5th-edition: penalty → no time (play replayed)
-        assert time_used == 0
+        # 5th-edition Timing Table: Penalty → 10 seconds
+        assert time_used == 10
 
 
 # ─── Defense Play Call Override ─────────────────────────────────────

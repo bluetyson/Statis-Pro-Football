@@ -55,6 +55,11 @@ class GameState:
     play_log: List[str] = field(default_factory=list)
     drives: List[DriveResult] = field(default_factory=list)
     is_over: bool = False
+    # 5E: Injury tracking - {player_name: plays_remaining}
+    injuries: Dict[str, int] = field(default_factory=dict)
+    # 5E: Track last play's ball carrier for endurance
+    last_ball_carrier: Optional[str] = None
+    prev_ball_carrier: Optional[str] = None  # Two plays ago for endurance 2
 
     def get_possession_team(self) -> str:
         return self.possession
@@ -275,7 +280,7 @@ class Game:
             return result
 
         if play_call.play_type == "KNEEL":
-            self._advance_time(40)
+            self._advance_time(self.TIME_KNEEL)
             return result
 
         self._advance_down(result.yards_gained)
@@ -436,25 +441,39 @@ class Game:
             self.state.distance = 10
 
     # 5th-edition clock constants (seconds consumed per play type)
-    TIME_CLOCK_STOP = 5       # Incomplete pass / OOB — clock stops, minimal elapsed
-    TIME_STANDARD_PLAY = 30   # Run, complete pass, sack — 30-second play clock
-    TIME_KNEEL = 40           # Kneel — maximum clock burn
-    TIME_PENALTY = 0          # Penalty — no game time (play replayed)
+    # Per 5E rules page 4 Timing Table:
+    TIME_STANDARD_PLAY = 40   # Run, complete pass, sack — 40 seconds
+    TIME_CLOCK_STOP = 10      # Incomplete pass, OOB, injury, penalty, TD — 10 seconds
+    TIME_PUNT_KICK = 10       # Punt / kickoff — 10 seconds
+    TIME_FIELD_GOAL = 5       # Field goal attempt — 5 seconds
+    TIME_KNEEL = 40           # Kneel — maximum clock burn (same as standard play)
+    TIME_ZERO = 0             # Touchback, XP, movement penalties — 0 seconds
 
     def _calculate_time(self, result: PlayResult) -> int:
         """Determine seconds consumed by a play using 5th-edition rules.
 
-        5th-edition clock rules:
-          * Incomplete pass / out-of-bounds → clock stops (5 s setup only)
-          * Run, complete pass, sack       → 30 s (standard play clock)
-          * Kneel                          → 40 s (maximum clock burn)
-          * Penalty                        → 0 s  (play is replayed)
+        5th-edition Timing Table (Page 4):
+          * Run, complete pass, sack     → 40 seconds
+          * Incomplete pass, OOB         → 10 seconds
+          * Injury, penalty, TD, timeout → 10 seconds
+          * Punt, kickoff                → 10 seconds
+          * Field goal attempt           → 5 seconds
+          * Touchback, XP, movement pen  → 0 seconds
+          * Kneel                        → 40 seconds
         """
+        if result.result in ("TOUCHBACK", "XP_GOOD", "XP_MISS"):
+            return self.TIME_ZERO
+        if result.play_type == "PUNT" or result.play_type == "KICKOFF":
+            return self.TIME_PUNT_KICK
+        if result.play_type == "FG" or result.result in ("FG_GOOD", "FG_MISS"):
+            return self.TIME_FIELD_GOAL
         if result.penalty:
-            return self.TIME_PENALTY
+            return self.TIME_CLOCK_STOP
         if result.out_of_bounds:
             return self.TIME_CLOCK_STOP
         if result.result == "INCOMPLETE":
+            return self.TIME_CLOCK_STOP
+        if result.is_touchdown or result.result == "TD":
             return self.TIME_CLOCK_STOP
         if result.play_type == "KNEEL":
             return self.TIME_KNEEL
@@ -523,6 +542,88 @@ class Game:
             f"Own {self.state.yard_line}"
         )
 
+        # ── 5E Play restrictions ─────────────────────────────────────
+        # Long pass within opponent's 20 → auto-convert to short pass
+        if play_call.play_type == "LONG_PASS":
+            if PlayResolver.check_long_pass_restriction(self.state.yard_line):
+                play_call = PlayCall(
+                    play_type="SHORT_PASS",
+                    formation=play_call.formation,
+                    direction=play_call.direction,
+                    reasoning="Long pass restricted inside 20; converted to short",
+                )
+        # Screen pass within 5-yard line → auto-convert to short pass
+        if play_call.play_type == "SCREEN":
+            if PlayResolver.check_screen_pass_restriction(self.state.yard_line):
+                play_call = PlayCall(
+                    play_type="SHORT_PASS",
+                    formation=play_call.formation,
+                    direction=play_call.direction,
+                    reasoning="Screen restricted inside 5; converted to short",
+                )
+
+        # ── Strategy handling ─────────────────────────────────────────
+        strategy = getattr(play_call, 'strategy', None)
+        if strategy == "FLOP":
+            qb = self.get_qb()
+            if qb:
+                result = self.resolver.resolve_flop(qb)
+                self.state.play_log.append(f"  → {result.description}")
+                self._advance_down(result.yards_gained)
+                self._advance_time(self.TIME_STANDARD_PLAY)
+                return result
+        elif strategy == "SNEAK":
+            qb = self.get_qb()
+            if qb:
+                result = self.resolver.resolve_sneak(qb, self.deck)
+                self.state.play_log.append(f"  → {result.description}")
+                self._advance_down(result.yards_gained)
+                self._advance_time(self.TIME_STANDARD_PLAY)
+                return result
+        elif strategy == "DRAW":
+            rb = self.get_rb()
+            def_form = defense_formation or self.ai.call_defense_5e(situation, fac_card)
+            defense = self.get_defense_team()
+            if rb:
+                result = self.resolver.resolve_draw(
+                    fac_card, self.deck, rb, def_form,
+                    defense_run_stop=defense.defense_rating,
+                )
+                self.state.play_log.append(f"  → {result.description}")
+                self._advance_down(result.yards_gained)
+                time_used = self._calculate_time(result)
+                self._advance_time(time_used)
+                return result
+        elif strategy == "PLAY_ACTION":
+            qb = self.get_qb()
+            receiver = self._pick_receiver(play_call)
+            receivers = self._get_all_receivers()
+            defense = self.get_defense_team()
+            def_form = defense_formation or self.ai.call_defense_5e(situation, fac_card)
+            pass_type = "LONG" if play_call.play_type == "LONG_PASS" else "SHORT"
+            if qb and receiver:
+                result = self.resolver.resolve_play_action(
+                    fac_card, self.deck, qb, receiver, receivers,
+                    pass_type=pass_type, defense_formation=def_form,
+                    defense_coverage=defense.defense_rating,
+                    defense_pass_rush=defense.defense_rating,
+                )
+                self.state.play_log.append(f"  → {result.description}")
+                if result.turnover:
+                    self._handle_turnover(result)
+                    return result
+                if result.is_touchdown or result.result == "TD":
+                    self._score_touchdown()
+                    kickoff = self.resolver.resolve_kickoff()
+                    self.state.play_log.append(kickoff.description)
+                    new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+                    self._change_possession(new_yl)
+                    return result
+                self._advance_down(result.yards_gained)
+                time_used = self._calculate_time(result)
+                self._advance_time(time_used)
+                return result
+
         if play_call.play_type == "PUNT":
             result = self._execute_punt()
         elif play_call.play_type == "FG":
@@ -540,6 +641,33 @@ class Game:
             result = self._execute_pass_5e(fac_card, play_call, defense_formation)
 
         self.state.play_log.append(f"  → {result.description}")
+
+        # ── 5E Injury tracking: process Z-card injuries ──────────────
+        if result.z_card_event and result.z_card_event.get("type") == "INJURY":
+            duration = result.z_card_event.get("injury_duration", 2)
+            injured_player = result.rusher or result.receiver or result.passer
+            if injured_player:
+                self.state.injuries[injured_player] = duration
+                result.injury_player = injured_player
+                result.injury_duration = duration
+                self.state.play_log.append(
+                    f"  ⚕ {injured_player} injured! Out for {duration} plays."
+                )
+
+        # ── 5E Endurance tracking ────────────────────────────────────
+        ball_carrier = result.rusher or result.receiver
+        self.state.prev_ball_carrier = self.state.last_ball_carrier
+        self.state.last_ball_carrier = ball_carrier
+
+        # Tick injury counters
+        to_remove = []
+        for name in list(self.state.injuries):
+            self.state.injuries[name] -= 1
+            if self.state.injuries[name] <= 0:
+                to_remove.append(name)
+                self.state.play_log.append(f"  ⚕ {name} returns from injury.")
+        for name in to_remove:
+            del self.state.injuries[name]
 
         if result.penalty:
             self._apply_penalty(result.penalty)
@@ -574,7 +702,7 @@ class Game:
             return result
 
         if play_call.play_type == "KNEEL":
-            self._advance_time(40)
+            self._advance_time(self.TIME_KNEEL)
             return result
 
         self._advance_down(result.yards_gained)
@@ -739,3 +867,55 @@ class Game:
     @staticmethod
     def _ordinal_suffix(n: int) -> str:
         return {1: "st", 2: "nd", 3: "rd"}.get(n, "th")
+
+    # ── 5E: Onside kick ─────────────────────────────────────────────
+
+    def execute_onside_kick(self, onside_defense: bool = False) -> PlayResult:
+        """Execute an onside kick per 5E rules.
+
+        PN 1-11: kicking team recovers at 50
+        PN 12-48: receiving team at 50
+        With onside defense: PN 1-7 kicking / 8-48 receiving
+        """
+        result = self.resolver.resolve_onside_kick(self.deck, onside_defense)
+        self.state.play_log.append(result.description)
+        if result.result == "ONSIDE_RECOVERED":
+            # Kicking team keeps possession at 50
+            self.state.yard_line = 50
+            self.state.down = 1
+            self.state.distance = 10
+        else:
+            # Receiving team gets ball at 50
+            self._change_possession(50)
+        return result
+
+    def execute_squib_kick(self) -> PlayResult:
+        """Execute a squib kick per 5E rules.
+
+        Normal kickoff + 15 yards to return start + 1 to return Run Number.
+        """
+        result = self.resolver.resolve_squib_kick(self.deck)
+        self.state.play_log.append(result.description)
+        new_yl = max(1, result.yards_gained)
+        self._change_possession(new_yl)
+        return result
+
+    # ── 5E: Two-minute offense time adjustment ───────────────────────
+
+    def _is_two_minute_offense(self) -> bool:
+        """Check if two-minute offense conditions are met.
+
+        5E rules: 4th quarter, prior to 2:00, trailing by up to 20 points.
+        """
+        return (
+            self.state.quarter == 4
+            and self.state.time_remaining <= 120
+            and self.state.score_diff() < 0
+            and self.state.score_diff() >= -20
+        )
+
+    def _apply_two_minute_time(self, base_seconds: int) -> int:
+        """Halve time expenditure during two-minute offense per 5E rules."""
+        if self._is_two_minute_offense():
+            return max(1, base_seconds // 2)
+        return base_seconds
