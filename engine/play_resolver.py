@@ -4,11 +4,11 @@ Implements the FAC-card-driven resolution system:
 
   Pass plays (5th edition):
     1. Draw FAC card
-    2. Check ER field for sack
-    3. Check receiver target field (QK/SH/LG) for override
-    4. PN → QB card → receiver letter / INC / INT
-    5. If receiver letter → same PN → Receiver card → yards
-    6. Screen uses FAC card SC field directly
+    2. Check QK/SH/LG receiver target field — "P.Rush" triggers sack check
+       (ER field is for run plays only, NOT pass plays)
+    3. PN → QB card → receiver letter / INC / INT
+    4. If receiver letter → same PN → Receiver card → yards
+    5. Screen uses FAC card SC field directly
 
   Run plays (5th edition):
     1. Draw FAC card
@@ -1155,25 +1155,19 @@ class PlayResolver:
                                two_minute_offense: bool = False) -> PlayResult:
         """Inner pass resolution after Z-card handling.
 
-        Authentic resolution:
-          1. Check ER (sack) on FAC card
-          2. Check receiver target on FAC card
+        Authentic 5E resolution:
+          1. Check QK/SH/LG receiver target field on FAC card
+          2. If "P.Rush" → check QB pass rush ranges for sack/scramble/INC/COM
           3. Screen passes use FAC SC field directly
           4. PN → QB card passing ranges → COM / INC / INT
           5. If COM → RUN NUMBER → receiver's pass-gain Q/S/L → yards
+
+        NOTE: The ER (End Run) field is for run plays only; it does NOT
+        cause sacks on pass plays.  Pass-play sacks come exclusively
+        from the "P.Rush" code in the QK/SH/LG receiver-target field.
         """
 
-        # ── Step 1: Check ER (pass rush / sack) ─────────────────────
-        sack_yards = fac_card.sack_yards
-        if sack_yards is not None:
-            return PlayResult(
-                play_type="PASS", yards_gained=sack_yards,
-                result="SACK",
-                description=f"{qb.player_name} is sacked for {abs(sack_yards)} yard loss!",
-                passer=qb.player_name, z_card_event=z_event,
-            )
-
-        # ── Step 1b: Check receiver target for P.Rush ────────────────
+        # ── Step 1: Check receiver target for P.Rush ─────────────────
         target_field = fac_card.get_receiver_target(pass_type)
         if target_field == "P.Rush":
             # Pass rush result → check QB's pass_rush ranges

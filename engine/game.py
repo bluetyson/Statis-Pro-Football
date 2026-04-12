@@ -397,9 +397,9 @@ class Game:
     def _pick_receiver(self, play_call: PlayCall, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         team = self.get_offense_team()
 
-        # If specific player requested, try to find them
+        # If specific player requested, try to find them among all eligible receivers
         if player_name:
-            for p in team.roster.wrs + team.roster.tes:
+            for p in team.roster.wrs + team.roster.tes + team.roster.rbs:
                 if p.player_name == player_name:
                     return p
 
@@ -855,7 +855,19 @@ class Game:
     def _execute_run_5e(self, fac_card: FACCard, play_call: PlayCall,
                         defense_formation: Optional[str] = None,
                         player_name: Optional[str] = None) -> PlayResult:
-        rb = self.get_rb(player_name)
+        # Allow QB or WR as ball carrier (end-around, designed QB run)
+        rusher = self.get_rb(player_name)
+        if player_name and (rusher is None or rusher.player_name != player_name):
+            # Check if it's a QB or WR being used as ball carrier
+            qb = self.get_qb(player_name)
+            if qb and qb.player_name == player_name:
+                rusher = qb
+            else:
+                wr = self.get_wr(player_name)
+                if wr and wr.player_name == player_name:
+                    rusher = wr
+        if rusher is None:
+            rusher = self.get_rb()
         defense = self.get_defense_team()
         def_run_stop = defense.defense_rating
         situation = self.state.to_situation()
@@ -866,9 +878,9 @@ class Game:
         direction_map = {"LEFT": "IL", "MIDDLE": "IL", "RIGHT": "IR"}
         direction = direction_map.get(direction, direction)
 
-        if rb:
+        if rusher:
             result = self.resolver.resolve_run_5e(
-                fac_card, self.deck, rb, direction,
+                fac_card, self.deck, rusher, direction,
                 defense_run_stop=def_run_stop,
                 defense_formation=def_formation,
             )
@@ -908,8 +920,15 @@ class Game:
                          defense_formation: Optional[str] = None,
                          defensive_strategy: Optional[str] = None,
                          player_name: Optional[str] = None) -> PlayResult:
-        qb = self.get_qb(player_name)
+        # player_name on a pass play targets a specific receiver (not QB)
+        # Try to find them as a receiver first; fall back to QB selection
+        qb = self.get_qb()
         receiver = self._pick_receiver(play_call, player_name)
+        if player_name and receiver and receiver.player_name != player_name:
+            # If the player wasn't found as a receiver, check if it's a QB
+            qb_candidate = self.get_qb(player_name)
+            if qb_candidate and qb_candidate.player_name == player_name:
+                qb = qb_candidate
         receivers = self._get_all_receivers()
         defense = self.get_defense_team()
         situation = self.state.to_situation()
