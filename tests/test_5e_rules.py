@@ -799,3 +799,313 @@ class TestTimeoutRestriction:
         game = Game(home, away, use_5e=True)
         game._last_play_time = 10
         assert game.call_timeout("offense") is False
+
+
+# ─── Display Box Tracking Tests ──────────────────────────────────────────
+
+
+class TestDisplayBoxTracking:
+    """Test 5E Display box assignment system."""
+
+    def test_assign_default_display_boxes(self):
+        """Verify default box assignments follow 5E rules."""
+        team = Team.load("KC", "2025_5e")
+        defs = team.roster.defenders[:11]
+        boxes = PlayResolver.assign_default_display_boxes(defs)
+        assert len(boxes) > 0
+        # All assigned boxes should be valid
+        valid_boxes = set('ABCDEFGHIJKLMNO')
+        for name, box in boxes.items():
+            assert box in valid_boxes, f"{name} assigned to invalid box {box}"
+
+    def test_dl_in_row1(self):
+        """DL players should be in Row 1 (A-E)."""
+        team = Team.load("KC", "2025_5e")
+        defs = team.roster.defenders[:11]
+        boxes = PlayResolver.assign_default_display_boxes(defs)
+        for d in defs:
+            if d.position in ('DE', 'DT', 'DL', 'NT'):
+                if d.player_name in boxes:
+                    assert boxes[d.player_name] in 'ABCDE', \
+                        f"DL {d.player_name} should be in Row 1"
+
+    def test_lb_in_row2(self):
+        """LB players should be in Row 2 (F-J)."""
+        team = Team.load("KC", "2025_5e")
+        defs = team.roster.defenders[:11]
+        boxes = PlayResolver.assign_default_display_boxes(defs)
+        for d in defs:
+            if d.position in ('LB', 'OLB', 'ILB', 'MLB'):
+                if d.player_name in boxes:
+                    assert boxes[d.player_name] in 'FGHIJ', \
+                        f"LB {d.player_name} should be in Row 2"
+
+
+# ─── Pass Defense Box Assignment Tests ───────────────────────────────────
+
+
+class TestPassDefenseAssignments:
+    """Test 5E pass defense box assignments."""
+
+    def test_receiver_slot_to_box_mapping(self):
+        """Verify receiver slot → box mapping matches 5E rules."""
+        assert PlayResolver.PASS_DEFENSE_ASSIGNMENTS['RE'] == 'N'
+        assert PlayResolver.PASS_DEFENSE_ASSIGNMENTS['LE'] == 'K'
+        assert PlayResolver.PASS_DEFENSE_ASSIGNMENTS['FL1'] == 'O'
+        assert PlayResolver.PASS_DEFENSE_ASSIGNMENTS['FL2'] == 'M'
+        assert PlayResolver.PASS_DEFENSE_ASSIGNMENTS['BK1'] == 'F'
+        assert PlayResolver.PASS_DEFENSE_ASSIGNMENTS['BK2'] == 'J'
+        assert PlayResolver.PASS_DEFENSE_ASSIGNMENTS['BK3'] == 'H'
+
+    def test_get_pass_defender_empty_box(self):
+        """Empty box returns None (→ +5 completion bonus)."""
+        assignments = {'Smith': 'K', 'Jones': 'O'}
+        result = PlayResolver.get_pass_defender_for_receiver('BK1', assignments)
+        assert result is None  # Box F is empty
+
+
+# ─── Flanker Designation Tests ───────────────────────────────────────────
+
+
+class TestFlankerDesignation:
+    """Test FL#1/FL#2 designation system."""
+
+    def test_three_rbs_designates_fl1(self):
+        """With 3 RBs on display, third back becomes FL#1."""
+        team = Team.load("KC", "2025_5e")
+        rbs = team.roster.rbs[:3]
+        wrs = team.roster.wrs[:3]
+        tes = team.roster.tes[:1]
+        flankers = PlayResolver.designate_flankers(3, wrs, tes, rbs)
+        assert 'FL1' in flankers
+        assert flankers['FL1'] == rbs[2].player_name
+
+    def test_two_rbs_wr_is_fl1(self):
+        """With 2 RBs, first WR becomes FL#1."""
+        team = Team.load("KC", "2025_5e")
+        rbs = team.roster.rbs[:2]
+        wrs = team.roster.wrs[:3]
+        tes = team.roster.tes[:1]
+        flankers = PlayResolver.designate_flankers(2, wrs, tes, rbs)
+        assert 'FL1' in flankers
+        assert flankers['FL1'] == wrs[0].player_name
+
+    def test_one_rb_gets_fl2(self):
+        """With 1 RB, second WR becomes FL#2."""
+        team = Team.load("KC", "2025_5e")
+        rbs = team.roster.rbs[:1]
+        wrs = team.roster.wrs[:3]
+        tes = team.roster.tes[:1]
+        flankers = PlayResolver.designate_flankers(1, wrs, tes, rbs)
+        assert 'FL2' in flankers
+
+
+# ─── Injury Protection Tests ────────────────────────────────────────────
+
+
+class TestInjuryProtection:
+    """Test backup player injury protection per 5E rules."""
+
+    def test_backup_protected_when_starter_injured(self):
+        assert PlayResolver.check_injury_protection("Backup QB", True, True) is True
+
+    def test_starter_not_protected(self):
+        assert PlayResolver.check_injury_protection("Starter QB", False, False) is False
+
+    def test_backup_not_protected_when_starter_healthy(self):
+        assert PlayResolver.check_injury_protection("Backup QB", True, False) is False
+
+
+# ─── Asterisked Punt Return Tests ───────────────────────────────────────
+
+
+class TestAsteriskedReturns:
+    """Test asterisked punt return resolution."""
+
+    def test_asterisked_return_uses_base_or_special(self):
+        """Result is always one of the two possible values."""
+        deck = FACDeck(seed=42)
+        for _ in range(20):
+            result = PlayResolver.resolve_asterisked_return(15, 40, deck)
+            assert result in (15, 40)
+
+
+# ─── Spot of Foul Tests ─────────────────────────────────────────────────
+
+
+class TestSpotOfFoul:
+    """Test pass interference spot of foul calculation."""
+
+    def test_screen_half_rn(self):
+        spot = PlayResolver.calculate_spot_of_foul('SCREEN', 8, 30)
+        assert spot == 34  # 30 + 8//2 = 34
+
+    def test_quick_pass_rn(self):
+        spot = PlayResolver.calculate_spot_of_foul('QUICK_PASS', 6, 40)
+        assert spot == 46  # 40 + 6
+
+    def test_short_pass_double_rn(self):
+        spot = PlayResolver.calculate_spot_of_foul('SHORT_PASS', 5, 50)
+        assert spot == 60  # 50 + 5*2
+
+    def test_long_pass_quad_rn(self):
+        spot = PlayResolver.calculate_spot_of_foul('LONG_PASS', 10, 50)
+        assert spot == 90  # 50 + 10*4
+
+    def test_capped_at_99(self):
+        spot = PlayResolver.calculate_spot_of_foul('LONG_PASS', 12, 80)
+        assert spot == 99  # Capped
+
+
+# ─── Clipping Spot Tests ────────────────────────────────────────────────
+
+
+class TestClippingSpot:
+    """Test clipping spot penalty calculation."""
+
+    def test_odd_rn_halfway(self):
+        spot = PlayResolver.calculate_clipping_spot(3, 20, 30)
+        assert spot == 40  # 30 + 20//2 = 40
+
+    def test_even_rn_end_of_return(self):
+        spot = PlayResolver.calculate_clipping_spot(4, 20, 30)
+        assert spot == 50  # 30 + 20 = 50
+
+
+# ─── Out of Position Tests ──────────────────────────────────────────────
+
+
+class TestOutOfPosition:
+    """Test out of position penalty logic including DL/LB exception."""
+
+    def test_dl_no_penalty_in_row1(self):
+        """DL/LB may play any Row 1 position without modification."""
+        from engine.player_card import PlayerCard
+        p = PlayerCard(player_name="DE", team="KC", position="DE", number=99)
+        assert PlayResolver.check_out_of_position_penalty(p, "DT") == 0
+        assert PlayResolver.check_out_of_position_penalty(p, "A") == 0
+
+    def test_cb_penalty_in_wrong_position(self):
+        from engine.player_card import PlayerCard
+        p = PlayerCard(player_name="CB", team="KC", position="CB", number=21)
+        assert PlayResolver.check_out_of_position_penalty(p, "SS") == -1
+
+    def test_db_no_penalty_in_box_l(self):
+        """Any DB may play in Box L without modification."""
+        from engine.player_card import PlayerCard
+        p = PlayerCard(player_name="Safety", team="KC", position="S", number=22)
+        assert PlayResolver.check_out_of_position_penalty(p, "L") == 0
+
+
+# ─── Blocking Value Classification Tests ─────────────────────────────────
+
+
+class TestBlockingValues:
+    """Test TE/WR blocking value classification."""
+
+    def test_te_elite_blocking(self):
+        from engine.player_card import PlayerCard
+        p = PlayerCard(player_name="TE1", team="KC", position="TE", number=87, blocks=4)
+        assert PlayResolver.classify_blocking_value(p) == 'Elite'
+
+    def test_wr_liability_blocking(self):
+        from engine.player_card import PlayerCard
+        p = PlayerCard(player_name="WR1", team="KC", position="WR", number=11, blocks=-3)
+        assert PlayResolver.classify_blocking_value(p) == 'Liability'
+
+    def test_wr_good_blocking(self):
+        from engine.player_card import PlayerCard
+        p = PlayerCard(player_name="WR2", team="KC", position="WR", number=12, blocks=2)
+        assert PlayResolver.classify_blocking_value(p) == 'Good'
+
+
+# ─── Fumble Team Rating Tests ───────────────────────────────────────────
+
+
+class TestFumbleTeamRatings:
+    """Test fumble recovery with team ratings per 5E rules."""
+
+    def test_fumble_lost_within_range(self):
+        """PN within Fumbles Lost range = fumble lost."""
+        assert PlayResolver.resolve_fumble_with_team_rating(10, 21) is True
+
+    def test_fumble_kept_outside_range(self):
+        """PN outside range = fumble kept."""
+        assert PlayResolver.resolve_fumble_with_team_rating(30, 21) is False
+
+    def test_defensive_adjustment(self):
+        """Defensive adjustment increases fumble loss range."""
+        assert PlayResolver.resolve_fumble_with_team_rating(23, 21, def_fumble_adj=5) is True
+
+    def test_home_field_bonus(self):
+        """Home team gets -1 to fumble loss threshold."""
+        # PN=21, max=21, but home bonus makes effective max=20
+        assert PlayResolver.resolve_fumble_with_team_rating(21, 21, is_home=True) is False
+        assert PlayResolver.resolve_fumble_with_team_rating(20, 21, is_home=True) is True
+
+
+# ─── Blitz Procedure Tests ──────────────────────────────────────────────
+
+
+class TestBlitzProcedure:
+    """Test blitz player removal tracking."""
+
+    def test_pn_low_removes_f_j(self):
+        removals = PlayResolver.get_blitz_removals(15)
+        assert removals == ['F', 'J']
+
+    def test_pn_mid_removes_f_j_m(self):
+        removals = PlayResolver.get_blitz_removals(30)
+        assert removals == ['F', 'J', 'M']
+
+    def test_pn_high_removes_all_lb(self):
+        removals = PlayResolver.get_blitz_removals(40)
+        assert removals == ['F', 'G', 'H', 'I', 'J']
+
+
+# ─── Game Method Integration Tests ──────────────────────────────────────
+
+
+class TestSpecialPlaysIntegration:
+    """Test new game methods for fake punt/FG, coffin corner, all-out rush."""
+
+    def test_fake_punt(self):
+        """Fake punt executes and returns PlayResult."""
+        home = Team.load("KC", "2025_5e")
+        away = Team.load("SF", "2025_5e")
+        game = Game(home, away, use_5e=True, seed=42)
+        result = game.execute_fake_punt()
+        assert result.play_type in ("PUNT", "RUN", "PASS")
+
+    def test_fake_punt_once_per_game(self):
+        """Fake punt can only be used once per game."""
+        home = Team.load("KC", "2025_5e")
+        away = Team.load("SF", "2025_5e")
+        game = Game(home, away, use_5e=True, seed=42)
+        result1 = game.execute_fake_punt()
+        result2 = game.execute_fake_punt()
+        assert "ILLEGAL" in result2.description or "already used" in result2.description
+
+    def test_fake_fg(self):
+        """Fake FG executes and returns PlayResult."""
+        home = Team.load("KC", "2025_5e")
+        away = Team.load("SF", "2025_5e")
+        game = Game(home, away, use_5e=True, seed=42)
+        result = game.execute_fake_field_goal()
+        assert result is not None
+
+    def test_coffin_corner_punt(self):
+        """Coffin corner punt uses deduction."""
+        home = Team.load("KC", "2025_5e")
+        away = Team.load("SF", "2025_5e")
+        game = Game(home, away, use_5e=True, seed=42)
+        result = game.execute_coffin_corner_punt(15)
+        assert "coffin corner" in result.description.lower() or "COFFIN" in str(result)
+
+    def test_all_out_punt_rush(self):
+        """All-out punt rush executes."""
+        home = Team.load("KC", "2025_5e")
+        away = Team.load("SF", "2025_5e")
+        game = Game(home, away, use_5e=True, seed=42)
+        result = game.execute_all_out_punt_rush()
+        assert result is not None

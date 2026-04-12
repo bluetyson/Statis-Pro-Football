@@ -659,6 +659,67 @@ class TwoPointConversionRequest(BaseModel):
     player_name: str = ""
 
 
+class CoffinCornerRequest(BaseModel):
+    deduction: int = 15  # 10-25 yard deduction from normal punt distance
+
+
+@app.post("/games/{game_id}/fake-punt")
+def execute_fake_punt(game_id: str):
+    """Execute a fake punt per 5E rules (once per game)."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+    result = game.execute_fake_punt()
+    return {
+        "game_id": game_id,
+        "play_result": _serialize_play_result(result),
+        "state": _serialize_state(game.state),
+    }
+
+
+@app.post("/games/{game_id}/fake-fg")
+def execute_fake_fg(game_id: str):
+    """Execute a fake field goal per 5E rules (once per game, not in final 2 min)."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+    result = game.execute_fake_field_goal()
+    return {
+        "game_id": game_id,
+        "play_result": _serialize_play_result(result),
+        "state": _serialize_state(game.state),
+    }
+
+
+@app.post("/games/{game_id}/coffin-corner")
+def execute_coffin_corner(game_id: str, request: CoffinCornerRequest):
+    """Execute a coffin corner punt with declared yardage deduction."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+    deduction = max(10, min(25, request.deduction))
+    result = game.execute_coffin_corner_punt(deduction)
+    return {
+        "game_id": game_id,
+        "play_result": _serialize_play_result(result),
+        "state": _serialize_state(game.state),
+    }
+
+
+@app.post("/games/{game_id}/all-out-punt-rush")
+def execute_all_out_punt_rush(game_id: str):
+    """Execute an all-out punt rush (defensive call)."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+    result = game.execute_all_out_punt_rush()
+    return {
+        "game_id": game_id,
+        "play_result": _serialize_play_result(result),
+        "state": _serialize_state(game.state),
+    }
+
+
 @app.post("/games/{game_id}/two-point-conversion")
 def execute_two_point_conversion(game_id: str, request: TwoPointConversionRequest):
     """Execute a two-point conversion attempt after a touchdown."""

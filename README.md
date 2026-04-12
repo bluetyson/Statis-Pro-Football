@@ -2,7 +2,7 @@
 
 A digital implementation of the classic Statis Pro Football tabletop game, featuring a Python game engine with AI play calling, a React/TypeScript web GUI, and complete player cards for all 32 NFL teams across multiple seasons.
 
-**Status:** Production-ready with 57% of 5E rules implemented, 306 tests passing.
+**Status:** Active rapid development. Core 5E engine is largely implemented, the GUI now includes human offensive and defensive play calling, and 388 tests are passing.
 
 ## Overview
 
@@ -17,7 +17,7 @@ The **5th-edition FAC deck system** uses a physical deck of **109 Fast Action Ca
 - **48-slot QB pass columns** — Pass Numbers 1–48 produce receiver letters (A–E), INC, or INT
 - **12-slot RB run columns** — Run Numbers 1–12 with inside, outside, and sweep directions
 - **Two-stage pass resolution** — QB card determines receiver letter → receiver card determines yards
-- **FAC-driven mechanics** — Sack determination (ER field), receiver targeting (QK/SH/LG), screen results (SC), blocking matchups (SL/IL/SR/IR), and solitaire play calling (SOLO field)
+- **FAC-driven mechanics** — End-around checks (ER field), receiver targeting / pass-rush triggers (QK/SH/LG), screen results (SC), blocking matchups (SL/IL/SR/IR), and solitaire play calling (SOLO field)
 - **Z-card system** — 13 Z-cards trigger special events (injuries, penalties, fumbles)
 - **Offensive Strategies** — Flop, Sneak, Draw, Play-Action (all implemented)
 - **Defensive Strategies** — Double Coverage, Triple Coverage (all implemented)
@@ -34,16 +34,15 @@ The original **d8×d8 dice-based system** (64 slots, range 11–88) remains full
 - **AI Play Calling** — Solitaire mode with both legacy dice-based and 5th-edition SOLO field-based play selection
 - **Player Card System** — 5th-edition (48/12-slot) and legacy (64-slot) cards generated from real NFL statistics
 - **Two Seasons of Data** — 2024 (2023 NFL stats) and 2025 (2024 NFL stats) with all 32 teams
-- **Web GUI** — React/TypeScript frontend with strategy selectors, player selection, and real-time game state
-- **Web GUI** — React/TypeScript frontend with strategy selectors, player selection, and real-time game state
+- **Web GUI** — React/TypeScript frontend with human offensive play calling, human defensive play calling, defensive run/play cards, player selection, special teams controls, and real-time game state
 - **REST API** — FastAPI backend with endpoints for game management, dice rolling, and card browsing
-- **Comprehensive Tests** — 306 tests covering dice/deck distribution, card generation, game mechanics, and team loading
+- **Comprehensive Tests** — 388 tests covering dice/deck distribution, card generation, game mechanics, GUI-facing API behavior, and 5E rules
 
 ## Implementation Status
 
-- **Engine**: 81/142 5E rules (57%) fully implemented
-- **GUI**: 30/87 features (34%) implemented
-- **Tests**: 306 tests passing
+- **Engine**: 140/146 5E rules (96%) implemented
+- **GUI**: 63/88 audited features (72%) implemented
+- **Tests**: 388 tests passing
 - **Documentation**: Complete audit documents and API reference
 
 See [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) for detailed status.
@@ -71,6 +70,30 @@ npm install
 cd ..
 ```
 
+### Updating an Existing Local Clone
+
+Because the project is moving quickly, use this sequence whenever you pull new changes:
+
+```bash
+# From the repo root
+git pull
+
+# Refresh Python dependencies
+pip install -r scripts/requirements.txt
+
+# Refresh GUI dependencies and rebuild
+cd gui
+rm -rf node_modules
+npm install
+npx vite build
+cd ..
+
+# Re-run backend tests
+python3 -m pytest tests/ -x -q
+```
+
+If you are actively developing with the GUI open, restart both the API server and the Vite dev server after pulling updates.
+
 ### Run a Quick Game (Python)
 
 ```python
@@ -78,8 +101,8 @@ from engine.team import Team
 from engine.game import Game
 
 # Load two teams
-home = Team.load("KC", 2025)   # Kansas City Chiefs
-away = Team.load("BUF", 2025)  # Buffalo Bills
+home = Team.load("KC", "2025_5e")   # Kansas City Chiefs
+away = Team.load("BUF", "2025_5e")  # Buffalo Bills
 
 # 5th Edition mode (109-card FAC deck)
 game = Game(home, away, use_5e=True, seed=42)
@@ -124,7 +147,7 @@ python engine/data/generate_2025_5e_data.py
 ### Run Tests
 
 ```bash
-python -m pytest tests/ -v
+python3 -m pytest tests/ -x -q
 ```
 
 ## Project Structure
@@ -193,16 +216,16 @@ Each FAC card contains 13 fields that drive all game mechanics:
 | RUN# (1–12) | RB card lookup |
 | PASS# (1–48) | QB/receiver card lookup |
 | SL/IL/SR/IR | Defensive blocking matchups |
-| ER | Pass rush / sack determination |
-| QK/SH/LG | Receiver targeting override |
+| ER | End-around resolution |
+| QK/SH/LG | Receiver targeting override / P.Rush trigger |
 | SC | Screen pass result |
 | Z RES | Special events (penalty, injury, fumble) |
 | SOLO | Solitaire play calling |
 
 **Pass Play Resolution (5th Edition):**
 1. Draw FAC card
-2. Check ER field → if negative, **SACK** (play over)
-3. Check receiver target field → may override receiver
+2. Check QK/SH/LG target field → may override receiver or trigger **P.Rush**
+3. ER is used for end-around resolution, not normal pass sacks
 4. Look up PASS# on QB card → receiver letter (A–E) / INC / INT
 5. If receiver letter → look up same PASS# on receiver card → yards
 

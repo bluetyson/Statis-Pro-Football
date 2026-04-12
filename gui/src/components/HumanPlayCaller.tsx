@@ -10,6 +10,13 @@ interface HumanPlayCallerProps {
   onSimulateDrive: () => void;
   onSimulateGame: () => void;
   onExecuteAIPlay: () => void;
+  onFakePunt: () => void;
+  onFakeFG: () => void;
+  onCoffinCorner: (deduction: number) => void;
+  coffinDeduction: number;
+  onCoffinDeductionChange: (d: number) => void;
+  onOnsideKick: (onsideDefense?: boolean) => void;
+  onSquibKick: () => void;
 }
 
 const PLAY_TYPES = [
@@ -66,6 +73,13 @@ export function HumanPlayCaller({
   onSimulateDrive,
   onSimulateGame,
   onExecuteAIPlay,
+  onFakePunt,
+  onFakeFG,
+  onCoffinCorner,
+  coffinDeduction,
+  onCoffinDeductionChange,
+  onOnsideKick,
+  onSquibKick,
 }: HumanPlayCallerProps) {
   const [selectedPlay, setSelectedPlay] = useState<string>('RUN');
   const [selectedDirection, setSelectedDirection] = useState<string>('MIDDLE');
@@ -273,6 +287,47 @@ export function HumanPlayCaller({
         <button className="btn btn-accent btn-sm" onClick={onSimulateGame} disabled={disabled}>
           🏆 Sim Game
         </button>
+      </div>
+
+      {/* Special Teams Options */}
+      <div className="special-teams-section">
+        <details className="special-teams-details">
+          <summary className="section-label special-teams-toggle">🏈 Special Teams Options</summary>
+          <div className="special-teams-grid">
+            <button className="btn btn-outline btn-sm" onClick={onFakePunt} disabled={disabled} title="Once per game">
+              🎭 Fake Punt
+            </button>
+            <button className="btn btn-outline btn-sm" onClick={onFakeFG} disabled={disabled} title="Once per game, not in final 2 min">
+              🎭 Fake FG
+            </button>
+            <div className="coffin-corner-group">
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => onCoffinCorner(coffinDeduction)}
+                disabled={disabled}
+                title={`Punt with ${coffinDeduction}yd deduction`}
+              >
+                ⚰️ Coffin Corner
+              </button>
+              <input
+                type="range"
+                min={10}
+                max={25}
+                value={coffinDeduction}
+                onChange={(e) => onCoffinDeductionChange(Number(e.target.value))}
+                className="coffin-slider"
+                disabled={disabled}
+              />
+              <span className="coffin-value">-{coffinDeduction}yd</span>
+            </div>
+            <button className="btn btn-outline btn-sm" onClick={() => onOnsideKick()} disabled={disabled}>
+              🏈 Onside Kick
+            </button>
+            <button className="btn btn-outline btn-sm" onClick={onSquibKick} disabled={disabled}>
+              🏈 Squib Kick
+            </button>
+          </div>
+        </details>
       </div>
 
       {state.is_over && (

@@ -2506,11 +2506,348 @@ class PlayResolver:
 
         OL playing wrong slot: -1 to blocking value
         CB/S playing wrong position: -1 to pass defense
+        DL/LB may play any Row 1 position without modification.
+        Any DB may play in Box L without modification.
         """
         natural_pos = getattr(player, 'position', '')
-        if natural_pos != assigned_position:
-            if natural_pos in ('LT', 'LG', 'C', 'RG', 'RT'):
-                return -1  # OL out of position
-            if natural_pos in ('CB', 'S', 'SS', 'FS'):
-                return -1  # DB out of position
+        if natural_pos == assigned_position:
+            return 0
+
+        # DL/LB can play any Row 1 position without penalty
+        if natural_pos in ('DE', 'DT', 'DL', 'NT', 'LB', 'OLB', 'ILB', 'MLB'):
+            if assigned_position in ('A', 'B', 'C', 'D', 'E',
+                                     'DE', 'DT', 'DL', 'NT', 'LB', 'OLB', 'ILB', 'MLB'):
+                return 0
+
+        # Any DB may play in Box L without modification
+        if natural_pos in ('CB', 'S', 'SS', 'FS', 'DB') and assigned_position == 'L':
+            return 0
+
+        if natural_pos in ('LT', 'LG', 'C', 'RG', 'RT'):
+            return -1  # OL out of position
+        if natural_pos in ('CB', 'S', 'SS', 'FS'):
+            return -1  # DB out of position
         return 0
+
+    # ── Display Box Tracking (5E Defensive Spatial Arrangement) ──────
+
+    # 5E Display Layout:
+    #   Row 1 (Defensive Line): Boxes A, B, C, D, E
+    #   Row 2 (Linebackers):    Boxes F, G, H, I, J
+    #   Row 3 (Defensive Backs): Boxes K, L, M, N, O
+    # Rules:
+    #   Row 1: 3-10 cards, 0-2 per box, only DE/DT/LB
+    #   Row 2: 0-5 LBs, one per box (F-J)
+    #   Row 3: 0-6 DBs, CB in K/O, FS in M, SS in N, Box L any DB
+
+    DISPLAY_BOXES_ROW1 = ['A', 'B', 'C', 'D', 'E']
+    DISPLAY_BOXES_ROW2 = ['F', 'G', 'H', 'I', 'J']
+    DISPLAY_BOXES_ROW3 = ['K', 'L', 'M', 'N', 'O']
+
+    @staticmethod
+    def assign_default_display_boxes(defenders: list) -> Dict[str, str]:
+        """Assign defenders to default Display box positions.
+
+        Returns a dict mapping player_name -> box_letter.
+        Follows 5E rules for Row 1/2/3 placement.
+        """
+        assignments: Dict[str, str] = {}
+        dl_players = [d for d in defenders if getattr(d, 'position', '') in
+                      ('DE', 'DT', 'DL', 'NT')]
+        lb_players = [d for d in defenders if getattr(d, 'position', '') in
+                      ('LB', 'OLB', 'ILB', 'MLB')]
+        db_players = [d for d in defenders if getattr(d, 'position', '') in
+                      ('CB', 'S', 'SS', 'FS', 'DB')]
+
+        # Row 1: DL players to boxes A-E (0-2 per box)
+        row1_boxes = ['A', 'B', 'C', 'D', 'E']
+        for i, p in enumerate(dl_players[:5]):
+            box = row1_boxes[i % len(row1_boxes)]
+            assignments[p.player_name] = box
+
+        # Row 2: LBs to boxes F-J (one per box)
+        row2_boxes = ['F', 'G', 'H', 'I', 'J']
+        for i, p in enumerate(lb_players[:5]):
+            assignments[p.player_name] = row2_boxes[i]
+
+        # Row 3: DBs to boxes K-O following position rules
+        # CB→K/O, FS→M, SS→N, any DB→L
+        cbs = [d for d in db_players if getattr(d, 'position', '') == 'CB']
+        safeties = [d for d in db_players if getattr(d, 'position', '') in ('S', 'SS', 'FS')]
+        other_dbs = [d for d in db_players if d not in cbs and d not in safeties]
+
+        if len(cbs) >= 1:
+            assignments[cbs[0].player_name] = 'K'
+        if len(cbs) >= 2:
+            assignments[cbs[1].player_name] = 'O'
+        for s in safeties:
+            pos = getattr(s, 'position', '')
+            if pos in ('FS', 'S') and 'M' not in assignments.values():
+                assignments[s.player_name] = 'M'
+            elif pos == 'SS' and 'N' not in assignments.values():
+                assignments[s.player_name] = 'N'
+            elif 'L' not in assignments.values():
+                assignments[s.player_name] = 'L'
+        for db in other_dbs:
+            for box in ['L', 'M', 'N']:
+                if box not in assignments.values():
+                    assignments[db.player_name] = box
+                    break
+
+        return assignments
+
+    # ── Pass Defense Box Assignments (5E) ────────────────────────────
+
+    # Per 5E rules, pass defense assignments are:
+    #   RE (Right End) → Box N
+    #   LE (Left End) → Box K
+    #   FL#1 → Box O
+    #   FL#2 → Box M
+    #   BK#1 → Box F
+    #   BK#2 → Box J
+    #   BK#3 → Box H
+
+    PASS_DEFENSE_ASSIGNMENTS = {
+        'RE': 'N',    # Right End → Box N
+        'LE': 'K',    # Left End → Box K
+        'FL1': 'O',   # Flanker #1 → Box O
+        'FL2': 'M',   # Flanker #2 → Box M
+        'BK1': 'F',   # Back #1 → Box F
+        'BK2': 'J',   # Back #2 → Box J
+        'BK3': 'H',   # Back #3 → Box H
+    }
+
+    @staticmethod
+    def get_pass_defender_for_receiver(receiver_slot: str,
+                                       box_assignments: Dict[str, str]) -> Optional[str]:
+        """Return the defender name guarding the given receiver slot.
+
+        receiver_slot: 'RE', 'LE', 'FL1', 'FL2', 'BK1', 'BK2', 'BK3'
+        box_assignments: dict mapping player_name → box_letter
+        """
+        target_box = PlayResolver.PASS_DEFENSE_ASSIGNMENTS.get(receiver_slot)
+        if not target_box:
+            return None
+        # Find defender in that box
+        for name, box in box_assignments.items():
+            if box == target_box:
+                return name
+        return None  # Empty box → +5 to completion range per 5E rules
+
+    # ── FL#1/FL#2 Flanker Designation System (5E) ────────────────────
+
+    # Per 5E rules:
+    #   If 3 RBs on display → 1 back is in flanker position (FL#1)
+    #   If 2 RBs → 1 WR is designated as flanker (FL#1)
+    #   If 1 RB → WR or TE is designated as FL#2
+    #   FAC "flanker" always means FL#1
+
+    @staticmethod
+    def designate_flankers(rbs_on_display: int,
+                           wrs: list,
+                           tes: list,
+                           rbs: list) -> Dict[str, str]:
+        """Designate FL#1 and FL#2 based on RBs on display.
+
+        Returns dict: {'FL1': player_name, 'FL2': player_name}
+        """
+        result: Dict[str, str] = {}
+
+        if rbs_on_display >= 3 and len(rbs) >= 3:
+            # 3 RBs: one back becomes FL#1
+            result['FL1'] = rbs[2].player_name
+        elif rbs_on_display == 2:
+            # 2 RBs: first available WR is FL#1
+            if wrs:
+                result['FL1'] = wrs[0].player_name
+        elif rbs_on_display <= 1:
+            # 1 RB: WR or TE is FL#2
+            if len(wrs) >= 2:
+                result['FL2'] = wrs[1].player_name
+            elif tes:
+                result['FL2'] = tes[0].player_name
+
+        return result
+
+    # ── Injury Protection for Backup Players (5E) ────────────────────
+
+    @staticmethod
+    def check_injury_protection(player_name: str,
+                                 is_backup: bool,
+                                 starter_injured: bool) -> bool:
+        """Check if a backup player has injury protection.
+
+        Per 5E rules: If starter lost to injury, backup plays injury-free
+        until starter is eligible to return.
+
+        Returns True if the backup is injury-protected.
+        """
+        return is_backup and starter_injured
+
+    # ── Asterisked Punt Returns (5E) ─────────────────────────────────
+
+    @staticmethod
+    def resolve_asterisked_return(base_yards: int,
+                                   asterisk_yards: int,
+                                   deck: 'FACDeck') -> int:
+        """Resolve asterisked punt return per 5E rules.
+
+        Flip new FAC:
+          RN 1-2 = use asterisked yardage
+          RN 3-12 = use original (base) yardage
+        """
+        fac = deck.draw()
+        rn = fac.run_num_int or random.randint(1, 12)
+        if 1 <= rn <= 2:
+            return asterisk_yards
+        return base_yards
+
+    # ── Spot of Foul for Pass Interference (5E) ──────────────────────
+
+    @staticmethod
+    def calculate_spot_of_foul(pass_type: str,
+                                run_number: int,
+                                yard_line: int) -> int:
+        """Calculate spot of foul for pass interference.
+
+        Per 5E rules: Determined same way as Point of Interception.
+          Screen = RN ÷ 2
+          Quick = RN
+          Short = RN × 2
+          Long = RN × 4
+
+        Returns the yard line where the foul occurred.
+        """
+        rn = max(1, min(12, run_number))
+        ptype = pass_type.upper()
+        if ptype == 'SCREEN':
+            distance = max(1, rn // 2)
+        elif ptype in ('QUICK', 'QUICK_PASS'):
+            distance = rn
+        elif ptype in ('SHORT', 'SHORT_PASS'):
+            distance = rn * 2
+        elif ptype in ('LONG', 'LONG_PASS'):
+            distance = rn * 4
+        else:
+            distance = rn * 2  # Default to short pass formula
+
+        spot = min(99, yard_line + distance)
+        return spot
+
+    # ── Clipping Spot Penalty (5E) ───────────────────────────────────
+
+    @staticmethod
+    def calculate_clipping_spot(run_number: int,
+                                 return_yards: int,
+                                 yard_line: int) -> int:
+        """Calculate spot of clipping penalty per 5E rules.
+
+        New FAC drawn:
+          Odd RN = halfway point of return
+          Even RN = where return ended
+        """
+        if run_number % 2 == 1:
+            # Odd: halfway point of the return
+            clip_spot = yard_line + (return_yards // 2)
+        else:
+            # Even: where the return ended
+            clip_spot = yard_line + return_yards
+        return min(99, max(1, clip_spot))
+
+    # ── TE/WR Blocking Value Differentiation (5E) ────────────────────
+
+    # Per 5E player card creation rules:
+    #   TE blocking: 4 (all-pro) to 1 (minimum)
+    #   WR blocking: +2 to -3 (negative = bad blocker)
+    # These are already stored in the `blocks` field on PlayerCard.
+    # This method validates/classifies them for display purposes.
+
+    @staticmethod
+    def classify_blocking_value(player: PlayerCard) -> str:
+        """Classify a player's blocking value for display.
+
+        Returns a human-readable label: 'Elite', 'Good', 'Average', 'Poor', 'Liability'
+        """
+        bv = getattr(player, 'blocks', 0)
+        pos = getattr(player, 'position', '').upper()
+
+        if pos == 'TE':
+            if bv >= 4:
+                return 'Elite'
+            elif bv >= 3:
+                return 'Good'
+            elif bv >= 2:
+                return 'Average'
+            else:
+                return 'Below Average'
+        elif pos == 'WR':
+            if bv >= 2:
+                return 'Good'
+            elif bv >= 0:
+                return 'Average'
+            elif bv >= -1:
+                return 'Poor'
+            else:
+                return 'Liability'
+        else:
+            if bv >= 3:
+                return 'Good'
+            elif bv >= 0:
+                return 'Average'
+            else:
+                return 'Poor'
+
+    # ── Fumble Team Ratings (5E) ─────────────────────────────────────
+
+    # Per 5E rules, teams have a "Fumbles Lost" range (e.g., 1-21)
+    # and a Defensive Fumble Adjustment. When a fumble occurs:
+    #   - Draw FAC, get PN (1-48)
+    #   - If PN falls within team's Fumbles Lost range → fumble lost
+    #   - Defensive Fumble Adjustment modifies the range
+    #   - Home field gives +1 bonus (already implemented)
+
+    @staticmethod
+    def resolve_fumble_with_team_rating(fumble_pn: int,
+                                         fumbles_lost_max: int = 21,
+                                         def_fumble_adj: int = 0,
+                                         is_home: bool = False) -> bool:
+        """Resolve fumble recovery using team ratings per 5E rules.
+
+        Args:
+            fumble_pn: Pass Number drawn from FAC (1-48)
+            fumbles_lost_max: Team's Fumbles Lost upper range (e.g., 21 means 1-21)
+            def_fumble_adj: Defensive Fumble Adjustment (positive = defense recovers more)
+            is_home: Whether ball carrier is on home team (home gets +1)
+
+        Returns True if fumble is LOST (defense recovers).
+        """
+        adjusted_max = fumbles_lost_max + def_fumble_adj
+        if is_home:
+            adjusted_max -= 1  # Home team bonus: harder to lose fumble
+
+        adjusted_max = max(0, min(48, adjusted_max))
+        return 1 <= fumble_pn <= adjusted_max
+
+    # ── Blitz Procedure Tracking (5E) ────────────────────────────────
+
+    # Per 5E rules, when blitz is announced:
+    #   - Remove 2-5 LBs/DBs from Display before play
+    #   - Blitzing players have Pass Rush Value of 2 (already implemented)
+    #   - After play, restore removed players to Display
+
+    @staticmethod
+    def get_blitz_removals(pn: int) -> list:
+        """Determine which defensive boxes to remove players from for blitz.
+
+        Per 5E solitaire rules:
+          PN 1-26:  Remove F + J
+          PN 27-35: Remove F + J + M
+          PN 36-48: Remove F + G + H + I + J
+        """
+        if 1 <= pn <= 26:
+            return ['F', 'J']
+        elif 27 <= pn <= 35:
+            return ['F', 'J', 'M']
+        elif 36 <= pn <= 48:
+            return ['F', 'G', 'H', 'I', 'J']
+        return ['F', 'J']  # Default

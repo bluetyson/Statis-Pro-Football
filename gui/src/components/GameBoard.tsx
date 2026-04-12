@@ -62,6 +62,13 @@ interface GameBoardProps {
   onSimulateGame: () => void;
   onRollDice: () => void;
   onSubstitute: (position: string, playerOut: string, playerIn: string) => void;
+  onCallTimeout: (team?: string) => void;
+  onFakePunt: () => void;
+  onFakeFG: () => void;
+  onCoffinCorner: (deduction: number) => void;
+  onOnsideKick: (onsideDefense?: boolean) => void;
+  onSquibKick: () => void;
+  onTwoPointConversion: (playType: string) => void;
   onDownloadGameLog: () => void;
   onNewGame: () => void;
 }
@@ -84,10 +91,27 @@ export function GameBoard({
   onSimulateGame,
   onRollDice,
   onSubstitute,
+  onCallTimeout,
+  onFakePunt,
+  onFakeFG,
+  onCoffinCorner,
+  onOnsideKick,
+  onSquibKick,
+  onTwoPointConversion,
   onDownloadGameLog,
   onNewGame,
 }: GameBoardProps) {
   const isInteractive = gameMode !== 'solitaire';
+  const [showTwoPoint, setShowTwoPoint] = useState(false);
+  const [coffinDeduction, setCoffinDeduction] = useState(15);
+
+  // Detect touchdown for two-point conversion option
+  const isTouchdown = lastPlay?.is_touchdown === true;
+
+  // Halftime / Quarter break detection
+  const isHalftime = state.quarter === 2 && state.time_remaining === 0 && !state.is_over;
+  const isQuarterBreak = !isHalftime && state.time_remaining === 0 && state.quarter < 5 && !state.is_over;
+  const isOvertime = state.quarter > 4;
 
   return (
     <div className="game-board">
@@ -109,8 +133,89 @@ export function GameBoard({
 
       <Scoreboard state={state} />
 
+      {/* Halftime / Quarter break / Overtime indicators */}
+      {isHalftime && (
+        <div className="game-break-banner halftime-banner">
+          🏟️ HALFTIME — {state.home_team} {state.score.home} - {state.away_team} {state.score.away}
+        </div>
+      )}
+      {isQuarterBreak && (
+        <div className="game-break-banner quarter-banner">
+          📋 End of Q{state.quarter} — {state.home_team} {state.score.home} - {state.away_team} {state.score.away}
+        </div>
+      )}
+      {isOvertime && (
+        <div className="game-break-banner overtime-banner">
+          ⏰ OVERTIME
+        </div>
+      )}
+
       {/* Gridiron field display */}
       <Gridiron state={state} />
+
+      {/* Timeout buttons */}
+      {isInteractive && !state.is_over && (
+        <div className="timeout-actions">
+          <button
+            className="btn btn-outline btn-sm timeout-btn"
+            onClick={() => onCallTimeout('home')}
+            disabled={loading || state.timeouts_home <= 0}
+            title={`${state.home_team} timeouts: ${state.timeouts_home}`}
+          >
+            ⏱️ {state.home_team} TO ({state.timeouts_home})
+          </button>
+          <button
+            className="btn btn-outline btn-sm timeout-btn"
+            onClick={() => onCallTimeout('away')}
+            disabled={loading || state.timeouts_away <= 0}
+            title={`${state.away_team} timeouts: ${state.timeouts_away}`}
+          >
+            ⏱️ {state.away_team} TO ({state.timeouts_away})
+          </button>
+        </div>
+      )}
+
+      {/* Two-point conversion prompt after TD */}
+      {isTouchdown && isInteractive && (
+        <div className="two-point-prompt">
+          <span className="two-point-label">🎉 TOUCHDOWN! Extra point attempt:</span>
+          <div className="two-point-buttons">
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowTwoPoint(false)} disabled={loading}>
+              ✅ PAT (kick)
+            </button>
+            <button className="btn btn-accent btn-sm" onClick={() => setShowTwoPoint(true)} disabled={loading}>
+              2️⃣ Two-Point Conversion
+            </button>
+          </div>
+          {showTwoPoint && (
+            <div className="two-point-options">
+              <button className="btn btn-primary btn-sm" onClick={() => { onTwoPointConversion('RUN'); setShowTwoPoint(false); }} disabled={loading}>
+                🏃 Run
+              </button>
+              <button className="btn btn-primary btn-sm" onClick={() => { onTwoPointConversion('SHORT_PASS'); setShowTwoPoint(false); }} disabled={loading}>
+                📫 Short Pass
+              </button>
+              <button className="btn btn-primary btn-sm" onClick={() => { onTwoPointConversion('QUICK_PASS'); setShowTwoPoint(false); }} disabled={loading}>
+                ⚡ Quick Pass
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Injury tracker */}
+      {state.injuries && Object.keys(state.injuries).length > 0 && (
+        <div className="injury-tracker">
+          <span className="injury-header">🏥 Active Injuries:</span>
+          <div className="injury-list">
+            {Object.entries(state.injuries).map(([name, plays]) => (
+              <span key={name} className="injury-chip">
+                {name} ({plays} plays)
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="board-content">
         <div className="board-left">
@@ -124,6 +229,13 @@ export function GameBoard({
               onSimulateDrive={onSimulateDrive}
               onSimulateGame={onSimulateGame}
               onExecuteAIPlay={onExecutePlay}
+              onFakePunt={onFakePunt}
+              onFakeFG={onFakeFG}
+              onCoffinCorner={onCoffinCorner}
+              coffinDeduction={coffinDeduction}
+              onCoffinDeductionChange={setCoffinDeduction}
+              onOnsideKick={onOnsideKick}
+              onSquibKick={onSquibKick}
             />
           ) : isInteractive && isHumanOnDefense ? (
             <DefensivePlayCaller

@@ -32,6 +32,13 @@ interface UseGameEngineReturn {
   rollDice: () => Promise<void>;
   fetchPersonnel: () => Promise<void>;
   substitutePlayer: (position: string, playerOut: string, playerIn: string) => Promise<void>;
+  callTimeout: (team?: string) => Promise<void>;
+  executeFakePunt: () => Promise<void>;
+  executeFakeFG: () => Promise<void>;
+  executeCoffinCorner: (deduction: number) => Promise<void>;
+  executeOnsideKick: (onsideDefense?: boolean) => Promise<void>;
+  executeSquibKick: () => Promise<void>;
+  executeTwoPointConversion: (playType: string) => Promise<void>;
   downloadGameLog: () => void;
   resetError: () => void;
   isHumanTurn: () => boolean;
@@ -250,6 +257,134 @@ export function useGameEngine(): UseGameEngineReturn {
 
   const resetError = useCallback(() => setError(null), []);
 
+  const callTimeout = useCallback(async (team?: string) => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const params = team ? `?team=${team}` : '';
+      const res = await axios.post(`${API_BASE}/games/${gameId}/timeout${params}`);
+      setGameState(res.data.state);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  const executeFakePunt = useCallback(async () => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/fake-punt`);
+      setLastPlay(res.data.play_result);
+      setGameState(res.data.state);
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  const executeFakeFG = useCallback(async () => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/fake-fg`);
+      setLastPlay(res.data.play_result);
+      setGameState(res.data.state);
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  const executeCoffinCorner = useCallback(async (deduction: number) => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/coffin-corner`, { deduction });
+      setLastPlay(res.data.play_result);
+      setGameState(res.data.state);
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  const executeOnsideKick = useCallback(async (onsideDefense: boolean = false) => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/onside-kick`, { onside_defense: onsideDefense });
+      setLastPlay(res.data.play_result);
+      setGameState(res.data.state);
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  const executeSquibKick = useCallback(async () => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/squib-kick`);
+      setLastPlay(res.data.play_result);
+      setGameState(res.data.state);
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  const executeTwoPointConversion = useCallback(async (playType: string) => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/two-point-conversion`, {
+        play_type: playType,
+        direction: 'MIDDLE',
+      });
+      setLastPlay(res.data.play_result);
+      setGameState(res.data.state);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
   return {
     gameId,
     gameState,
@@ -269,6 +404,13 @@ export function useGameEngine(): UseGameEngineReturn {
     rollDice,
     fetchPersonnel,
     substitutePlayer,
+    callTimeout,
+    executeFakePunt,
+    executeFakeFG,
+    executeCoffinCorner,
+    executeOnsideKick,
+    executeSquibKick,
+    executeTwoPointConversion,
     downloadGameLog,
     resetError,
     isHumanTurn,

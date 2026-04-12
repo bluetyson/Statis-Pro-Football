@@ -19,6 +19,7 @@ export interface GameState {
   timeouts_home: number;
   timeouts_away: number;
   last_plays: string[];
+  injuries?: Record<string, number>;
 }
 
 export interface PlayResult {
