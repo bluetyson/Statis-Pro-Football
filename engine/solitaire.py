@@ -31,6 +31,7 @@ class PlayCall:
     formation: str   # SHOTGUN, UNDER_CENTER, I_FORM, TRIPS, etc.
     direction: str   # LEFT, RIGHT, MIDDLE, IL, IR, SL, SR, DEEP_LEFT, DEEP_RIGHT, etc.
     reasoning: str
+    strategy: Optional[str] = None  # FLOP, SNEAK, DRAW, PLAY_ACTION (5E offensive strategies)
 
 
 # ── SOLO field code → PlayCall mapping ───────────────────────────────

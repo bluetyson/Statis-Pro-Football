@@ -48,6 +48,9 @@ def _serialize_play_result(result) -> dict:
         "run_number": result.run_number_used,
         "pass_number": result.pass_number_used,
         "defense_formation": result.defense_formation,
+        "strategy": result.strategy,
+        "injury_player": result.injury_player,
+        "injury_duration": result.injury_duration,
     }
 
 
@@ -65,6 +68,7 @@ class HumanPlayCallRequest(BaseModel):
     play_type: str  # RUN, SHORT_PASS, LONG_PASS, QUICK_PASS, SCREEN, PUNT, FG, KNEEL
     direction: str = "MIDDLE"  # LEFT, RIGHT, MIDDLE, IL, IR, SL, SR, DEEP_LEFT, DEEP_RIGHT
     formation: str = "UNDER_CENTER"  # UNDER_CENTER, SHOTGUN, I_FORM, TRIPS, etc.
+    strategy: Optional[str] = None  # FLOP, SNEAK, DRAW, PLAY_ACTION (5E strategies)
 
 
 class DefensivePlayCallRequest(BaseModel):
@@ -176,6 +180,7 @@ def execute_human_play(game_id: str, request: HumanPlayCallRequest):
         formation=request.formation.upper(),
         direction=request.direction.upper(),
         reasoning="Human play call",
+        strategy=request.strategy.upper() if request.strategy else None,
     )
 
     result = game.execute_play(play_call=play_call)
@@ -543,6 +548,41 @@ def _serialize_state(state: GameState) -> dict:
         "timeouts_home": state.timeouts_home,
         "timeouts_away": state.timeouts_away,
         "last_plays": state.play_log[-MAX_LAST_PLAYS:] if state.play_log else [],
+        "injuries": state.injuries,
+    }
+
+
+# ─── Onside / Squib Kick Endpoints ─────────────────────────────────────────
+
+class OnsideKickRequest(BaseModel):
+    onside_defense: bool = False  # Receiving team declared onside defense
+
+
+@app.post("/games/{game_id}/onside-kick")
+def execute_onside_kick(game_id: str, request: OnsideKickRequest):
+    """Execute an onside kick per 5E rules."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+    result = game.execute_onside_kick(onside_defense=request.onside_defense)
+    return {
+        "game_id": game_id,
+        "play_result": _serialize_play_result(result),
+        "state": _serialize_state(game.state),
+    }
+
+
+@app.post("/games/{game_id}/squib-kick")
+def execute_squib_kick(game_id: str):
+    """Execute a squib kick per 5E rules."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+    result = game.execute_squib_kick()
+    return {
+        "game_id": game_id,
+        "play_result": _serialize_play_result(result),
+        "state": _serialize_state(game.state),
     }
 
 
