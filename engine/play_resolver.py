@@ -378,6 +378,7 @@ class PlayResolver:
             defense_formation=defense_formation,
             defensive_strategy=defensive_strategy,
             defenders=defenders,
+            two_minute_offense=False,  # Play-action not affected by two-minute restrictions
         )
         result.strategy = "PLAY_ACTION"
         result.description += f" (Play-action, completion modifier {pa_mod:+d})"
@@ -1096,7 +1097,8 @@ class PlayResolver:
                         defense_formation: str = "4_3",
                         is_blitz_tendency: bool = False,
                         defensive_strategy: str = "NONE",
-                        defenders: Optional[List[PlayerCard]] = None) -> PlayResult:
+                        defenders: Optional[List[PlayerCard]] = None,
+                        two_minute_offense: bool = False) -> PlayResult:
         """Resolve a pass play using 5th-edition FAC card mechanics.
 
         Parameters
@@ -1117,6 +1119,8 @@ class PlayResolver:
             "NONE", "DOUBLE_COVERAGE", "TRIPLE_COVERAGE", or "ALT_DOUBLE_COVERAGE".
         defenders : Optional[List[PlayerCard]]
             Defensive players for coverage calculations.
+        two_minute_offense : bool
+            If True, apply two-minute offense restrictions (-4 to completion range for non-screen passes).
         """
         # ── Handle Z card ────────────────────────────────────────────
         if fac_card.is_z_card:
@@ -1127,12 +1131,14 @@ class PlayResolver:
                 fac_card, deck, qb, receiver, receivers, pass_type,
                 defense_coverage, defense_pass_rush, defense_formation,
                 is_blitz_tendency, z_event, defensive_strategy, defenders,
+                two_minute_offense,
             )
 
         return self._resolve_pass_inner_5e(
             fac_card, deck, qb, receiver, receivers, pass_type,
             defense_coverage, defense_pass_rush, defense_formation,
             is_blitz_tendency, None, defensive_strategy, defenders,
+            two_minute_offense,
         )
 
     def _resolve_pass_inner_5e(self, fac_card: FACCard, deck: FACDeck,
@@ -1145,7 +1151,8 @@ class PlayResolver:
                                is_blitz_tendency: bool,
                                z_event: Optional[Dict[str, Any]],
                                defensive_strategy: str = "NONE",
-                               defenders: Optional[List[PlayerCard]] = None) -> PlayResult:
+                               defenders: Optional[List[PlayerCard]] = None,
+                               two_minute_offense: bool = False) -> PlayResult:
         """Inner pass resolution after Z-card handling.
 
         Authentic resolution:
@@ -1288,6 +1295,11 @@ class PlayResolver:
         elif defensive_strategy == "ALT_DOUBLE_COVERAGE" and defenders:
             # Alternative double coverage: -7 to two receivers
             strategy_modifier = self.resolve_double_coverage(actual_receiver, defenders)
+        
+        # Apply two-minute offense restrictions (5E Rule)
+        # Non-screen passes: -4 to completion range
+        if two_minute_offense and pass_type != "SCREEN":
+            strategy_modifier -= 4
         
         # Adjust PN based on strategy modifier (negative modifier = harder to complete)
         # Strategy modifiers reduce completion range, so we shift PN upward

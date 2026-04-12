@@ -38,7 +38,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 ## PLAYS (Page 1)
 
 - [x] **Nine Offensive Plays**: SL, SR, IL, IR, ER, QK, SH, LG, SC — `engine/play_resolver.py` supports run (sweep left/right, inside left/right), pass (quick, short, long, screen); end-around partially supported
-- [ ] **End-Around Restriction**: Only if on-Display receiver has Rush column; only ONCE per game per player — End-around play exists but per-game-per-player limit not tracked
+- [x] **End-Around Restriction**: Only if on-Display receiver has Rush column; only ONCE per game per player — `engine/play_resolver.py:resolve_end_around()` with `_end_around_used` dict tracking per-player usage
 - [x] **Long Pass within 20**: No long pass when scrimmage line is within opponent's 20-yard line — `engine/play_resolver.py:check_long_pass_restriction()`, `engine/game.py:_execute_play_5e()` auto-converts to short pass
 - [x] **Screen Pass within 5**: No screen pass within 5-yard line — `engine/play_resolver.py:check_screen_pass_restriction()`, `engine/game.py:_execute_play_5e()` auto-converts to short pass
 - [x] **Seven Defensive Plays**: 4 Run Defenses (key on back 1/2/3 or no key), Pass Defense, Prevent Defense, Blitz — `engine/solitaire.py:call_defense()` and `call_defense_5e()`, formations in `engine/api_server.py`
@@ -271,8 +271,8 @@ The engine now matches the 5E rules specification:
 - [ ] **Timeout Restriction**: May only be called after a play taking more than 10 seconds — Not enforced
 - [x] **Two-Minute Warning**: Clock auto-stops at exactly 2:00 in 2nd and 4th quarters — `engine/game.py` handles two-minute warning
 - [x] **Two-Minute Offense**: Offense can invoke; halves time expenditure — `engine/solitaire.py:_call_two_minute_drill()`
-- [ ] **Two-Minute Offense Restrictions**: Run/screen yardage halved (TD and negative unaffected); non-screen passes -4 to completion range; even RN = OOB, odd RN = in bounds — Not fully implemented
-- [ ] **Two-Minute Offense Eligibility**: 4th quarter, prior to 2:00, only if trailing by 20+ points — Logic partially exists but not exact
+- [x] **Two-Minute Offense Restrictions**: Run/screen yardage halved (TD and negative unaffected); non-screen passes -4 to completion range; even RN = OOB, odd RN = in bounds — `engine/game.py:_apply_two_minute_yardage()` and `engine/play_resolver.py` applies -4 completion modifier
+- [x] **Two-Minute Offense Eligibility**: 4th quarter, prior to 2:00, only if trailing by 20+ points — `engine/game.py:_is_two_minute_offense()` checks all conditions
 - [ ] **Half Cannot End on Defensive Penalty**: Additional play if half ends on defensive penalty — Not implemented
 - [ ] **Half May End on Offensive Penalty**: Allowed — Not specifically checked
 
@@ -464,18 +464,18 @@ The engine now matches the 5E rules specification:
 
 | Category | Implemented | Partial | Not Implemented | Total |
 |----------|-------------|---------|-----------------|-------|
-| Core Play Resolution | 18 | 8 | 12 | 38 |
+| Core Play Resolution | 19 | 8 | 11 | 38 |
 | FAC Cards | 5 | 0 | 0 | 5 |
 | Displays & Formations | 2 | 1 | 5 | 8 |
 | Strategies | 7 | 0 | 0 | 7 |
 | Kicking | 10 | 0 | 5 | 15 |
-| Timing | 7 | 1 | 5 | 13 |
+| Timing | 9 | 1 | 3 | 13 |
 | Z Cards & Specials | 4 | 2 | 4 | 10 |
 | Optional Rules | 3 | 0 | 9 | 12 |
 | Solitaire | 7 | 0 | 3 | 10 |
 | Player Cards/Rosters | 10 | 0 | 9 | 19 |
 | Big Play Defense | 5 | 0 | 0 | 5 |
-| **TOTAL** | **78** | **12** | **52** | **142** |
+| **TOTAL** | **81** | **12** | **49** | **142** |
 
 ### Priority Gaps (Most Impact on Gameplay Accuracy)
 
@@ -488,4 +488,4 @@ The engine now matches the 5E rules specification:
 7. **Display Box Tracking** — No spatial arrangement tracking for offensive/defensive formations
 8. ~~**Onside Kicks / Squib Kicks**~~ ✅ COMPLETE — Both implemented
 9. **Run Number Modifiers** — Key on back system not fully implemented
-10. **Two-Minute Offense Restrictions** — Yardage halving and completion range penalties not fully implemented
+10. ~~**Two-Minute Offense Restrictions**~~ ✅ COMPLETE — Yardage halving and completion range penalties implemented

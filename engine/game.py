@@ -702,6 +702,12 @@ class Game:
         ball_carrier = result.rusher or result.receiver
         self.state.prev_ball_carrier = self.state.last_ball_carrier
         self.state.last_ball_carrier = ball_carrier
+        
+        # ── 5E Two-Minute Offense yardage restrictions ───────────────
+        if result.play_type in ("RUN", "SCREEN") and not result.turnover:
+            result.yards_gained = self._apply_two_minute_yardage(
+                result.yards_gained, result.play_type
+            )
 
         # Tick injury counters
         to_remove = []
@@ -841,6 +847,7 @@ class Game:
                 defense_formation=def_formation,
                 defensive_strategy=defensive_strategy or "NONE",
                 defenders=defenders,
+                two_minute_offense=self._is_two_minute_offense(),
             )
             result.defense_formation = def_formation
             return result
@@ -971,3 +978,14 @@ class Game:
         if self._is_two_minute_offense():
             return max(1, base_seconds // 2)
         return base_seconds
+    
+    def _apply_two_minute_yardage(self, yards: int, play_type: str) -> int:
+        """Apply two-minute offense yardage restrictions (5E Rule).
+        
+        Run/screen yardage halved (TD and negative unaffected).
+        """
+        if not self._is_two_minute_offense():
+            return yards
+        if play_type in ("RUN", "SCREEN") and yards > 0:
+            return max(1, yards // 2)
+        return yards
