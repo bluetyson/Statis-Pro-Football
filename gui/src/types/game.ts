@@ -158,6 +158,7 @@ export interface HumanPlayCall {
   formation: string;
   strategy?: string;
   player_name?: string;  // Specific player to use (QB/RB/WR name)
+  call_timeout?: boolean;  // Call timeout before play
 }
 
 export interface DefensivePlayCall {

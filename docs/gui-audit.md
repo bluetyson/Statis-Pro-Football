@@ -17,7 +17,7 @@ This document tracks the implementation status of 5E rules and features in the R
 - [x] **Pass Directions** — Left, Right, Middle, Deep Left, Deep Right
 - [x] **Formations** — Shotgun, Under Center, I-Form, Trips, Spread
 - [x] **Offensive Strategies (5E)** — Flop, Sneak, Draw, Play-Action selector added
-- [ ] **Player Selection** — Cannot choose specific QB/RB/WR for the play
+- [x] **Player Selection** — Dropdown to choose specific QB/RB/WR for the play
 - [ ] **End-Around** — No UI to call end-around plays
 - [ ] **Two-Point Conversion** — No option after TD
 
@@ -57,6 +57,7 @@ This document tracks the implementation status of 5E rules and features in the R
 - [x] **Field Position** — Yard line shown
 - [x] **Possession** — Current team with ball shown
 - [x] **Play Log** — Recent plays displayed in GameLog component
+- [x] **Timeout Display** — Shows remaining timeouts for possessing team
 - [ ] **Drive Summary** — No drive stats (plays, yards, time)
 - [ ] **Team Stats** — No cumulative game stats display
 - [ ] **Player Stats** — No individual player stats tracking
@@ -126,19 +127,19 @@ This document tracks the implementation status of 5E rules and features in the R
 | Category | Implemented | Partial | Not Implemented | Total |
 |----------|-------------|---------|-----------------|-------|
 | Game Setup | 3 | 0 | 2 | 5 |
-| Offense Play Calling | 5 | 0 | 3 | 8 |
+| Offense Play Calling | 6 | 0 | 2 | 8 |
 | Defense Play Calling | 2 | 0 | 3 | 5 |
 | Special Teams | 2 | 0 | 7 | 9 |
 | Roster Management | 0 | 0 | 6 | 6 |
-| Game State Display | 5 | 0 | 5 | 10 |
+| Game State Display | 6 | 0 | 5 | 11 |
 | 5E Features | 2 | 0 | 9 | 11 |
 | Player Cards | 2 | 0 | 7 | 9 |
 | AI Behavior | 2 | 0 | 5 | 7 |
 | Game Flow | 4 | 0 | 5 | 9 |
 | Visual Enhancements | 1 | 0 | 6 | 7 |
-| **TOTAL** | **28** | **0** | **58** | **86** |
+| **TOTAL** | **30** | **0** | **57** | **87** |
 
-**Completion: 33% (28/86)**
+**Completion: 34% (30/87)**
 
 ### Priority Improvements
 

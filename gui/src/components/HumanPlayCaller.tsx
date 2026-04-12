@@ -23,6 +23,12 @@ const PLAY_TYPES = [
   { value: 'KNEEL', label: '🧎 Kneel', color: '#374151' },
 ];
 
+const KICKOFF_TYPES = [
+  { value: 'NORMAL', label: 'Normal Kickoff' },
+  { value: 'ONSIDE', label: 'Onside Kick' },
+  { value: 'SQUIB', label: 'Squib Kick' },
+];
+
 const RUN_DIRECTIONS = [
   { value: 'IL', label: 'Inside Left' },
   { value: 'IR', label: 'Inside Right' },
@@ -234,6 +240,11 @@ export function HumanPlayCaller({
         >
           {loading ? '⏳ Running...' : '▶ Call Play'}
         </button>
+      </div>
+
+      {/* Timeout info */}
+      <div className="timeout-info">
+        <span>⏱️ Timeouts: {state.possession === 'home' ? state.timeouts_home : state.timeouts_away} remaining</span>
       </div>
 
       {/* Simulate options */}
