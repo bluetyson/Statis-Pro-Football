@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { GameState, HumanPlayCall } from '../types/game';
+import { OFFENSIVE_STRATEGIES } from '../types/game';
 
 interface HumanPlayCallerProps {
   state: GameState;
@@ -60,6 +61,7 @@ export function HumanPlayCaller({
   const [selectedPlay, setSelectedPlay] = useState<string>('RUN');
   const [selectedDirection, setSelectedDirection] = useState<string>('MIDDLE');
   const [selectedFormation, setSelectedFormation] = useState<string>('UNDER_CENTER');
+  const [selectedStrategy, setSelectedStrategy] = useState<string>('NONE');
 
   const disabled = loading || state.is_over;
 
@@ -74,6 +76,7 @@ export function HumanPlayCaller({
       play_type: selectedPlay,
       direction: isSpecialPlay ? 'MIDDLE' : selectedDirection,
       formation: isSpecialPlay ? 'SHOTGUN' : selectedFormation,
+      strategy: selectedStrategy !== 'NONE' ? selectedStrategy : undefined,
     });
   };
 
@@ -159,6 +162,26 @@ export function HumanPlayCaller({
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Strategy selection (5E rules) */}
+      {!isSpecialPlay && (
+        <div className="play-option">
+          <label className="section-label">Strategy (5E)</label>
+          <div className="option-pills">
+            {OFFENSIVE_STRATEGIES.map((s) => (
+              <button
+                key={s.value}
+                className={`option-pill ${selectedStrategy === s.value ? 'selected' : ''}`}
+                onClick={() => setSelectedStrategy(s.value)}
+                disabled={disabled}
+                title={s.label}
+              >
+                {s.label}
+              </button>
+            ))}
           </div>
         </div>
       )}

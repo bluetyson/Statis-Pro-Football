@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { GameState, DefensivePlayCall } from '../types/game';
-import { DEFENSIVE_FORMATIONS } from '../types/game';
+import { DEFENSIVE_FORMATIONS, DEFENSIVE_STRATEGIES } from '../types/game';
 
 interface DefensivePlayCallerProps {
   state: GameState;
@@ -24,11 +24,15 @@ export function DefensivePlayCaller({
   onExecuteAIPlay,
 }: DefensivePlayCallerProps) {
   const [selectedFormation, setSelectedFormation] = useState<string>('4_3');
+  const [selectedStrategy, setSelectedStrategy] = useState<string>('NONE');
 
   const disabled = loading || state.is_over;
 
   const handleCallDefense = () => {
-    onCallDefense({ formation: selectedFormation });
+    onCallDefense({ 
+      formation: selectedFormation,
+      defensive_strategy: selectedStrategy !== 'NONE' ? selectedStrategy : undefined,
+    });
   };
 
   return (
@@ -88,6 +92,24 @@ export function DefensivePlayCaller({
       {/* Formation description */}
       <div className="formation-info">
         <FormationDescription formation={selectedFormation} />
+      </div>
+
+      {/* Defensive strategy selection (5E rules) */}
+      <div className="play-option">
+        <label className="section-label">Defensive Strategy (5E)</label>
+        <div className="option-pills">
+          {DEFENSIVE_STRATEGIES.map((s) => (
+            <button
+              key={s.value}
+              className={`option-pill ${selectedStrategy === s.value ? 'selected' : ''}`}
+              onClick={() => setSelectedStrategy(s.value)}
+              disabled={disabled}
+              title={s.label}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Execute button */}

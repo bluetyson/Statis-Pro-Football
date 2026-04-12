@@ -156,10 +156,12 @@ export interface HumanPlayCall {
   play_type: string;
   direction: string;
   formation: string;
+  strategy?: string;
 }
 
 export interface DefensivePlayCall {
   formation: string;
+  defensive_strategy?: string;
 }
 
 export const DEFENSIVE_FORMATIONS = [
@@ -172,4 +174,19 @@ export const DEFENSIVE_FORMATIONS = [
   { value: 'NICKEL_BLITZ', label: 'Nickel Blitz', icon: '💥' },
   { value: 'NICKEL_COVER2', label: 'Nickel Cover 2', icon: '🪙' },
   { value: 'GOAL_LINE', label: 'Goal Line', icon: '🧱' },
+] as const;
+
+export const OFFENSIVE_STRATEGIES = [
+  { value: 'NONE', label: 'None' },
+  { value: 'FLOP', label: 'QB Flop (-1 yard)' },
+  { value: 'SNEAK', label: 'QB Sneak (0 or +1)' },
+  { value: 'DRAW', label: 'Draw Play' },
+  { value: 'PLAY_ACTION', label: 'Play-Action Pass' },
+] as const;
+
+export const DEFENSIVE_STRATEGIES = [
+  { value: 'NONE', label: 'None' },
+  { value: 'DOUBLE_COVERAGE', label: 'Double Coverage (-7)' },
+  { value: 'TRIPLE_COVERAGE', label: 'Triple Coverage (-15)' },
+  { value: 'ALT_DOUBLE_COVERAGE', label: 'Alt Double (2 receivers)' },
 ] as const;
