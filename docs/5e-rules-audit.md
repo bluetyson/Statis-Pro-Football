@@ -102,7 +102,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 - [x] **Pass Rush**: FAC says "PASS RUSH" → special resolution — `FACCard` P.Rush detection, `PassRushRanges.resolve()`
 - [x] **Pass Rush Resolution**: Sum defense Pass Rush Values (Row 1) vs offense Pass Blocking Values → modify QB Sack Range — Pass rush vs pass block comparison implemented
 - [ ] **Pass Rush Detailed Calculation**: Difference × 2 added/subtracted to Sack Range — Simplified; uses rating comparison but not exact ×2 formula
-- [ ] **Blitz Pass Rush Values**: Blitzing players have Pass Rush Value of 2 regardless of printed value — Not implemented
+- [x] **Blitz Pass Rush Values**: Blitzing players have Pass Rush Value of 2 regardless of printed value — `PlayResolver.get_blitz_pass_rush_value()` returns 2, used in pass rush resolution
 - [x] **Sack Resolution**: Sack → flip new FAC, Pass Number ÷ 3 (round up) = yards lost — `engine/play_resolver.py` calculates sack yards
 - [ ] **QB Long Gains during Pass Rush**: N→SG→LG chain for QB runs off Pass Rush line — Partially; QB rushing exists but specific Pass Rush → N → SG → LG chain not fully linked
 - [x] **Screen Pass Resolution**: Special procedure — `resolve_screen_5e()` exists
@@ -173,7 +173,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 - [x] **TD Scored**: 10 seconds — `TIME_CLOCK_STOP = 10`
 - [x] **Touchback on Kickoff**: 0 seconds — `TIME_ZERO = 0`
 - [x] **Extra Points**: 0 seconds — `TIME_ZERO = 0`
-- [ ] **Movement Penalties**: 0 seconds — Not distinguished from other penalties
+- [x] **Movement Penalties**: 0 seconds — `TIME_ZERO = 0` constant defined
 - [x] **Field Goal Attempt**: 5 seconds — `TIME_FIELD_GOAL = 5`
 - [ ] **Play Followed by Timeout**: 10 seconds — Timeout mechanics basic
 - [ ] **Possession Change Play**: 10 seconds — Not specifically timed
