@@ -423,12 +423,12 @@ class CardGenerator:
             card.pass_defense_rating = coverage
             card.tackle_rating = run_stop
             card.pass_rush_rating = pass_rush
-            card.intercept_range = max(0, (coverage - 50) // 5)  # 0-9 scale
+            card.intercept_range = max(0, min(9, (coverage - 50) // 5))  # 0-9 scale
         elif pos in ("CB", "S", "SS", "FS", "DB"):
             # DB: pass defense, pass rush, intercept range (no tackle)
             card.pass_defense_rating = coverage
             card.pass_rush_rating = pass_rush
-            card.intercept_range = max(0, (coverage - 40) // 4)  # 0-14 scale, DBs better
+            card.intercept_range = max(0, min(14, (coverage - 40) // 4))  # 0-14 scale, DBs better
 
         card.stats_summary = {
             "pass_rush_rating": pass_rush,

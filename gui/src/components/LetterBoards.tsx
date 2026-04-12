@@ -6,6 +6,11 @@ interface LetterBoardsProps {
   possession: string;
 }
 
+/** Scale intercept_range (0-14) to a 0-100% bar width. */
+function intRangeBarWidth(ir: number): string {
+  return `${Math.min(ir * 10, 100)}%`;
+}
+
 /* ─── Compact inline card for a single player ─────────────────── */
 
 function MiniCard({ player, isDefender }: { player: PlayerBrief; isDefender?: boolean }) {
@@ -165,7 +170,7 @@ function MiniCard({ player, isDefender }: { player: PlayerBrief; isDefender?: bo
               </div>
               <div className="mc-rating">
                 <span className="mc-rl">Int</span>
-                <div className="mc-bar"><div className="mc-fill mc-fill-int" style={{ width: `${Math.min(player.intercept_range * 10, 100)}%` }} /></div>
+                <div className="mc-bar"><div className="mc-fill mc-fill-int" style={{ width: intRangeBarWidth(player.intercept_range) }} /></div>
                 <span className="mc-rv">{player.intercept_range}</span>
               </div>
             </>
@@ -185,7 +190,7 @@ function MiniCard({ player, isDefender }: { player: PlayerBrief; isDefender?: bo
               </div>
               <div className="mc-rating">
                 <span className="mc-rl">Int</span>
-                <div className="mc-bar"><div className="mc-fill mc-fill-int" style={{ width: `${Math.min(player.intercept_range * 10, 100)}%` }} /></div>
+                <div className="mc-bar"><div className="mc-fill mc-fill-int" style={{ width: intRangeBarWidth(player.intercept_range) }} /></div>
                 <span className="mc-rv">{player.intercept_range}</span>
               </div>
             </>
