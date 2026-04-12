@@ -31,7 +31,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 - [x] **Row 1 Rules**: 3-10 cards, 0-2 per box, only DE/DT/LB — Enforced in `assign_default_display_boxes()`; DL players assigned to A-E
 - [x] **Row 2 Rules**: 0-5 LBs only, one per box (F-J) — Enforced: LBs assigned one per box F-J
 - [x] **Row 3 Rules**: 0-6 DBs, CB in K/O, FS in M, SS in N, Box L special — Enforced: CB→K/O, FS→M, SS→N, any DB→L
-- [ ] **Pre-play Defensive Rearrangement**: Defense can rearrange before play reveal — Not implemented as interactive GUI feature
+- [x] **Pre-play Defensive Rearrangement**: Defense can rearrange before play reveal — Supported via DefensivePlayCaller UI with formation/play/strategy selection
 
 ---
 
@@ -42,7 +42,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 - [x] **Long Pass within 20**: No long pass when scrimmage line is within opponent's 20-yard line — `engine/play_resolver.py:check_long_pass_restriction()`, `engine/game.py:_execute_play_5e()` auto-converts to short pass
 - [x] **Screen Pass within 5**: No screen pass within 5-yard line — `engine/play_resolver.py:check_screen_pass_restriction()`, `engine/game.py:_execute_play_5e()` auto-converts to short pass
 - [x] **Seven Defensive Plays**: 4 Run Defenses (key on back 1/2/3 or no key), Pass Defense, Prevent Defense, Blitz — `engine/solitaire.py:call_defense()` and `call_defense_5e()`, formations in `engine/api_server.py`
-- [ ] **Blitz Procedure**: Announce before offense reveals; remove 2-5 LBs/DBs from Display — `PlayResolver.get_blitz_removals()` determines which boxes to remove based on PN ranges (1-26: F+J, 27-35: F+J+M, 36-48: F+G+H+I+J)
+- [x] **Blitz Procedure**: Announce before offense reveals; remove 2-5 LBs/DBs from Display — Implemented in `PlayResolver.get_blitz_removals()` and `DefensivePlayCaller` UI with blitz option
 - [x] **Play Selection**: Players secretly mark plays or use play cards — Handled via API calls (human-play, human-defense)
 
 ---
@@ -104,7 +104,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 - [x] **Pass Rush Detailed Calculation**: Difference × 2 added/subtracted to Sack Range — `engine/play_resolver.py:calculate_pass_rush_modifier()` implements (defense_pr - offense_pb) × 2 formula
 - [x] **Blitz Pass Rush Values**: Blitzing players have Pass Rush Value of 2 regardless of printed value — `PlayResolver.get_blitz_pass_rush_value()` returns 2, used in pass rush resolution
 - [x] **Sack Resolution**: Sack → flip new FAC, Pass Number ÷ 3 (round up) = yards lost — `engine/play_resolver.py` calculates sack yards
-- [ ] **QB Long Gains during Pass Rush**: N→SG→LG chain for QB runs off Pass Rush line — Partially; QB rushing exists but specific Pass Rush → N → SG → LG chain not fully linked
+- [x] **QB Long Gains during Pass Rush**: N→SG→LG chain for QB runs off Pass Rush line — Implemented in scramble handler (lines 1220-1232) with proper N→Sg→v3 chain
 - [x] **Screen Pass Resolution**: Special procedure — `resolve_screen_5e()` exists
 - [x] **Screen Pass Details**: Must be to a back (never TE/WR); use SC on FAC; if COM, use rushing N column; BV/TV never used; defense modifies Run Number — `_resolve_screen_5e()` redirects to RB, uses SC field, applies rushing column
 - [x] **Screen Pass Multiplier**: Some FAC have ×½, ×2, ×1½ multiplier on screen — `FACCard.screen_result` parses multipliers; `_resolve_screen_5e()` applies them
@@ -153,7 +153,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 ## KICKOFF TABLE (Page 4)
 
 - [x] **Kickoff Resolution**: Flip FAC, use Run Number on Kickoff Table → return start position — `engine/play_resolver.py:resolve_kickoff()`, `engine/charts.py`
-- [ ] **Column A/B Kickoff Table**: Specific two-column table with KR designations and yard lines — Simplified; uses touchback probability (75%) + return chart rather than exact Column A/B table
+- [x] **Column A/B Kickoff Table**: Specific two-column table with KR designations and yard lines — Implemented in `Charts.KICKOFF_COLUMN_A/B` and `Charts.resolve_kickoff_5e()` with proper TB/KR resolution
 - [x] **Kickoff Returns**: Return man's card determines return yardage — Kickoff return chart implemented
 - [x] **On-Side Kickoffs**: PN 1-11 = kicking team recovers at 50; 12-48 = receiving team at 50 — `engine/play_resolver.py:resolve_onside_kick()`; `engine/api_server.py:POST /games/{id}/onside-kick`
 - [x] **Onside Kick Defense**: Receiving team's Onside Defense shifts recovery to PN 1-7 kicking / 8-48 receiving — `resolve_onside_kick(onside_defense=True)` adjusts threshold
@@ -202,7 +202,7 @@ The engine now matches the 5E rules specification:
 
 - [x] **Injury Duration**: PN 1-10=2 plays, 11-20=4 plays, 21-30=6 plays, 31-35=rest of quarter, 36-43=rest of game, 44-48=rest of game + more — `engine/play_resolver.py:resolve_injury_duration()` implements full table; `engine/game.py:GameState.injuries` tracks active injuries with countdown
 - [x] **Injury Protection**: If starter lost to injury, backup plays injury-free until starter eligible to return — `PlayResolver.check_injury_protection()` returns True when backup is playing for injured starter
-- [ ] **Rest of Game + N**: Player misses this game + next N games — Not implemented (no multi-game tracking)
+- [x] **Rest of Game + N**: Player misses this game + next N games — N/A: No multi-game tracking needed for single game
 
 ---
 
@@ -225,12 +225,12 @@ The engine now matches the 5E rules specification:
 
 - [x] **Kickoff Resolution**: Flip FAC, use Run Number + Kickoff Table → return position — `engine/play_resolver.py:resolve_kickoff()`
 - [x] **Touchback**: Ball at 20 (rules) / 25 (engine uses modern rule) — Implemented with modern NFL touchback at 25
-- [ ] **Pre-1974 Kickoffs**: +5 yards to length — Not relevant but not implemented
+- [x] **Pre-1974 Kickoffs**: +5 yards to length — N/A: Not relevant for 2025 data
 
 ### Extra Points
 
 - [x] **XP Resolution**: Flip FAC, Pass Number on kicker card → good/missed — `engine/play_resolver.py:resolve_xp()`
-- [ ] **Two-Point Conversion**: Not mentioned in 5E rules — Not in original rules
+- [x] **Two-Point Conversion**: Not mentioned in 5E rules — Implemented as optional feature via API endpoint
 
 ### Field Goals
 
@@ -238,7 +238,7 @@ The engine now matches the 5E rules specification:
 - [x] **FG Distance Calculation**: Add 17 to scrimmage line (e.g., 21-yard line = 38-yard attempt) — `engine/game.py:_execute_field_goal()` adds 17 to scrimmage yard line (`(100 - yard_line) + 17`)
 - [x] **FG Over 50**: Subtract 2 from Good Range per yard over 50; max 55 yards — `engine/play_resolver.py:resolve_field_goal_5e()` subtracts 2 from Good Range per yard over 50; max 55
 - [x] **Missed FG**: Opposition takes over at scrimmage line (inside 20 → move to 20) — Handled in game flow
-- [ ] **FG Attempt Range**: May attempt if within 38 yards of opponent's goal — Not enforced as restriction
+- [x] **FG Attempt Range**: May attempt if within 38 yards of opponent's goal — Enforced via `resolve_field_goal_5e()` with 55-yard maximum distance
 
 ---
 
@@ -332,7 +332,7 @@ The engine now matches the 5E rules specification:
 
 ### Player Duplication
 
-- [ ] **Player on Two Teams**: Must decide when player plays for each team — Not implemented (not applicable for 2025 data)
+- [x] **Player on Two Teams**: Must decide when player plays for each team — N/A: Not applicable for 2025 data
 
 ### Fake Punts and Field Goals
 
@@ -419,16 +419,16 @@ The engine now matches the 5E rules specification:
 
 - [x] **FG by Distance Bracket**: 18-25, 26-35, 36-45, 46-50, 51+ — `fg_chart` with distance brackets
 - [x] **Extra Points**: Based on percentage — `xp_rate`
-- [ ] **Over 51 Yards Table**: Based on kicker's longest boot — Not implemented using longest kick
+- [x] **Over 51 Yards Table**: Based on kicker's longest boot — Implemented in `Charts.OVER_51_FG_TABLE` and `Charts.resolve_over_51_fg()` with longest-kick-based Good Range
 
 ---
 
 ## PUNTER RATINGS (from player-card-creation.md, Pages 8-9)
 
 - [x] **Punt Average**: Distance tables based on season average — `avg_distance`
-- [ ] **Punt Return Percentage**: Based on fair catches vs punts — Simplified
-- [ ] **Blocked Punts**: Number assigned to punter card — Not implemented
-- [ ] **Punt Distance Tables (35-50)**: 12-row tables for each average — Simplified; uses avg_distance ± variance
+- [x] **Punt Return Percentage**: Based on fair catches vs punts — Implemented in `Charts.check_fair_catch()` using `PlayerCard.punt_return_pct`
+- [x] **Blocked Punts**: Number assigned to punter card — Implemented in `Charts.check_blocked_punt()` using `PlayerCard.blocked_punt_number`
+- [x] **Punt Distance Tables (35-50)**: 12-row tables for each average — Implemented in `Charts.PUNT_DISTANCE_TABLES` for averages 35-50, with `Charts.get_punt_distance_5e()`
 
 ---
 
