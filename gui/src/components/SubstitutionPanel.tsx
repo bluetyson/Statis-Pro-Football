@@ -79,6 +79,8 @@ export function SubstitutionPanel({ gameId, personnel, loading, onSubstitute }: 
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setPosChangeMsg(`❌ ${err.response?.data?.detail ?? err.message}`);
+      } else {
+        setPosChangeMsg(`❌ ${err instanceof Error ? err.message : 'An unknown error occurred'}`);
       }
     }
   };
