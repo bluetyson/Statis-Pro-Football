@@ -1840,36 +1840,76 @@ class PlayResolver:
             +2 no key, 0 wrong key/pass/prevent/blitz).
         """
         z_event = None
+        log: List[str] = []
 
         # ── Handle Z card ────────────────────────────────────────────
         if fac_card.is_z_card:
+            log.append(f"[FAC] Z card drawn — resolving Z event, redrawing")
             z_event = self._resolve_z_card(deck)
             fac_card = deck.draw_non_z()
+
+        # ── Log FAC card details ─────────────────────────────────────
+        blocking_matchup = fac_card.get_blocking_matchup(play_direction)
+        log.append(
+            f"[FAC] Card #{fac_card.card_number}: "
+            f"RN={fac_card.run_number} PN={fac_card.pass_number} "
+            f"ER={fac_card.end_run} OOB={'Yes' if fac_card.is_out_of_bounds else 'No'}"
+        )
+        log.append(
+            f"[FAC] Blocking matchup for {play_direction}: "
+            f"SL={fac_card.sweep_left} | IL={fac_card.inside_left} | "
+            f"SR={fac_card.sweep_right} | IR={fac_card.inside_right}"
+        )
+        log.append(f"[FAC] Selected matchup ({play_direction}): {blocking_matchup}")
 
         # ── Determine run number and OOB ─────────────────────────────
         run_num = fac_card.run_num_int
         is_oob = fac_card.is_out_of_bounds
+        original_rn = run_num
 
         # Rule 1: Apply run number modifier based on defensive play + extra
         if defensive_play_5e is not None:
             from .play_types import get_run_number_modifier_5e
             # TODO: ball_carrier_number should come from play call context
-            rn_modifier = get_run_number_modifier_5e(defensive_play_5e, ball_carrier_number=1) + extra_rn_modifier
+            def_rn_mod = get_run_number_modifier_5e(defensive_play_5e, ball_carrier_number=1)
+            rn_modifier = def_rn_mod + extra_rn_modifier
+            log.append(
+                f"[RN MOD] Defensive play={defensive_play_5e.value}: "
+                f"def_modifier={def_rn_mod:+d}, extra={extra_rn_modifier:+d}, "
+                f"total RN modifier={rn_modifier:+d}"
+            )
         else:
-            rn_modifier = self.get_run_number_modifier(defense_formation) + extra_rn_modifier
+            def_rn_mod = self.get_run_number_modifier(defense_formation)
+            rn_modifier = def_rn_mod + extra_rn_modifier
+            log.append(
+                f"[RN MOD] Formation={defense_formation}: "
+                f"def_modifier={def_rn_mod:+d}, extra={extra_rn_modifier:+d}, "
+                f"total RN modifier={rn_modifier:+d}"
+            )
         if run_num is not None:
             run_num = max(1, min(12, run_num + rn_modifier))
+            log.append(f"[RN] Original RN={original_rn}, adjusted RN={run_num} (clamped 1-12)")
+        else:
+            log.append(f"[RN] No run number (Z card fallback)")
 
         rn_str = str(run_num) if run_num is not None else "1"
         used_run_num = run_num if run_num is not None else 1
 
         # Effective run-stop
         eff_run_stop = effective_run_stop(defense_run_stop, defense_formation)
+        log.append(
+            f"[DEF] Run-stop: base={defense_run_stop}, "
+            f"formation={defense_formation}, effective={eff_run_stop}"
+        )
 
         # ── Try authentic 12-row rushing first ───────────────────────
         if rusher.rushing and rusher.has_rushing():
             rn = run_num if run_num is not None else 1
             row = rusher.get_rushing_row(rn)
+            log.append(
+                f"[RUSH] {rusher.player_name} card row {rn}: "
+                f"N={row.v1}, SG={row.v2}, LG={row.v3}"
+            )
 
             # Use N (normal) column as base yards
             yards = row.v1
@@ -1878,10 +1918,11 @@ class PlayResolver:
                     # Special gain (breakaway)
                     yards = row.v3 if isinstance(row.v3, int) else random.randint(15, 40)
                     is_td = random.random() < 0.2
+                    log.append(f"[RUSH] Special Gain (breakaway)! Yards={yards}, TD={is_td}")
                     desc = f"{rusher.player_name} breaks free for {yards} yards!"
                     if is_td:
                         desc += " TOUCHDOWN!"
-                    return PlayResult(
+                    r = PlayResult(
                         play_type="RUN", yards_gained=yards,
                         result="TD" if is_td else "GAIN",
                         is_touchdown=is_td,
@@ -1889,26 +1930,49 @@ class PlayResolver:
                         rusher=rusher.player_name, z_card_event=z_event,
                         run_number_used=used_run_num,
                     )
+                    r.debug_log = log
+                    return r
                 else:
                     try:
                         yards = int(yards)
                     except (ValueError, TypeError):
                         yards = random.randint(1, 5)
 
+            base_yards = yards
             # Defense run-stop modifier (authentic 5E: tackle rating −5 to +4)
             # Positive tackle = defense is better at stopping, reduces yards
             yards = max(-5, int(yards - eff_run_stop))
+            log.append(
+                f"[YARDS] Base yards={base_yards}, "
+                f"minus run-stop ({eff_run_stop}) = {base_yards - eff_run_stop}, "
+                f"clamped to {yards}"
+            )
             if eff_run_stop >= 3 and random.random() < 0.15:
+                old_yards = yards
                 yards = min(yards, random.choice([-2, -1, 0]))
+                log.append(
+                    f"[TACKLE] Strong defense tackle (eff_run_stop={eff_run_stop}): "
+                    f"yards {old_yards} → {yards}"
+                )
 
             # 5E Rule: Inside run max loss = 3 yards; no limit on sweep
+            old_yards = yards
             yards = self.apply_inside_run_max_loss(yards, play_direction)
+            if yards != old_yards:
+                log.append(
+                    f"[CAP] Inside run max loss applied ({play_direction}): "
+                    f"{old_yards} → {yards}"
+                )
 
             if eff_run_stop >= 3 and random.random() < 0.03:
                 recovery = Charts.roll_fumble_recovery()
                 fumble_yards, fumble_td = Charts.roll_fumble_return()
                 is_turnover = recovery == "DEFENSE"
-                return PlayResult(
+                log.append(
+                    f"[FUMBLE] Forced fumble (eff_run_stop={eff_run_stop}): "
+                    f"recovery={recovery}"
+                )
+                r = PlayResult(
                     play_type="RUN", yards_gained=yards,
                     result="FUMBLE", turnover=is_turnover,
                     turnover_type="FUMBLE" if is_turnover else None,
@@ -1919,17 +1983,22 @@ class PlayResolver:
                     rusher=rusher.player_name, z_card_event=z_event,
                     run_number_used=used_run_num,
                 )
+                r.debug_log = log
+                return r
 
             # Out of bounds — 5E Rule: inside runs may never end out of bounds
             if is_oob and play_direction not in ("IL", "IR", "INSIDE", "MIDDLE", "LEFT"):
+                log.append(f"[OOB] Runner out of bounds ({play_direction})")
                 desc = f"{rusher.player_name} runs {play_direction} for {yards} yards, out of bounds"
-                return PlayResult(
+                r = PlayResult(
                     play_type="RUN", yards_gained=yards,
                     result="OOB", out_of_bounds=True,
                     description=desc, rusher=rusher.player_name,
                     z_card_event=z_event,
                     run_number_used=used_run_num,
                 )
+                r.debug_log = log
+                return r
 
             is_td = random.random() < 0.03
             desc = f"{rusher.player_name} runs {play_direction}"
@@ -1937,8 +2006,9 @@ class PlayResolver:
                 desc += " for a TOUCHDOWN!"
             else:
                 desc += f" for {yards} yard{'s' if yards != 1 else ''}"
+            log.append(f"[RESULT] Final: {yards} yards, TD={is_td}")
 
-            return PlayResult(
+            r = PlayResult(
                 play_type="RUN", yards_gained=yards,
                 result="TD" if is_td else "GAIN",
                 is_touchdown=is_td,
@@ -1946,8 +2016,11 @@ class PlayResolver:
                 rusher=rusher.player_name, z_card_event=z_event,
                 run_number_used=used_run_num,
             )
+            r.debug_log = log
+            return r
 
         # ── Legacy: fall back to old slot-based columns ──────────────
+        log.append(f"[LEGACY] No 12-row rushing data; using legacy slot columns")
         if play_direction in ("SL", "SR"):
             column = rusher.sweep if rusher.sweep else rusher.outside_run
         elif play_direction in ("IL", "IR"):
@@ -1960,44 +2033,57 @@ class PlayResolver:
         if not column:
             yards = random.choices([-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8],
                                    weights=[2, 3, 5, 8, 10, 12, 12, 10, 8, 5, 3])[0]
-            return PlayResult(
+            log.append(f"[LEGACY] No column data; random yards={yards}")
+            r = PlayResult(
                 play_type="RUN", yards_gained=yards, result="GAIN",
                 description=f"{rusher.player_name} runs for {yards} yards",
                 rusher=rusher.player_name, z_card_event=z_event,
                 run_number_used=used_run_num,
             )
+            r.debug_log = log
+            return r
 
         play_data = column.get(rn_str, {"result": "GAIN", "yards": 2, "td": False})
         result_type = play_data.get("result", "GAIN")
         yards = play_data.get("yards", 0)
         is_td = play_data.get("td", False)
+        log.append(f"[LEGACY] Column lookup RN={rn_str}: result={result_type}, yards={yards}, TD={is_td}")
 
         # Defense run-stop modifier (authentic 5E small-number scale)
         if result_type in ("GAIN", "BREAKAWAY"):
+            base_yards = yards
             yards = max(-5, int(yards - eff_run_stop))
+            log.append(f"[LEGACY] Run-stop applied: {base_yards} - {eff_run_stop} = {yards}")
             if eff_run_stop >= 3 and random.random() < 0.15:
+                old_yards = yards
                 yards = min(yards, random.choice([-2, -1, 0]))
+                log.append(f"[TACKLE] Strong defense tackle: {old_yards} → {yards}")
             if eff_run_stop >= 3 and result_type == "GAIN" and random.random() < 0.03:
                 result_type = "FUMBLE"
+                log.append(f"[FUMBLE] Forced fumble by strong defense")
 
         # ── Out of bounds ────────────────────────────────────────────
         if is_oob:
+            log.append(f"[OOB] Runner out of bounds ({play_direction})")
             desc = f"{rusher.player_name} runs {play_direction} for {yards} yards, out of bounds"
-            return PlayResult(
+            r = PlayResult(
                 play_type="RUN", yards_gained=yards,
                 result="OOB", out_of_bounds=True,
                 description=desc, rusher=rusher.player_name,
                 z_card_event=z_event,
                 run_number_used=used_run_num,
             )
+            r.debug_log = log
+            return r
 
         # ── Fumble ───────────────────────────────────────────────────
         if result_type == "FUMBLE":
             recovery = Charts.roll_fumble_recovery()
             fumble_yards, fumble_td = Charts.roll_fumble_return()
             is_turnover = recovery == "DEFENSE"
+            log.append(f"[FUMBLE] Recovery={recovery}")
             if is_turnover and fumble_td:
-                return PlayResult(
+                r = PlayResult(
                     play_type="RUN", yards_gained=-fumble_yards,
                     result="FUMBLE_TD", is_touchdown=False,
                     turnover=True, turnover_type="FUMBLE",
@@ -2005,7 +2091,9 @@ class PlayResolver:
                     rusher=rusher.player_name, z_card_event=z_event,
                     run_number_used=used_run_num,
                 )
-            return PlayResult(
+                r.debug_log = log
+                return r
+            r = PlayResult(
                 play_type="RUN", yards_gained=yards,
                 result="FUMBLE", turnover=is_turnover,
                 turnover_type="FUMBLE" if is_turnover else None,
@@ -2016,14 +2104,17 @@ class PlayResolver:
                 rusher=rusher.player_name, z_card_event=z_event,
                 run_number_used=used_run_num,
             )
+            r.debug_log = log
+            return r
 
         # ── Breakaway ────────────────────────────────────────────────
         if result_type == "BREAKAWAY":
             is_td = is_td or random.random() < 0.2
+            log.append(f"[BREAKAWAY] yards={yards}, TD={is_td}")
             desc = f"{rusher.player_name} breaks free for {yards} yards!"
             if is_td:
                 desc += " TOUCHDOWN!"
-            return PlayResult(
+            r = PlayResult(
                 play_type="RUN", yards_gained=yards,
                 result="TD" if is_td else "GAIN",
                 is_touchdown=is_td,
@@ -2031,6 +2122,8 @@ class PlayResolver:
                 rusher=rusher.player_name, z_card_event=z_event,
                 run_number_used=used_run_num,
             )
+            r.debug_log = log
+            return r
 
         # ── Normal gain ──────────────────────────────────────────────
         # Check Z RES on the card for additional effects
@@ -2038,7 +2131,8 @@ class PlayResolver:
         if z_res_info["type"] == "FUMBLE" and random.random() < 0.5:
             recovery = Charts.roll_fumble_recovery()
             is_turnover = recovery == "DEFENSE"
-            return PlayResult(
+            log.append(f"[FUMBLE] Z-result fumble, recovery={recovery}")
+            r = PlayResult(
                 play_type="RUN", yards_gained=yards,
                 result="FUMBLE", turnover=is_turnover,
                 turnover_type="FUMBLE" if is_turnover else None,
@@ -2049,14 +2143,17 @@ class PlayResolver:
                 rusher=rusher.player_name, z_card_event=z_event,
                 run_number_used=used_run_num,
             )
+            r.debug_log = log
+            return r
 
         desc = f"{rusher.player_name} runs {play_direction}"
         if is_td:
             desc += " for a TOUCHDOWN!"
         else:
             desc += f" for {yards} yard{'s' if yards != 1 else ''}"
+        log.append(f"[RESULT] Final: {yards} yards, TD={is_td}")
 
-        return PlayResult(
+        r = PlayResult(
             play_type="RUN", yards_gained=yards,
             result="TD" if is_td else "GAIN",
             is_touchdown=is_td,
@@ -2065,6 +2162,8 @@ class PlayResolver:
             z_card_event=z_event,
             run_number_used=used_run_num,
         )
+        r.debug_log = log
+        return r
 
     # ══════════════════════════════════════════════════════════════════
     #  ADDITIONAL 5E RULES — NEW METHODS

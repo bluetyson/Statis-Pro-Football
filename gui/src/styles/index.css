@@ -1784,6 +1784,27 @@ body {
   color: #6b7280;
 }
 
+.debug-entry.debug-run {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.debug-entry.debug-fac {
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.debug-entry.debug-result {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+  font-weight: 600;
+}
+
+.debug-entry.debug-def {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+
 /* ─── Play Call Badges ────────────────────────────────────────── */
 
 .last-play-calls {

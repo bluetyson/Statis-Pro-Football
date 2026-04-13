@@ -36,6 +36,11 @@ function DebugLogPanel({ log }: { log: string[] }) {
               entry.includes('[INT]') ? 'debug-int' :
               entry.includes('[COM]') ? 'debug-com' :
               entry.includes('[INC]') ? 'debug-inc' :
+              entry.includes('[RUSH]') || entry.includes('[RN]') ? 'debug-run' :
+              entry.includes('[FAC]') ? 'debug-fac' :
+              entry.includes('[YARDS]') || entry.includes('[RESULT]') ? 'debug-result' :
+              entry.includes('[FUMBLE]') ? 'debug-int' :
+              entry.includes('[TACKLE]') || entry.includes('[DEF]') ? 'debug-def' :
               ''
             }`}>
               {entry}
