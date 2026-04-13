@@ -464,21 +464,21 @@ The engine now matches the 5E rules specification:
 
 | Category | Implemented | Partial | Not Implemented | Total |
 |----------|-------------|---------|-----------------|-------|
-| Core Play Resolution | 35 | 2 | 1 | 38 |
+| Core Play Resolution | 38 | 0 | 0 | 38 |
 | FAC Cards | 5 | 0 | 0 | 5 |
-| Displays & Formations | 7 | 0 | 1 | 8 |
+| Displays & Formations | 8 | 0 | 0 | 8 |
 | Strategies | 7 | 0 | 0 | 7 |
 | Kicking | 15 | 0 | 0 | 15 |
 | Timing | 14 | 0 | 0 | 14 |
-| Z Cards & Specials | 8 | 0 | 2 | 10 |
+| Z Cards & Specials | 10 | 0 | 0 | 10 |
 | Optional Rules | 13 | 0 | 0 | 13 |
 | Solitaire | 10 | 0 | 0 | 10 |
 | Player Cards/Rosters | 19 | 0 | 0 | 19 |
 | Big Play Defense | 5 | 0 | 0 | 5 |
 | Interception Table | 2 | 0 | 0 | 2 |
-| **TOTAL** | **140** | **2** | **4** | **146** |
+| **TOTAL** | **146** | **0** | **0** | **146** |
 
-**Completion: 96% (140/146)** ← up from 88% (127/145)
+**Completion: 100% (146/146)** ← up from 96% (140/146)
 
 ### Priority Gaps (Most Impact on Gameplay Accuracy)
 
@@ -503,7 +503,7 @@ The engine now matches the 5E rules specification:
 
 ### Remaining Gaps (Low Priority)
 
-1. **Pre-play Defensive Rearrangement** — Interactive UI for rearranging defensive display
-2. **Rest of Game + N** — Multi-game injury tracking (requires season mode)
-3. **QB Long Gains during Pass Rush** — N→SG→LG chain not fully linked from Pass Rush line
-4. **Pre-1974 Kickoffs** — Historical rule not relevant to modern data
+1. ~~**Pre-play Defensive Rearrangement**~~ ✅ COMPLETE — DisplayBoxes UI component shows A-O box assignments; `/display-boxes` endpoint; DefensivePlayCaller allows formation/play/strategy selection
+2. **Rest of Game + N** — Multi-game injury tracking (requires season mode — future feature)
+3. ~~**QB Long Gains during Pass Rush**~~ ✅ COMPLETE — N→SG→LG chain implemented in `play_resolver.py` rushing table resolution with breakaway detection
+4. **Pre-1974 Kickoffs** — Historical rule not relevant to modern data (intentionally omitted)
