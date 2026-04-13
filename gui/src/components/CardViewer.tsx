@@ -104,14 +104,14 @@ export function CardViewer({ teamAbbr }: CardViewerProps) {
         </section>
 
         <section className="team-card-section">
-          <h4>Kick Return</h4>
+          <h4>Kick Return Depth (KR1-KR3)</h4>
           <div className="team-card-stack">
             {card.kick_returners.map((player, index) => renderPlayerLink(`KR${index + 1}`, player))}
           </div>
         </section>
 
         <section className="team-card-section">
-          <h4>Punt Return</h4>
+          <h4>Punt Return Depth (PR1-PR4)</h4>
           <div className="team-card-stack">
             {card.punt_returners.map((player, index) => renderPlayerLink(`PR${index + 1}`, player))}
           </div>

@@ -53,6 +53,10 @@ class Team:
         "KR": {"RB": 14, "WR": 12, "CB": 9, "S": 8, "SS": 8, "FS": 8, "DB": 8, "TE": 4, "QB": 2},
         "PR": {"WR": 15, "CB": 12, "S": 11, "SS": 11, "FS": 11, "DB": 11, "RB": 10, "TE": 3, "QB": 1},
     }
+    _INELIGIBLE_RETURN_POSITIONS = {
+        "K", "P", "LT", "LG", "C", "RG", "RT", "OL",
+        "DE", "DT", "DL", "NT", "LB", "OLB", "ILB", "MLB",
+    }
 
     def to_dict(self) -> dict:
         return {
@@ -74,7 +78,7 @@ class Team:
     @classmethod
     def _return_score(cls, player: PlayerCard, kind: str) -> float:
         pos = player.position.upper()
-        if pos in {"K", "P", "LT", "LG", "C", "RG", "RT", "OL", "DE", "DT", "DL", "NT", "LB", "OLB", "ILB", "MLB"}:
+        if pos in cls._INELIGIBLE_RETURN_POSITIONS:
             return float("-inf")
 
         stats = player.stats_summary or {}

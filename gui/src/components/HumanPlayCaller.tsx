@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { GameState, HumanPlayCall, PersonnelData } from '../types/game';
 import { OFFENSIVE_STRATEGIES } from '../types/game';
 
@@ -96,21 +96,33 @@ export function HumanPlayCaller({
   const directions = isRunPlay ? RUN_DIRECTIONS : PASS_DIRECTIONS;
 
   // Get available players based on play type
-  const ballCarriers = personnel ? (
-    personnel.offense_all.filter(p => 
+  const ballCarriers = useMemo(() => (
+    personnel ? personnel.offense_all.filter(p =>
       p.position === 'RB' || p.position === 'QB' || p.position === 'WR'
-    )
-  ) : [];
-  const availableBallCarriers = ballCarriers.filter((p) => !p.injured);
+    ) : []
+  ), [personnel]);
+  const availableBallCarriers = useMemo(
+    () => ballCarriers.filter((p) => !p.injured),
+    [ballCarriers],
+  );
 
-  const receiverTargets = personnel ? (
-    personnel.offense_receivers
-  ) : [];
-  const availableReceiverTargets = receiverTargets.filter((p) => !p.injured);
-  const autoBallCarrier = availableBallCarriers.find((p) => p.position === 'RB') ?? availableBallCarriers[0] ?? null;
-  const noEligiblePlayer =
-    (isRunPlay && availableBallCarriers.length === 0) ||
-    (isPassPlay && availableReceiverTargets.length === 0);
+  const receiverTargets = useMemo(
+    () => personnel ? personnel.offense_receivers : [],
+    [personnel],
+  );
+  const availableReceiverTargets = useMemo(
+    () => receiverTargets.filter((p) => !p.injured),
+    [receiverTargets],
+  );
+  const autoBallCarrier = useMemo(
+    () => availableBallCarriers.find((p) => p.position === 'RB') ?? availableBallCarriers[0] ?? null,
+    [availableBallCarriers],
+  );
+  const noEligiblePlayer = useMemo(
+    () => (isRunPlay && availableBallCarriers.length === 0) ||
+      (isPassPlay && availableReceiverTargets.length === 0),
+    [availableBallCarriers.length, availableReceiverTargets.length, isPassPlay, isRunPlay],
+  );
 
   useEffect(() => {
     const pool = isRunPlay ? availableBallCarriers : availableReceiverTargets;

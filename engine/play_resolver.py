@@ -145,6 +145,13 @@ class BigPlayDefense:
 class PlayResolver:
     """Resolves plays by consulting player cards with FAC distributions."""
 
+    RETURN_BASE_YPC = 4.0
+    RETURN_BASE_REC_YARDS = 10.0
+    PUNT_RETURN_YPC_WEIGHT = 1.0
+    KICK_RETURN_YPC_WEIGHT = 1.5
+    PUNT_RETURN_REC_DIVISOR = 5.0
+    KICK_RETURN_REC_DIVISOR = 6.0
+
     def __init__(self):
         self.charts = Charts()
         # Track endurance: {player_name: consecutive_plays_directed}
@@ -938,8 +945,15 @@ class PlayResolver:
             return 0
         stats = returner.stats_summary or {}
         grade_bonus = {"A+": 2, "A": 2, "B": 1, "C": 0, "D": -1}.get(returner.overall_grade, 0)
-        ypc_bonus = round((float(stats.get("ypc", 4.0)) - 4.0) * (1.0 if kind == "PR" else 1.5))
-        rec_bonus = round((float(stats.get("avg_yards", 10.0)) - 10.0) / (5.0 if kind == "PR" else 6.0))
+        # Use rushing efficiency and receiving explosiveness as lightweight return proxies.
+        ypc_bonus = round(
+            (float(stats.get("ypc", PlayResolver.RETURN_BASE_YPC)) - PlayResolver.RETURN_BASE_YPC)
+            * (PlayResolver.PUNT_RETURN_YPC_WEIGHT if kind == "PR" else PlayResolver.KICK_RETURN_YPC_WEIGHT)
+        )
+        rec_bonus = round(
+            (float(stats.get("avg_yards", PlayResolver.RETURN_BASE_REC_YARDS)) - PlayResolver.RETURN_BASE_REC_YARDS)
+            / (PlayResolver.PUNT_RETURN_REC_DIVISOR if kind == "PR" else PlayResolver.KICK_RETURN_REC_DIVISOR)
+        )
         position_bonus = 1 if returner.position.upper() in ("RB", "WR", "CB", "S", "SS", "FS", "DB") else 0
         modifier = grade_bonus + ypc_bonus + rec_bonus + position_bonus
         return max(-2, min(6, modifier))
