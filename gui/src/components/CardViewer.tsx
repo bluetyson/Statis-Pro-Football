@@ -99,7 +99,7 @@ export function CardViewer({ teamAbbr }: CardViewerProps) {
         <section className="team-card-section">
           <h4>Defense</h4>
           <div className="team-card-stack">
-            {card.defense.map((player, index) => renderPlayerLink(`${index + 1}`, player))}
+            {card.defense.map((player, index) => renderPlayerLink(`${player.position}${index + 1}`, player))}
           </div>
         </section>
 

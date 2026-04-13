@@ -1068,15 +1068,15 @@ class PlayResolver:
                 result="TOUCHBACK",
                 description="Kickoff - touchback, ball at 25-yard line",
             )
-        start_yard = Charts.roll_kick_return() + self._returner_modifier(returner, "KR")
-        start_yard = max(1, min(99, start_yard))
+        final_position = Charts.roll_kick_return() + self._returner_modifier(returner, "KR")
+        final_position = max(1, min(99, final_position))
         return PlayResult(
             play_type="KICKOFF",
-            yards_gained=start_yard,
+            yards_gained=final_position,
             result="RETURN",
             description=(
-                f"Kickoff to {returner.player_name}, returned to the {start_yard}-yard line"
-                if returner else f"Kickoff returned to the {start_yard}-yard line"
+                f"Kickoff to {returner.player_name}, returned to the {final_position}-yard line"
+                if returner else f"Kickoff returned to the {final_position}-yard line"
             ),
         )
 

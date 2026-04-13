@@ -119,9 +119,9 @@ export function HumanPlayCaller({
     [availableBallCarriers],
   );
   const noEligiblePlayer = useMemo(
-    () => (isRunPlay && availableBallCarriers.length === 0) ||
-      (isPassPlay && availableReceiverTargets.length === 0),
-    [availableBallCarriers.length, availableReceiverTargets.length, isPassPlay, isRunPlay],
+    () => ((selectedPlay === 'RUN' || selectedPlay === 'END_AROUND') && availableBallCarriers.length === 0) ||
+      (['SHORT_PASS', 'LONG_PASS', 'QUICK_PASS', 'SCREEN'].includes(selectedPlay) && availableReceiverTargets.length === 0),
+    [availableBallCarriers.length, availableReceiverTargets.length, selectedPlay],
   );
 
   useEffect(() => {
@@ -257,7 +257,7 @@ export function HumanPlayCaller({
             onChange={(e) => setSelectedPlayer(e.target.value)}
             disabled={disabled}
           >
-            <option value="">{autoBallCarrier ? `Auto (${autoBallCarrier.name})` : 'Auto (no healthy ball carrier)'}</option>
+            <option value="">{autoBallCarrier ? `Auto (${autoBallCarrier.name})` : 'Auto (No healthy ball carrier)'}</option>
             {ballCarriers.map((p) => (
               <option key={p.name} value={p.name} disabled={p.injured}>
                 {p.name} ({p.position}) - {p.overall_grade}{p.injured ? ' [INJ]' : ''}

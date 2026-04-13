@@ -222,12 +222,7 @@ class Game:
         return self._resolve_position_player(self.get_offense_team().roster.rbs, "RB", player_name)
 
     def get_wr(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
-        if player_name:
-            return self._resolve_position_player(self.get_offense_team().roster.wrs, "WR", player_name)
-        for wr in self.get_offense_team().roster.wrs[:3]:
-            if not self._is_player_unavailable(wr):
-                return wr
-        return self._resolve_position_player(self.get_offense_team().roster.wrs, "WR")
+        return self._resolve_position_player(self.get_offense_team().roster.wrs, "WR", player_name)
 
     def get_te(self) -> Optional[PlayerCard]:
         return self._resolve_position_player(self.get_offense_team().roster.tes, "TE")

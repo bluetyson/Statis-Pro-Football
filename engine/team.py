@@ -50,8 +50,8 @@ class Team:
     defense_rating: int = 0
 
     _RETURN_POSITION_BONUS = {
-        "KR": {"RB": 14, "WR": 12, "CB": 9, "S": 8, "SS": 8, "FS": 8, "DB": 8, "TE": 4, "QB": 2},
-        "PR": {"WR": 15, "CB": 12, "S": 11, "SS": 11, "FS": 11, "DB": 11, "RB": 10, "TE": 3, "QB": 1},
+        "KR": {"RB": 14, "WR": 12, "CB": 9, "DB": 8, "TE": 4, "QB": 2},
+        "PR": {"WR": 15, "CB": 12, "DB": 11, "RB": 10, "TE": 3, "QB": 1},
     }
     _INELIGIBLE_RETURN_POSITIONS = {
         "K", "P", "LT", "LG", "C", "RG", "RT", "OL",
@@ -80,10 +80,11 @@ class Team:
         pos = player.position.upper()
         if pos in cls._INELIGIBLE_RETURN_POSITIONS:
             return float("-inf")
+        pos_key = "DB" if pos in {"S", "SS", "FS", "DB"} else pos
 
         stats = player.stats_summary or {}
         score = cls._grade_score(player.overall_grade) * 10
-        score += cls._RETURN_POSITION_BONUS.get(kind, {}).get(pos, 0)
+        score += cls._RETURN_POSITION_BONUS.get(kind, {}).get(pos_key, 0)
         score += len([row for row in getattr(player, "rushing", []) if row is not None]) * 0.25
         score += len([row for row in getattr(player, "pass_gain", []) if row is not None]) * 0.15
         score += float(stats.get("ypc", 0)) * 2.0
