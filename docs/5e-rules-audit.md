@@ -69,7 +69,7 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 - [x] **Special: Empty Defensive Box**: +2 yards bonus — `resolve_bv_tv_battle(empty_box=True)` returns +2
 - [x] **Special: BV vs Empty Box**: Add BV only, no +2 bonus — `resolve_bv_tv_battle(empty_box=True)` returns BV when blocker present
 - [x] **Run Number Modifiers**: Key correct +4, no key +2, wrong key 0, pass/prevent/blitz 0 — Run number modifiers partially implemented via defense formation system
-- [x] **Draw Play**: Inside run to any back/QB; vs Pass/Prevent -2 to RN, vs Blitz -4, vs Run +2 (in addition to normal modifiers) — `engine/play_resolver.py:resolve_draw()` implements with correct formation modifiers
+- [x] **Draw Play**: Inside run to any back/QB; vs Pass/Prevent -2 to RN, vs Blitz -4, vs Run +2 (in addition to normal modifiers) — `engine/play_resolver.py:resolve_draw()` applies RN modifier BEFORE card lookup via `extra_rn_modifier` parameter to `resolve_run_5e()`
 - [x] **Short Gains (SG)**: When N column yields "1", get new Run Number for SG column — `ThreeValueRow` v1/v2/v3 (N/SG/LG); SG resolution via row lookup
 - [x] **Long Gains (LG/BREAK)**: FAC says BREAK → use LG column with new Run Number — BREAK mechanic in FAC card resolution
 - [x] **End-Around Resolution**: Consult ER info on FAC; "OK" = resolve as run; negative = automatic loss — `engine/play_resolver.py:resolve_end_around()` implements full ER resolution (FAC ER field check, "OK" = resolve as run, negative = automatic loss, once per game per player)
@@ -139,8 +139,8 @@ This document maps every rule from the 5th Edition Rules PDF to its implementati
 
 - [x] **a. Flop (QB Dive)**: Inside run to QB; automatic -1 yard; no FAC flip, no fumble possible — `engine/play_resolver.py:resolve_flop()`; available via `PlayCall(strategy="FLOP")`
 - [x] **b. Sneak**: Inside run to QB; flip FAC; even PN = +1 yard, odd PN = 0 yards — `engine/play_resolver.py:resolve_sneak()`; available via `PlayCall(strategy="SNEAK")`
-- [x] **c. Draw Play**: Inside run to any back/QB; vs Pass/Prevent -2 to RN, vs Blitz -4, vs Run +2 (in addition to normal modifiers) — `engine/play_resolver.py:resolve_draw()`; available via `PlayCall(strategy="DRAW")`
-- [x] **d. Play-Action**: Short/Long pass only; vs Run +5 to completion range; vs Pass -5; vs Prevent -10 — `engine/play_resolver.py:resolve_play_action()`; available via `PlayCall(strategy="PLAY_ACTION")`
+- [x] **c. Draw Play**: Inside run to any back/QB; vs Pass/Prevent -2 to RN, vs Blitz -4, vs Run +2 (in addition to normal modifiers) — `engine/play_resolver.py:resolve_draw()` applies RN modifier BEFORE card lookup via `extra_rn_modifier`; available via `PlayCall(strategy="DRAW")`
+- [x] **d. Play-Action**: Short/Long pass only; vs Run +5 to completion range; vs Pass -5; vs Prevent -10 — `engine/play_resolver.py:resolve_play_action()` passes `completion_modifier` to `resolve_pass_5e()` which adjusts PN before QB card check; available via `PlayCall(strategy="PLAY_ACTION")`
 
 ### Defensive Strategies
 
@@ -379,7 +379,7 @@ The engine now matches the 5E rules specification:
 - [x] **Run Def / Wrong Key**: 0 — `engine/play_resolver.py:get_run_number_modifier()` implements 0 (wrong key)
 - [x] **Pass/Prevent Def**: 0 — `engine/play_resolver.py:get_run_number_modifier()` implements 0 (pass/prevent)
 - [x] **Blitz Def**: 0 — `engine/play_resolver.py:get_run_number_modifier()` implements 0 (blitz)
-- [x] **Draw Modifier (additional)**: Run Def +2, Pass/Prevent -2, Blitz -4 — `engine/play_resolver.py:resolve_draw()` applies formation-based modifiers
+- [x] **Draw Modifier (additional)**: Run Def +2, Pass/Prevent -2, Blitz -4 — `engine/play_resolver.py:resolve_draw()` applies RN modifier BEFORE card lookup via `extra_rn_modifier` param to `resolve_run_5e()`
 
 ---
 

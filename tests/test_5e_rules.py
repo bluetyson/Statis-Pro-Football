@@ -167,8 +167,8 @@ class TestOffensiveStrategies:
         assert result.strategy == "SNEAK"
         assert result.play_type == "RUN"
 
-    def test_draw_modifies_yards(self):
-        """Draw play applies RN modifier based on defensive formation."""
+    def test_draw_modifies_run_number(self):
+        """Draw play applies RN modifier to Run Number before card lookup."""
         deck = FACDeck(seed=42)
         from engine.card_generator import CardGenerator
         gen = CardGenerator(seed=42)
@@ -183,6 +183,135 @@ class TestOffensiveStrategies:
         )
         assert result.strategy == "DRAW"
         assert "Draw play" in result.description
+        assert "RN modifier" in result.description
+
+    def test_draw_vs_blitz_gives_negative_rn_modifier(self):
+        """Draw vs Blitz: -4 to RN (bonus for offense)."""
+        deck = FACDeck(seed=42)
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "blitz",
+            defense_run_stop=0,
+            defensive_play="BLITZ",
+        )
+        assert "RN modifier -4" in result.description
+
+    def test_draw_vs_run_defense_gives_positive_rn_modifier(self):
+        """Draw vs Run Defense: +2 to RN (penalty for offense)."""
+        deck = FACDeck(seed=42)
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "4_3",
+            defense_run_stop=0,
+        )
+        assert "RN modifier +2" in result.description
+
+    def test_draw_vs_pass_defense_gives_negative_rn_modifier(self):
+        """Draw vs Pass Defense: -2 to RN (bonus for offense)."""
+        deck = FACDeck(seed=42)
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "4_3_cover2",
+            defense_run_stop=0,
+        )
+        assert "RN modifier -2" in result.description
+
+    def test_draw_vs_prevent_gives_negative_rn_modifier(self):
+        """Draw vs Prevent: -2 to RN (bonus for offense)."""
+        deck = FACDeck(seed=42)
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "prevent",
+            defense_run_stop=0,
+        )
+        assert "RN modifier -2" in result.description
+
+
+class TestPlayActionModifiers:
+    """Test Play-Action pass strategy applies PN (completion range) modifiers."""
+
+    def setup_method(self):
+        random.seed(42)
+        self.resolver = PlayResolver()
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        self.qb = gen.generate_qb_card_authentic(
+            name="TestQB", team="TST", number=12,
+            comp_pct=0.65, ypa=7.5, int_rate=0.025,
+            sack_rate=0.07, grade="A",
+        )
+        self.wr = gen.generate_wr_card_authentic(
+            name="TestWR", team="TST", number=81,
+            catch_rate=0.65, avg_yards=12.0, grade="B",
+        )
+
+    def test_play_action_vs_run_defense_positive_modifier(self):
+        """Play-action vs Run Defense: +5 to completion range."""
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT", defense_formation="4_3",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier +5" in result.description
+
+    def test_play_action_vs_pass_defense_negative_modifier(self):
+        """Play-action vs Pass Defense: -5 to completion range."""
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT", defense_formation="4_3_cover2",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier -5" in result.description
+
+    def test_play_action_vs_prevent_large_negative_modifier(self):
+        """Play-action vs Prevent Defense: -10 to completion range."""
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT", defense_formation="prevent",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier -10" in result.description
+
+    def test_play_action_vs_blitz_neutral(self):
+        """Play-action vs Blitz: 0 modifier (neutral)."""
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT", defense_formation="blitz",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier +0" in result.description
 
 
 class TestBVTVBattle:

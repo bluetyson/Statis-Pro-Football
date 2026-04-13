@@ -323,10 +323,14 @@ class PlayResolver:
         """Resolve a Draw Play strategy.
 
         5E Rules: Inside run to any back/QB.
-          vs Blitz:          +2 to Run Number (blitzers commit hard, draw freezes them)
-          vs Prevent Defense: +2 to Run Number (spread defense, easy to run through)
-          vs Pass Defense:    0 (neutral — in coverage but not committing)
-          vs Run Defense:    -2 to Run Number (set up to stop the run)
+        Draw modifier is applied to the Run Number BEFORE the card lookup:
+          vs Blitz:          -4 to Run Number (blitzers commit, draw exploits gaps)
+          vs Pass Defense:   -2 to Run Number (defense in coverage, not keying run)
+          vs Prevent Defense:-2 to Run Number (spread defense, easy to run through)
+          vs Run Defense:    +2 to Run Number (defense set to stop the run)
+
+        Negative RN modifier = lower run number = better rushing row = more yards.
+        Positive RN modifier = higher run number = worse rushing row = fewer yards.
 
         The defensive_play value (BLITZ, PREVENT_DEFENSE, PASS_DEFENSE,
         RUN_DEFENSE_*) takes priority over formation string when provided.
@@ -336,23 +340,22 @@ class PlayResolver:
         form_lower = defense_formation.lower()
 
         if dp == "BLITZ" or "blitz" in form_lower or form_lower == "blz":
-            draw_mod = 2   # Bonus: blitzers commit to rush, creating lanes
+            draw_mod = -4  # Bonus: blitzers commit hard, draw freezes them
         elif dp == "PREVENT_DEFENSE" or "prevent" in form_lower or form_lower == "3_4_zone":
-            draw_mod = 2   # Bonus: spread/prevent defense is easy to run through
+            draw_mod = -2  # Bonus: spread/prevent defense is easy to run through
         elif dp == "PASS_DEFENSE" or form_lower in ("4_3_cover2", "nickel_zone",
                                                      "nickel_cover2", "nickel"):
-            draw_mod = 0   # Neutral: pass coverage, not committing to run stop
+            draw_mod = -2  # Bonus: pass coverage, not keying on run
         else:
-            draw_mod = -2  # Penalty: Run Defense is set up to stop the run
+            draw_mod = 2   # Penalty: Run Defense is set up to stop the run
 
-        # Resolve as inside run with draw modifier applied to RN
+        # Resolve as inside run with draw modifier applied to RN before lookup
         result = self.resolve_run_5e(
             fac_card, deck, rusher, "IL",
             defense_run_stop=defense_run_stop,
             defense_formation=defense_formation,
+            extra_rn_modifier=draw_mod,
         )
-        # Apply draw RN modifier to yards (approximation: each RN point ≈ 1 yard)
-        result.yards_gained += draw_mod
         result.strategy = "DRAW"
         result.description += f" (Draw play, RN modifier {draw_mod:+d})"
         return result
@@ -368,9 +371,15 @@ class PlayResolver:
         """Resolve a Play-Action pass strategy.
 
         5E Rules: Short/Long pass only.
-          vs Run Defense: +5 to completion range
-          vs Pass Defense: -5 to completion range
-          vs Prevent: -10 to completion range
+        Play-action modifier is applied to the QB's completion range
+        (adjusting the effective Pass Number before the card lookup):
+          vs Run Defense:    +5 to completion range (fools run-keyed defense)
+          vs Blitz:           0 (neutral)
+          vs Pass Defense:   -5 to completion range (defense not fooled)
+          vs Prevent Defense:-10 to completion range (deep zone not fooled at all)
+
+        Positive completion modifier = wider COM range = more completions.
+        Negative completion modifier = narrower COM range = fewer completions.
         """
         # Play-action modifier to completion range
         pa_mod = 0
@@ -378,26 +387,24 @@ class PlayResolver:
         if "blitz" in form_lower:
             pa_mod = 0
         elif form_lower in ("4_3", "3_4"):
-            pa_mod = 5  # vs Run Defense
+            pa_mod = 5  # vs Run Defense — fools them
         elif form_lower in ("4_3_cover2", "nickel_zone", "nickel_cover2"):
-            pa_mod = -5  # vs Pass Defense
+            pa_mod = -5  # vs Pass Defense — not fooled
         elif "prevent" in form_lower or form_lower == "3_4_zone":
-            pa_mod = -10  # vs Prevent Defense
+            pa_mod = -10  # vs Prevent Defense — deep zone, very not fooled
         else:
             pa_mod = 5  # default vs Run
-
-        # Adjust defense coverage for play-action effect
-        adjusted_coverage = max(0, defense_coverage - pa_mod)
 
         result = self.resolve_pass_5e(
             fac_card, deck, qb, receiver, receivers,
             pass_type=pass_type,
-            defense_coverage=adjusted_coverage,
+            defense_coverage=defense_coverage,
             defense_pass_rush=defense_pass_rush,
             defense_formation=defense_formation,
             defensive_strategy=defensive_strategy,
             defenders=defenders,
-            two_minute_offense=False,  # Play-action not affected by two-minute restrictions
+            two_minute_offense=False,
+            completion_modifier=pa_mod,
         )
         result.strategy = "PLAY_ACTION"
         result.description += f" (Play-action, completion modifier {pa_mod:+d})"
@@ -1156,7 +1163,8 @@ class PlayResolver:
                         is_blitz_tendency: bool = False,
                         defensive_strategy: str = "NONE",
                         defenders: Optional[List[PlayerCard]] = None,
-                        two_minute_offense: bool = False) -> PlayResult:
+                        two_minute_offense: bool = False,
+                        completion_modifier: int = 0) -> PlayResult:
         """Resolve a pass play using 5th-edition FAC card mechanics.
 
         Parameters
@@ -1179,6 +1187,9 @@ class PlayResolver:
             Defensive players for coverage calculations.
         two_minute_offense : bool
             If True, apply two-minute offense restrictions (-4 to completion range for non-screen passes).
+        completion_modifier : int
+            Additional modifier to QB completion range (e.g. from play-action).
+            Positive = wider COM range (more completions), negative = narrower.
         """
         # ── Handle Z card ────────────────────────────────────────────
         if fac_card.is_z_card:
@@ -1189,14 +1200,14 @@ class PlayResolver:
                 fac_card, deck, qb, receiver, receivers, pass_type,
                 defense_coverage, defense_pass_rush, defense_formation,
                 is_blitz_tendency, z_event, defensive_strategy, defenders,
-                two_minute_offense,
+                two_minute_offense, completion_modifier,
             )
 
         return self._resolve_pass_inner_5e(
             fac_card, deck, qb, receiver, receivers, pass_type,
             defense_coverage, defense_pass_rush, defense_formation,
             is_blitz_tendency, None, defensive_strategy, defenders,
-            two_minute_offense,
+            two_minute_offense, completion_modifier,
         )
 
     def _resolve_pass_inner_5e(self, fac_card: FACCard, deck: FACDeck,
@@ -1210,7 +1221,8 @@ class PlayResolver:
                                z_event: Optional[Dict[str, Any]],
                                defensive_strategy: str = "NONE",
                                defenders: Optional[List[PlayerCard]] = None,
-                               two_minute_offense: bool = False) -> PlayResult:
+                               two_minute_offense: bool = False,
+                               completion_modifier: int = 0) -> PlayResult:
         """Inner pass resolution after Z-card handling.
 
         Authentic 5E resolution:
@@ -1373,11 +1385,21 @@ class PlayResolver:
         
         if two_minute_offense and pass_type != "SCREEN":
             strategy_modifier -= 4
+
+        # Apply completion_modifier (e.g. from play-action strategy).
+        # Positive = wider COM range = subtract from PN (more likely to complete).
+        # Negative = narrower COM range = add to PN (less likely to complete).
+        # Combined with strategy_modifier which is always <= 0 (coverage penalties).
+        total_pn_adjustment = -completion_modifier + (-strategy_modifier if strategy_modifier < 0 else 0)
+        # total_pn_adjustment > 0 means increase PN (harder to complete)
+        # total_pn_adjustment < 0 means decrease PN (easier to complete)
         
-        if strategy_modifier != 0:
-            log.append(f"[QB CARD] Strategy modifier={strategy_modifier}, PN adjusted from {pn} to {min(48, pn + abs(strategy_modifier)) if strategy_modifier < 0 else pn}")
-        if strategy_modifier < 0:
-            pn = min(48, pn + abs(strategy_modifier))
+        if strategy_modifier != 0 or completion_modifier != 0:
+            log.append(f"[QB CARD] Strategy modifier={strategy_modifier}, completion modifier={completion_modifier}")
+        if total_pn_adjustment != 0:
+            old_pn = pn
+            pn = max(1, min(48, pn + total_pn_adjustment))
+            log.append(f"[QB CARD] PN adjusted from {old_pn} to {pn} (total adjustment {total_pn_adjustment:+d})")
 
         # Check authentic range-based passing first
         if qb.passing_short or qb.passing_long or qb.passing_quick:
@@ -1731,14 +1753,16 @@ class PlayResolver:
                        rusher: PlayerCard,
                        play_direction: str = "IL",
                        defense_run_stop: int = 0,
-                       defense_formation: str = "4_3") -> PlayResult:
+                       defense_formation: str = "4_3",
+                       extra_rn_modifier: int = 0) -> PlayResult:
         """Resolve a run play using 5th-edition FAC card mechanics.
 
         Authentic resolution:
           1. Draw FAC → get RUN NUMBER (1-12)
-          2. Look up rusher's Rushing column row → N/SG/LG values
-          3. Use N (Normal) column as base yards
-          4. Modify by blocking matchups
+          2. Apply Run Number modifiers (defense formation + extra)
+          3. Look up rusher's Rushing column row → N/SG/LG values
+          4. Use N (Normal) column as base yards
+          5. Modify by blocking matchups
 
         Parameters
         ----------
@@ -1751,6 +1775,9 @@ class PlayResolver:
         play_direction : str
             "SL" (sweep left), "IL" (inside left),
             "SR" (sweep right), "IR" (inside right).
+        extra_rn_modifier : int
+            Additional Run Number modifier (e.g. from Draw strategy).
+            Positive = worse for offense (higher RN), negative = better.
         """
         z_event = None
 
@@ -1763,8 +1790,8 @@ class PlayResolver:
         run_num = fac_card.run_num_int
         is_oob = fac_card.is_out_of_bounds
 
-        # Rule 1: Apply run number modifier based on defense formation
-        rn_modifier = self.get_run_number_modifier(defense_formation)
+        # Rule 1: Apply run number modifier based on defense formation + extra
+        rn_modifier = self.get_run_number_modifier(defense_formation) + extra_rn_modifier
         if run_num is not None:
             run_num = max(1, min(12, run_num + rn_modifier))
 
