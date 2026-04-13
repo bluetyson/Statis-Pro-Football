@@ -718,15 +718,9 @@ class PlayResolver:
             yards = play_data.get("yards", 0)
             is_td = play_data.get("td", False)
 
-        # Defense run-stop modifier: authentic 5E small-number scale
+        # Defense run-stop modifier (no artificial floor/clamping)
         if result_type in ("GAIN", "OOB"):
-            yards = max(-5, int(yards - eff_run_stop))
-            # High tackle rating can force TFL
-            if eff_run_stop >= 3 and random.random() < 0.15:
-                yards = min(yards, random.choice([-2, -1, 0]))
-            # High tackle rating can force fumble
-            if eff_run_stop >= 3 and result_type == "GAIN" and random.random() < 0.03:
-                result_type = "FUMBLE"
+            yards = int(yards - eff_run_stop)
 
         # Z-card check
         z_event = self._check_z_card(
@@ -1939,21 +1933,13 @@ class PlayResolver:
                         yards = random.randint(1, 5)
 
             base_yards = yards
-            # Defense run-stop modifier (authentic 5E: tackle rating −5 to +4)
-            # Positive tackle = defense is better at stopping, reduces yards
-            yards = max(-5, int(yards - eff_run_stop))
+            # Defense run-stop modifier (authentic 5E: tackle rating from
+            # blocking matchup on FAC card — no artificial floor/clamping)
+            yards = int(yards - eff_run_stop)
             log.append(
                 f"[YARDS] Base yards={base_yards}, "
-                f"minus run-stop ({eff_run_stop}) = {base_yards - eff_run_stop}, "
-                f"clamped to {yards}"
+                f"minus run-stop ({eff_run_stop}) = {yards}"
             )
-            if eff_run_stop >= 3 and random.random() < 0.15:
-                old_yards = yards
-                yards = min(yards, random.choice([-2, -1, 0]))
-                log.append(
-                    f"[TACKLE] Strong defense tackle (eff_run_stop={eff_run_stop}): "
-                    f"yards {old_yards} → {yards}"
-                )
 
             # 5E Rule: Inside run max loss = 3 yards; no limit on sweep
             old_yards = yards
@@ -1963,28 +1949,6 @@ class PlayResolver:
                     f"[CAP] Inside run max loss applied ({play_direction}): "
                     f"{old_yards} → {yards}"
                 )
-
-            if eff_run_stop >= 3 and random.random() < 0.03:
-                recovery = Charts.roll_fumble_recovery()
-                fumble_yards, fumble_td = Charts.roll_fumble_return()
-                is_turnover = recovery == "DEFENSE"
-                log.append(
-                    f"[FUMBLE] Forced fumble (eff_run_stop={eff_run_stop}): "
-                    f"recovery={recovery}"
-                )
-                r = PlayResult(
-                    play_type="RUN", yards_gained=yards,
-                    result="FUMBLE", turnover=is_turnover,
-                    turnover_type="FUMBLE" if is_turnover else None,
-                    description=(
-                        f"{rusher.player_name} fumbles! "
-                        f"{'Defense recovers!' if is_turnover else 'Offense recovers.'}"
-                    ),
-                    rusher=rusher.player_name, z_card_event=z_event,
-                    run_number_used=used_run_num,
-                )
-                r.debug_log = log
-                return r
 
             # Out of bounds — 5E Rule: inside runs may never end out of bounds
             if is_oob and play_direction not in ("IL", "IR", "INSIDE", "MIDDLE", "LEFT"):
@@ -2049,18 +2013,11 @@ class PlayResolver:
         is_td = play_data.get("td", False)
         log.append(f"[LEGACY] Column lookup RN={rn_str}: result={result_type}, yards={yards}, TD={is_td}")
 
-        # Defense run-stop modifier (authentic 5E small-number scale)
+        # Defense run-stop modifier (no artificial floor/clamping)
         if result_type in ("GAIN", "BREAKAWAY"):
             base_yards = yards
-            yards = max(-5, int(yards - eff_run_stop))
+            yards = int(yards - eff_run_stop)
             log.append(f"[LEGACY] Run-stop applied: {base_yards} - {eff_run_stop} = {yards}")
-            if eff_run_stop >= 3 and random.random() < 0.15:
-                old_yards = yards
-                yards = min(yards, random.choice([-2, -1, 0]))
-                log.append(f"[TACKLE] Strong defense tackle: {old_yards} → {yards}")
-            if eff_run_stop >= 3 and result_type == "GAIN" and random.random() < 0.03:
-                result_type = "FUMBLE"
-                log.append(f"[FUMBLE] Forced fumble by strong defense")
 
         # ── Out of bounds ────────────────────────────────────────────
         if is_oob:
