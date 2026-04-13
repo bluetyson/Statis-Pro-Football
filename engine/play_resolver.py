@@ -2318,6 +2318,42 @@ class PlayResolver:
                 return r
 
             is_td = random.random() < 0.03
+
+            # Check Z RES on the card for additional effects (authentic path)
+            z_res_info = fac_card.parse_z_result()
+            if z_res_info["type"] == "FUMBLE" and random.random() < 0.5:
+                fumble_fac = deck.draw()
+                if fumble_fac.is_z_card:
+                    fumble_fac = deck.draw_non_z()
+                fumble_pn = fumble_fac.pass_num_int or random.randint(1, 48)
+                fumble_lost = PlayResolver.resolve_fumble_with_team_rating(
+                    fumble_pn, fumbles_lost_max, def_fumble_adj, is_home,
+                )
+                is_turnover = fumble_lost
+                recovery = "DEFENSE" if fumble_lost else "OFFENSE"
+
+                adjusted_max = max(0, min(48, fumbles_lost_max + def_fumble_adj - (1 if is_home else 0)))
+                log.append(f"[FUMBLE] Z-result fumble triggered for {rusher.player_name}")
+                log.append(f"[FUMBLE] FAC drawn for recovery: Card #{fumble_fac.card_number}, PN={fumble_pn}")
+                log.append(f"[FUMBLE] Team fumbles_lost_max={fumbles_lost_max}, def_fumble_adj={def_fumble_adj}, "
+                            f"home={is_home} → adjusted range 1-{adjusted_max}")
+                log.append(f"[FUMBLE] PN {fumble_pn} {'in' if fumble_lost else 'outside'} range 1-{adjusted_max} "
+                            f"→ Recovery={recovery}")
+
+                r = PlayResult(
+                    play_type="RUN", yards_gained=yards,
+                    result="FUMBLE", turnover=is_turnover,
+                    turnover_type="FUMBLE" if is_turnover else None,
+                    description=(
+                        f"{rusher.player_name} fumbles at the end of the run! "
+                        f"{'Defense recovers!' if is_turnover else 'Offense recovers.'}"
+                    ),
+                    rusher=rusher.player_name, z_card_event=z_event,
+                    run_number_used=used_run_num,
+                )
+                r.debug_log = log
+                return r
+
             desc = f"{rusher.player_name} runs {play_direction}"
             if is_td:
                 desc += " for a TOUCHDOWN!"
