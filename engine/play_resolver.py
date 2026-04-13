@@ -2034,11 +2034,42 @@ class PlayResolver:
                 f"N={row.v1}, SG={row.v2}, LG={row.v3}"
             )
 
+            # ── Check blocking matchup FIRST to detect BREAKAWAY ─────
+            matchup_type = self.classify_blocking_matchup(blocking_matchup)
+            log.append(f"[BLOCK] Matchup type: {matchup_type} ({blocking_matchup!r}), box_empty={box_is_empty}, both_empty={both_boxes_empty}")
+
+            if matchup_type == "BREAK":
+                # BREAKAWAY: use the LG (Long Gain) column, no run-stop
+                yards = row.v3
+                if isinstance(yards, str):
+                    try:
+                        yards = int(yards)
+                    except (ValueError, TypeError):
+                        yards = random.randint(15, 40)
+                is_td = random.random() < 0.2
+                log.append(
+                    f"[BREAKAWAY] FAC blocking matchup is BREAK → "
+                    f"using LG column={row.v3}, yards={yards}, TD={is_td}"
+                )
+                desc = f"{rusher.player_name} breaks free for {yards} yards!"
+                if is_td:
+                    desc += " TOUCHDOWN!"
+                r = PlayResult(
+                    play_type="RUN", yards_gained=yards,
+                    result="TD" if is_td else "GAIN",
+                    is_touchdown=is_td,
+                    description=desc,
+                    rusher=rusher.player_name, z_card_event=z_event,
+                    run_number_used=used_run_num,
+                )
+                r.debug_log = log
+                return r
+
             # Use N (normal) column as base yards
             yards = row.v1
             if isinstance(yards, str):
                 if yards == "Sg":
-                    # Special gain (breakaway)
+                    # Special gain (breakaway from card)
                     yards = row.v3 if isinstance(row.v3, int) else random.randint(15, 40)
                     is_td = random.random() < 0.2
                     log.append(f"[RUSH] Special Gain (breakaway)! Yards={yards}, TD={is_td}")
@@ -2063,9 +2094,6 @@ class PlayResolver:
 
             base_yards = yards
             # ── Empty-box rules (5E rushing section) ─────────────────
-            # Parse the FAC matchup type to apply the correct modifier
-            matchup_type = self.classify_blocking_matchup(blocking_matchup)
-            log.append(f"[BLOCK] Matchup type: {matchup_type} ({blocking_matchup!r}), box_empty={box_is_empty}, both_empty={both_boxes_empty}")
 
             if matchup_type == "BK_VS_BOX" and box_is_empty:
                 # BK vs empty box: add BK's BV only (no +2 bonus)
@@ -2159,17 +2187,36 @@ class PlayResolver:
         is_td = play_data.get("td", False)
         log.append(f"[LEGACY] Column lookup RN={rn_str}: result={result_type}, yards={yards}, TD={is_td}")
 
+        # Check for BREAK (breakaway) blocking matchup FIRST
+        legacy_matchup_type = self.classify_blocking_matchup(blocking_matchup)
+        if legacy_matchup_type == "BREAK":
+            # BREAKAWAY from FAC blocking matchup — big play, no run-stop
+            is_td = random.random() < 0.2
+            log.append(f"[BREAKAWAY] FAC blocking matchup is BREAK → yards={yards}, TD={is_td}")
+            desc = f"{rusher.player_name} breaks free for {yards} yards!"
+            if is_td:
+                desc += " TOUCHDOWN!"
+            r = PlayResult(
+                play_type="RUN", yards_gained=yards,
+                result="TD" if is_td else "GAIN",
+                is_touchdown=is_td,
+                description=desc,
+                rusher=rusher.player_name, z_card_event=z_event,
+                run_number_used=used_run_num,
+            )
+            r.debug_log = log
+            return r
+
         # Defense run-stop modifier (no artificial floor/clamping)
         if result_type in ("GAIN", "BREAKAWAY"):
             base_yards = yards
-            matchup_type = self.classify_blocking_matchup(blocking_matchup)
-            if matchup_type == "BK_VS_BOX" and box_is_empty:
+            if legacy_matchup_type == "BK_VS_BOX" and box_is_empty:
                 yards = base_yards + blocking_back_bv
                 log.append(f"[LEGACY] BK vs empty box → +{blocking_back_bv}: {base_yards} + {blocking_back_bv} = {yards}")
-            elif matchup_type == "OL_VS_BOX" and box_is_empty:
+            elif legacy_matchup_type == "OL_VS_BOX" and box_is_empty:
                 yards = base_yards + 2
                 log.append(f"[LEGACY] OL vs empty box → +2: {base_yards} + 2 = {yards}")
-            elif matchup_type == "TWO_DEF_BOX" and both_boxes_empty:
+            elif legacy_matchup_type == "TWO_DEF_BOX" and both_boxes_empty:
                 yards = base_yards + 2
                 log.append(f"[LEGACY] Two def boxes both empty → +2: {base_yards} + 2 = {yards}")
             else:

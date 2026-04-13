@@ -863,3 +863,68 @@ class TestAuthenticRunResolution:
                 if result.yards_gained > 10:
                     breakaway_count += 1
         assert breakaway_count > 0
+
+    def test_break_blocking_matchup_uses_lg_column(self):
+        """BREAK blocking matchup = BREAKAWAY → must use LG column, no run-stop."""
+        random.seed(99)
+        # Create a FAC card with "Break" on all blocking matchup fields
+        break_card = FACCard(
+            card_number=92,
+            run_number="7(OB)",
+            pass_number="24",
+            sweep_left="Break",
+            inside_left="Break",
+            sweep_right="Break",
+            inside_right="Break",
+            end_run="-5",
+            quick_kick="BK2",
+            short_pass="BK2",
+            long_pass="BK2",
+            screen="Com",
+            z_result="Pen: 1.O6 /2.O10 /3.K9 /4.K9",
+            solo="1.R(NK)/2.P/3.PR/4.P/5.R(NK)",
+        )
+
+        # Resolve the run — BREAK should give a breakaway (LG column)
+        result = self.resolver.resolve_run_5e(
+            break_card, self.deck, self.rb, "IL",
+        )
+        # The LG column for this RB should yield a big gain, not a negative
+        assert result.yards_gained > 0, (
+            f"BREAK matchup should use LG column for breakaway, "
+            f"got {result.yards_gained} yards"
+        )
+        assert "BREAKAWAY" in "\n".join(result.debug_log), (
+            "Debug log should mention BREAKAWAY for Break matchup"
+        )
+
+    def test_break_matchup_skips_run_stop(self):
+        """BREAKAWAY from BREAK matchup must NOT subtract run-stop."""
+        random.seed(42)
+        break_card = FACCard(
+            card_number=1,
+            run_number="11",
+            pass_number="10",
+            sweep_left="Break",
+            inside_left="Break",
+            sweep_right="Break",
+            inside_right="Break",
+            end_run="OK",
+            quick_kick="WR1",
+            short_pass="WR1",
+            long_pass="WR1",
+            screen="Inc",
+            z_result="",
+            solo="",
+        )
+        # High defense run-stop should NOT affect breakaway
+        result = self.resolver.resolve_run_5e(
+            break_card, self.deck, self.rb, "IL",
+            defense_run_stop=99,
+        )
+        # With run-stop=99, a normal play would be hugely negative.
+        # BREAKAWAY should still be positive (LG column).
+        assert result.yards_gained > 0, (
+            f"BREAK matchup should ignore run-stop, "
+            f"got {result.yards_gained} with run-stop=99"
+        )
