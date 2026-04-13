@@ -60,6 +60,7 @@ def _serialize_play_result(result) -> dict:
         "bv_tv_result": result.bv_tv_result,
         "interception_point": result.interception_point,
         "personnel_note": getattr(result, "personnel_note", None),
+        "box_assignments": getattr(result, "box_assignments", None),
         "debug_log": getattr(result, 'debug_log', []),
     }
 

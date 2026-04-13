@@ -14,6 +14,7 @@ import { GameStats } from './GameStats';
 import { DisplayBoxes } from './DisplayBoxes';
 import { StartingLineup } from './StartingLineup';
 import { DepthChart } from './DepthChart';
+import { CardViewer } from './CardViewer';
 import type { DiceRollResult } from '../types/game';
 
 function formatDefenseFormation(formation?: string | null): string {
@@ -168,6 +169,7 @@ export function GameBoard({
   const isInteractive = gameMode !== 'solitaire';
   const [showTwoPoint, setShowTwoPoint] = useState(false);
   const [coffinDeduction, setCoffinDeduction] = useState(15);
+  const [showCardViewer, setShowCardViewer] = useState<string | null>(null);
 
   // Detect touchdown for two-point conversion option
   const isTouchdown = lastPlay?.is_touchdown === true;
@@ -452,6 +454,22 @@ export function GameBoard({
               {lastPlay.debug_log && lastPlay.debug_log.length > 0 && (
                 <DebugLogPanel log={lastPlay.debug_log} />
               )}
+              {/* Box assignments for this play */}
+              {lastPlay.box_assignments && Object.keys(lastPlay.box_assignments).length > 0 && (
+                <div style={{
+                  fontSize: '0.7em', padding: '4px 8px', margin: '4px 0',
+                  background: '#0f172a', borderRadius: '4px', border: '1px solid #1e3a5f',
+                }}>
+                  <span style={{ color: '#93c5fd', fontWeight: 'bold' }}>📦 Box Assignments: </span>
+                  {Object.entries(lastPlay.box_assignments)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([box, name]) => (
+                      <span key={box} style={{ color: '#ddd', marginRight: '8px' }}>
+                        {box}={name as string}
+                      </span>
+                    ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -494,6 +512,29 @@ export function GameBoard({
         </div>
 
         <div className="board-right">
+          {/* Team Card Viewers — access all player cards, KR, PR, team lineup */}
+          <div style={{
+            display: 'flex', gap: '4px', padding: '4px 0',
+            borderBottom: '1px solid #1e3a5f', marginBottom: '4px',
+          }}>
+            <button
+              className={`btn btn-sm ${showCardViewer === state.home_team ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setShowCardViewer(showCardViewer === state.home_team ? null : state.home_team)}
+              style={{ fontSize: '0.75em', padding: '2px 8px' }}
+            >
+              🃏 {state.home_team} Cards
+            </button>
+            <button
+              className={`btn btn-sm ${showCardViewer === state.away_team ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setShowCardViewer(showCardViewer === state.away_team ? null : state.away_team)}
+              style={{ fontSize: '0.75em', padding: '2px 8px' }}
+            >
+              🃏 {state.away_team} Cards
+            </button>
+          </div>
+
+          {showCardViewer && <CardViewer teamAbbr={showCardViewer} />}
+
           {/* Letter boards for offense/defense — always visible */}
           <LetterBoards
             personnel={personnel}

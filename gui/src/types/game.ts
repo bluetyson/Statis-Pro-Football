@@ -48,6 +48,7 @@ export interface PlayResult {
   bv_tv_result?: { blocker_bv: number; defender_tv: number; modifier: number } | null;
   interception_point?: number | null;
   personnel_note?: string | null;
+  box_assignments?: Record<string, string> | null;
   debug_log?: string[];
 }
 

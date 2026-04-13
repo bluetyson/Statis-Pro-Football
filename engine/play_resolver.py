@@ -2918,25 +2918,85 @@ class PlayResolver:
 
         Returns a dict mapping player_name -> box_letter.
         Follows 5E rules for Row 1/2/3 placement.
+
+        Row 1 (DL) layout mirrors the field:
+          A=LE, B=LDT, C=NT/C, D=RDT, E=RE
+        Row 2 (LB) layout:
+          F=LOLB, G=LILB, H=MLB, I=RILB, J=ROLB
+        Row 3 (DB) layout:
+          K=LCB, L=extra DB, M=FS, N=SS, O=RCB
         """
         assignments: Dict[str, str] = {}
         dl_players = [d for d in defenders if getattr(d, 'position', '') in
-                      ('DE', 'DT', 'DL', 'NT')]
+                      ('DE', 'DT', 'DL', 'NT', 'EDGE')]
         lb_players = [d for d in defenders if getattr(d, 'position', '') in
                       ('LB', 'OLB', 'ILB', 'MLB')]
         db_players = [d for d in defenders if getattr(d, 'position', '') in
                       ('CB', 'S', 'SS', 'FS', 'DB')]
 
-        # Row 1: DL players to boxes A-E (0-2 per box)
-        row1_boxes = ['A', 'B', 'C', 'D', 'E']
-        for i, p in enumerate(dl_players[:5]):
-            box = row1_boxes[i % len(row1_boxes)]
-            assignments[p.player_name] = box
+        # Row 1: DL players by position — DEs on edges (A/E), DTs inside (B/D), NT center (C)
+        des = [d for d in dl_players if getattr(d, 'position', '') in ('DE', 'EDGE')]
+        dts = [d for d in dl_players if getattr(d, 'position', '') in ('DT', 'DL')]
+        nts = [d for d in dl_players if getattr(d, 'position', '') == 'NT']
 
-        # Row 2: LBs to boxes F-J (one per box)
-        row2_boxes = ['F', 'G', 'H', 'I', 'J']
-        for i, p in enumerate(lb_players[:5]):
-            assignments[p.player_name] = row2_boxes[i]
+        # Assign DEs to edge boxes (A, E)
+        if len(des) >= 1:
+            assignments[des[0].player_name] = 'A'
+        if len(des) >= 2:
+            assignments[des[1].player_name] = 'E'
+
+        # Assign NTs to center box (C)
+        if nts:
+            assignments[nts[0].player_name] = 'C'
+
+        # Assign DTs to inside boxes (B, D)
+        dt_boxes = ['B', 'D']
+        dt_idx = 0
+        for dt in dts:
+            if dt.player_name not in assignments:
+                while dt_idx < len(dt_boxes) and dt_boxes[dt_idx] in assignments.values():
+                    dt_idx += 1
+                if dt_idx < len(dt_boxes):
+                    assignments[dt.player_name] = dt_boxes[dt_idx]
+                    dt_idx += 1
+
+        # Fill remaining DL to first empty Row 1 box
+        for p in dl_players:
+            if p.player_name not in assignments:
+                for box in ['A', 'B', 'C', 'D', 'E']:
+                    if box not in assignments.values():
+                        assignments[p.player_name] = box
+                        break
+
+        # Row 2: LBs by position — OLBs on edges (F/J), ILBs inside (G/I), MLB center (H)
+        olbs = [d for d in lb_players if getattr(d, 'position', '') == 'OLB']
+        ilbs = [d for d in lb_players if getattr(d, 'position', '') == 'ILB']
+        mlbs = [d for d in lb_players if getattr(d, 'position', '') == 'MLB']
+        generic_lbs = [d for d in lb_players if getattr(d, 'position', '') == 'LB']
+
+        if len(olbs) >= 1:
+            assignments[olbs[0].player_name] = 'F'
+        if len(olbs) >= 2:
+            assignments[olbs[1].player_name] = 'J'
+        if mlbs:
+            assignments[mlbs[0].player_name] = 'H'
+        lb_inner = ['G', 'I']
+        lb_idx = 0
+        for ilb in ilbs:
+            if ilb.player_name not in assignments:
+                while lb_idx < len(lb_inner) and lb_inner[lb_idx] in assignments.values():
+                    lb_idx += 1
+                if lb_idx < len(lb_inner):
+                    assignments[ilb.player_name] = lb_inner[lb_idx]
+                    lb_idx += 1
+
+        # Fill generic LBs to first empty Row 2 box
+        for p in generic_lbs + olbs[2:] + ilbs + mlbs[1:]:
+            if p.player_name not in assignments:
+                for box in ['F', 'G', 'H', 'I', 'J']:
+                    if box not in assignments.values():
+                        assignments[p.player_name] = box
+                        break
 
         # Row 3: DBs to boxes K-O following position rules
         # CB→K/O, FS→M, SS→N, any DB→L
@@ -2956,7 +3016,7 @@ class PlayResolver:
                 assignments[s.player_name] = 'N'
             elif 'L' not in assignments.values():
                 assignments[s.player_name] = 'L'
-        for db in other_dbs:
+        for db in (other_dbs + cbs[2:]):
             for box in ['L', 'M', 'N']:
                 if box not in assignments.values():
                     assignments[db.player_name] = box
