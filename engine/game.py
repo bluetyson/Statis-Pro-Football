@@ -1148,7 +1148,8 @@ class Game:
                          defense_formation: Optional[str] = None,
                          defensive_strategy: Optional[str] = None,
                          player_name: Optional[str] = None,
-                         defensive_play_5e: Optional[DefensivePlay] = None) -> PlayResult:
+                         defensive_play_5e: Optional[DefensivePlay] = None,
+                         backs_blocking: Optional[List[int]] = None) -> PlayResult:
         # player_name on a pass play targets a specific receiver (not QB)
         # Try to find them as a receiver first; fall back to QB selection
         qb = self.get_qb()
@@ -1167,6 +1168,17 @@ class Game:
         defenders = []
         if defense and defense.roster:
             defenders = list(defense.roster.defenders)[:10]
+
+        # Build defenders-by-box mapping for pass defense rating lookups
+        defenders_by_box = self._build_defenders_by_box(defense) if defense else {}
+
+        # Determine which defender (if any) moved for double coverage.
+        # If double coverage is active, the FS (box M) typically leaves
+        # their assignment to double-cover the targeted receiver.
+        double_coverage_defender_box: Optional[str] = None
+        if defensive_strategy in ("DOUBLE_COVERAGE", "ALT_DOUBLE_COVERAGE"):
+            # The FS (box M) is the default double-coverage defender
+            double_coverage_defender_box = 'M'
 
         if play_call.play_type == "LONG_PASS":
             pass_type = "LONG"
@@ -1187,6 +1199,9 @@ class Game:
                 two_minute_offense=self._is_two_minute_offense(),
                 defensive_play_5e=defensive_play_5e,
                 yard_line=self.state.yard_line,
+                defenders_by_box=defenders_by_box,
+                backs_blocking=backs_blocking,
+                double_coverage_defender_box=double_coverage_defender_box,
             )
             result.defense_formation = def_formation
             return result

@@ -1684,3 +1684,506 @@ class TestAIEnhancements:
         random.seed(42)
         results = [ai.should_use_big_play_defense(sit) for _ in range(100)]
         assert any(results), "Should sometimes use BPD on 3rd and long"
+
+
+# ─── Offensive Personnel Tracking Tests ──────────────────────────────────
+
+
+class TestOffensivePersonnel:
+    """Test offensive personnel tracking per play."""
+
+    def test_build_offensive_personnel_full(self):
+        """All 5 receiver slots populated."""
+        from engine.player_card import PlayerCard
+        recs = [PlayerCard(f"P{i}", "KC", "WR", 80+i, "B") for i in range(5)]
+        personnel = PlayResolver.build_offensive_personnel(recs)
+        assert personnel['FL'] is recs[0]
+        assert personnel['LE'] is recs[1]
+        assert personnel['RE'] is recs[2]
+        assert personnel['BK1'] is recs[3]
+        assert personnel['BK2'] is recs[4]
+
+    def test_build_offensive_personnel_three_receivers(self):
+        """Only 3 receivers — BK slots should be None."""
+        from engine.player_card import PlayerCard
+        recs = [PlayerCard(f"P{i}", "KC", "WR", 80+i, "B") for i in range(3)]
+        personnel = PlayResolver.build_offensive_personnel(recs)
+        assert personnel['FL'] is recs[0]
+        assert personnel['LE'] is recs[1]
+        assert personnel['RE'] is recs[2]
+        assert personnel['BK1'] is None
+        assert personnel['BK2'] is None
+
+    def test_build_offensive_personnel_with_backs_blocking(self):
+        """Backs kept in to block are removed from personnel."""
+        from engine.player_card import PlayerCard
+        recs = [PlayerCard(f"P{i}", "KC", "WR", 80+i, "B") for i in range(5)]
+        personnel = PlayResolver.build_offensive_personnel(recs, backs_blocking=[3, 4])
+        assert personnel['FL'] is recs[0]
+        assert personnel['LE'] is recs[1]
+        assert personnel['RE'] is recs[2]
+        assert personnel['BK1'] is None  # blocking
+        assert personnel['BK2'] is None  # blocking
+
+    def test_get_receiver_slot(self):
+        """Receiver index maps to correct slot name."""
+        from engine.player_card import PlayerCard
+        recs = [PlayerCard(f"P{i}", "KC", "WR", 80+i, "B") for i in range(5)]
+        assert PlayResolver.get_receiver_slot(recs[0], recs) == 'FL'
+        assert PlayResolver.get_receiver_slot(recs[1], recs) == 'LE'
+        assert PlayResolver.get_receiver_slot(recs[2], recs) == 'RE'
+        assert PlayResolver.get_receiver_slot(recs[3], recs) == 'BK1'
+        assert PlayResolver.get_receiver_slot(recs[4], recs) == 'BK2'
+
+    def test_get_receiver_slot_not_found(self):
+        """Unknown receiver returns None."""
+        from engine.player_card import PlayerCard
+        recs = [PlayerCard(f"P{i}", "KC", "WR", 80+i, "B") for i in range(3)]
+        stranger = PlayerCard("Stranger", "KC", "WR", 99, "B")
+        assert PlayResolver.get_receiver_slot(stranger, recs) is None
+
+
+# ─── Covering Defender Lookup Tests ──────────────────────────────────────
+
+
+class TestCoveringDefender:
+    """Test covering defender lookup via PASS_DEFENSE_ASSIGNMENTS."""
+
+    def test_re_covered_by_box_n(self):
+        """RE receiver is covered by defender in box N (SS)."""
+        from engine.player_card import PlayerCard
+        ss = PlayerCard("SS Player", "DAL", "S", 22, "B", pass_defense_rating=3)
+        defenders_by_box = {'N': ss}
+        result = PlayResolver.get_covering_defender('RE', defenders_by_box)
+        assert result is ss
+
+    def test_le_covered_by_box_k(self):
+        """LE receiver is covered by defender in box K (LCB)."""
+        from engine.player_card import PlayerCard
+        cb = PlayerCard("CB Player", "DAL", "CB", 24, "B", pass_defense_rating=2)
+        defenders_by_box = {'K': cb}
+        result = PlayResolver.get_covering_defender('LE', defenders_by_box)
+        assert result is cb
+
+    def test_fl_covered_by_box_o(self):
+        """FL receiver is covered by defender in box O (RCB)."""
+        from engine.player_card import PlayerCard
+        cb = PlayerCard("RCB Player", "DAL", "CB", 25, "B", pass_defense_rating=4)
+        defenders_by_box = {'O': cb}
+        result = PlayResolver.get_covering_defender('FL', defenders_by_box)
+        assert result is cb
+
+    def test_bk1_covered_by_box_f(self):
+        """BK1 covered by box F (LOLB)."""
+        from engine.player_card import PlayerCard
+        olb = PlayerCard("OLB Player", "DAL", "LB", 56, "B", pass_defense_rating=1)
+        defenders_by_box = {'F': olb}
+        result = PlayResolver.get_covering_defender('BK1', defenders_by_box)
+        assert result is olb
+
+    def test_bk2_covered_by_box_j(self):
+        """BK2 covered by box J (ROLB)."""
+        from engine.player_card import PlayerCard
+        olb = PlayerCard("ROLB Player", "DAL", "LB", 57, "B", pass_defense_rating=0)
+        defenders_by_box = {'J': olb}
+        result = PlayResolver.get_covering_defender('BK2', defenders_by_box)
+        assert result is olb
+
+    def test_empty_box_returns_none(self):
+        """Empty box returns None (triggers +5 completion bonus)."""
+        defenders_by_box = {'K': None}  # box N not populated
+        result = PlayResolver.get_covering_defender('RE', defenders_by_box)
+        assert result is None
+
+    def test_fl_alias_matches_fl1(self):
+        """FL alias maps to same box as FL1 (box O)."""
+        assert PlayResolver.PASS_DEFENSE_ASSIGNMENTS['FL'] == PlayResolver.PASS_DEFENSE_ASSIGNMENTS['FL1']
+
+
+# ─── Backs In To Block Tests ────────────────────────────────────────────
+
+
+class TestBacksInToBlock:
+    """Test +2 completion range per blocking back."""
+
+    def _make_fac_card(self, pn=20, rn=6):
+        """Create a simple FAC card for testing."""
+        from engine.fac_deck import FACCard
+        return FACCard(
+            card_number=1, run_number=str(rn), pass_number=str(pn),
+            sweep_left="A", inside_left="B", sweep_right="C", inside_right="D",
+            quick_kick="Orig", short_pass="Orig", long_pass="Orig",
+            screen="Com", end_run="OK", z_result="NONE", solo="P",
+        )
+
+    def _make_qb(self, com_max=30):
+        """Create a QB with known passing ranges."""
+        from engine.player_card import PlayerCard, PassRanges
+        qb = PlayerCard("Test QB", "KC", "QB", 15, "A")
+        qb.passing_short = PassRanges(com_max=com_max, inc_max=47)
+        qb.passing_quick = PassRanges(com_max=com_max, inc_max=47)
+        qb.passing_long = PassRanges(com_max=com_max - 5, inc_max=47)
+        return qb
+
+    def _make_receivers(self, n=5):
+        """Create receivers with pass_gain rows."""
+        from engine.player_card import PlayerCard, ThreeValueRow
+        recs = []
+        for i in range(n):
+            r = PlayerCard(f"WR{i}", "KC", "WR", 80+i, "B")
+            r.pass_gain = [ThreeValueRow(v1=5, v2=8, v3=15) for _ in range(12)]
+            recs.append(r)
+        return recs
+
+    def test_one_back_blocking_adds_plus_2(self):
+        """One back blocking → +2 completion modifier (lowers PN by 2)."""
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=25)  # COM range 1-25
+        recs = self._make_receivers(5)
+        # PN=27 is normally INC (> com_max 25)
+        # With +2 from 1 blocking back, PN adjusted to 25 → COM
+        fac = self._make_fac_card(pn=27)
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            backs_blocking=[3],  # BK1 blocking
+        )
+        # The +2 modifier shifts PN from 27 to 25, which is COM
+        assert result.result in ("COMPLETE", "TD"), f"Expected COM with back blocking, got {result.result}"
+
+    def test_two_backs_blocking_adds_plus_4(self):
+        """Two backs blocking → +4 completion modifier."""
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=25)
+        recs = self._make_receivers(5)
+        # PN=29 is INC. With +4 from 2 blockers, PN → 25 → COM
+        fac = self._make_fac_card(pn=29)
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            backs_blocking=[3, 4],  # BK1 + BK2 blocking
+        )
+        assert result.result in ("COMPLETE", "TD"), f"Expected COM with 2 backs blocking, got {result.result}"
+
+    def test_blocking_back_targeted_throws_away(self):
+        """If FAC targets a blocking back, ball is thrown away."""
+        from engine.fac_deck import FACCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=30)
+        recs = self._make_receivers(5)
+        # FAC card targets BK1 (index 3)
+        fac = FACCard(
+            card_number=1, run_number="6", pass_number="20",
+            sweep_left="A", inside_left="B", sweep_right="C", inside_right="D",
+            quick_kick="Orig", short_pass="BK1", long_pass="Orig",
+            screen="Com", end_run="OK", z_result="NONE", solo="P",
+        )
+        deck = FACDeck()
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            backs_blocking=[3],  # BK1 is blocking
+        )
+        assert result.result == "INCOMPLETE"
+        assert "block" in result.description.lower() or "thrown away" in result.description.lower()
+
+    def test_no_blocking_no_modifier(self):
+        """Without blocking backs, no extra modifier applied."""
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=25)
+        recs = self._make_receivers(5)
+        # PN=27 > com_max 25 → INC without blockers
+        fac = self._make_fac_card(pn=27)
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            backs_blocking=[],
+        )
+        assert result.result in ("INCOMPLETE", "INT"), f"Expected INC without blockers, got {result.result}"
+
+
+# ─── Pass Defense Rating Modifier Tests ─────────────────────────────────
+
+
+class TestPassDefenseRating:
+    """Test covering defender's pass_defense_rating modifies completion."""
+
+    def _make_fac_card(self, pn=20, rn=6):
+        from engine.fac_deck import FACCard
+        return FACCard(
+            card_number=1, run_number=str(rn), pass_number=str(pn),
+            sweep_left="A", inside_left="B", sweep_right="C", inside_right="D",
+            quick_kick="Orig", short_pass="Orig", long_pass="Orig",
+            screen="Com", end_run="OK", z_result="NONE", solo="P",
+        )
+
+    def _make_qb(self, com_max=30):
+        from engine.player_card import PlayerCard, PassRanges
+        qb = PlayerCard("Test QB", "KC", "QB", 15, "A")
+        qb.passing_short = PassRanges(com_max=com_max, inc_max=47)
+        qb.passing_quick = PassRanges(com_max=com_max, inc_max=47)
+        qb.passing_long = PassRanges(com_max=com_max - 5, inc_max=47)
+        return qb
+
+    def _make_receivers(self, n=5):
+        from engine.player_card import PlayerCard, ThreeValueRow
+        recs = []
+        for i in range(n):
+            r = PlayerCard(f"WR{i}", "KC", "WR", 80+i, "B")
+            r.pass_gain = [ThreeValueRow(v1=5, v2=8, v3=15) for _ in range(12)]
+            recs.append(r)
+        return recs
+
+    def test_high_pdr_makes_pass_harder(self):
+        """High pass_defense_rating defender increases PN → harder to complete."""
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=30)
+        recs = self._make_receivers(5)
+        # FL is receivers[0], covered by box O
+        cb = PlayerCard("Elite CB", "DAL", "CB", 24, "A", pass_defense_rating=4)
+        defenders_by_box = {'O': cb}  # box O covers FL
+        # PN=29 is normally COM (≤30), but PDR=4 → PN adjusted +4 → 33 → INC
+        fac = self._make_fac_card(pn=29)
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+        )
+        assert result.result in ("INCOMPLETE", "INT"), f"Expected INC/INT with high PDR, got {result.result}"
+
+    def test_negative_pdr_makes_pass_easier(self):
+        """Negative pass_defense_rating defender (bad coverage) lowers PN."""
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=30)
+        recs = self._make_receivers(5)
+        # FL is receivers[0], covered by box O
+        cb = PlayerCard("Weak CB", "DAL", "CB", 24, "D", pass_defense_rating=-2)
+        defenders_by_box = {'O': cb}
+        # PN=32 is normally INC (>30), but PDR=-2 → modifier +2 → PN adjusted -2 → 30 → COM
+        fac = self._make_fac_card(pn=32)
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+        )
+        assert result.result in ("COMPLETE", "TD"), f"Expected COM with negative PDR, got {result.result}"
+
+    def test_empty_box_gives_plus_5(self):
+        """Empty covering box → +5 to completion range."""
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=25)
+        recs = self._make_receivers(5)
+        # Box O (covers FL) is empty → +5 → PN 30 adjusted to 25 → COM
+        defenders_by_box = {'K': PlayerCard("CB", "DAL", "CB", 24, "B")}  # Only box K filled
+        fac = self._make_fac_card(pn=30)
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+        )
+        assert result.result in ("COMPLETE", "TD"), f"Expected COM with empty box +5, got {result.result}"
+
+    def test_zero_pdr_no_effect(self):
+        """PDR=0 has no effect on completion."""
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=30)
+        recs = self._make_receivers(5)
+        cb = PlayerCard("Average CB", "DAL", "CB", 24, "B", pass_defense_rating=0)
+        defenders_by_box = {'O': cb}
+        # PN=30 → exactly at COM boundary → should complete
+        fac = self._make_fac_card(pn=30)
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+        )
+        assert result.result in ("COMPLETE", "TD"), f"Expected COM with PDR=0, got {result.result}"
+
+
+# ─── INC→INT Covering Defender Tests ────────────────────────────────────
+
+
+class TestINCInterceptionCoveringDefender:
+    """Test INC→INT uses covering defender's intercept_range."""
+
+    def _make_fac_card(self, pn=45, rn=6):
+        from engine.fac_deck import FACCard
+        return FACCard(
+            card_number=1, run_number=str(rn), pass_number=str(pn),
+            sweep_left="A", inside_left="B", sweep_right="C", inside_right="D",
+            quick_kick="Orig", short_pass="Orig", long_pass="Orig",
+            screen="Com", end_run="OK", z_result="NONE", solo="P",
+        )
+
+    def _make_qb(self, com_max=20, inc_max=44):
+        from engine.player_card import PlayerCard, PassRanges
+        qb = PlayerCard("Test QB", "KC", "QB", 15, "A")
+        qb.passing_short = PassRanges(com_max=com_max, inc_max=inc_max)
+        qb.passing_quick = PassRanges(com_max=com_max, inc_max=inc_max)
+        qb.passing_long = PassRanges(com_max=com_max - 5, inc_max=inc_max)
+        return qb
+
+    def _make_receivers(self, n=5):
+        from engine.player_card import PlayerCard, ThreeValueRow
+        recs = []
+        for i in range(n):
+            r = PlayerCard(f"WR{i}", "KC", "WR", 80+i, "B")
+            r.pass_gain = [ThreeValueRow(v1=5, v2=8, v3=15) for _ in range(12)]
+            recs.append(r)
+        return recs
+
+    def test_covering_defender_intercept_fires(self):
+        """Covering defender with intercept_range catches the INC→INT."""
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=20, inc_max=40)
+        recs = self._make_receivers(5)
+        # CB in box O covers FL (recs[0]), intercept_range=38
+        cb = PlayerCard("Ball Hawk CB", "DAL", "CB", 24, "A",
+                        pass_defense_rating=0, intercept_range=38)
+        defenders_by_box = {'O': cb}
+        # PN=39: INC range (21-40), and 38 ≤ 39 ≤ 48 → INT
+        fac = self._make_fac_card(pn=39)
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+        )
+        assert result.result == "INT", f"Expected INT from covering defender, got {result.result}"
+        assert "Ball Hawk CB" in result.description
+
+    def test_no_defenders_by_box_legacy_fallback(self):
+        """Without defenders_by_box, falls back to legacy check (offensive receiver)."""
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=20, inc_max=44)
+        recs = self._make_receivers(5)
+        # No defenders_by_box → legacy path, offensive receiver has intercept_range=0
+        fac = self._make_fac_card(pn=42)
+        deck = FACDeck()
+        random.seed(99)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+        )
+        # Should be INC (offensive players don't have intercept_range)
+        assert result.result in ("INCOMPLETE", "INT")
+
+
+# ─── Double Coverage INT Suppression Tests ───────────────────────────────
+
+
+class TestDoubleCoverageINTSuppression:
+    """Test double coverage defender away → INT suppressed."""
+
+    def _make_fac_card(self, pn=39, rn=6):
+        from engine.fac_deck import FACCard
+        return FACCard(
+            card_number=1, run_number=str(rn), pass_number=str(pn),
+            sweep_left="A", inside_left="B", sweep_right="C", inside_right="D",
+            quick_kick="Orig", short_pass="Orig", long_pass="Orig",
+            screen="Com", end_run="OK", z_result="NONE", solo="P",
+        )
+
+    def _make_qb(self, com_max=20, inc_max=40):
+        from engine.player_card import PlayerCard, PassRanges
+        qb = PlayerCard("Test QB", "KC", "QB", 15, "A")
+        qb.passing_short = PassRanges(com_max=com_max, inc_max=inc_max)
+        qb.passing_quick = PassRanges(com_max=com_max, inc_max=inc_max)
+        qb.passing_long = PassRanges(com_max=com_max - 5, inc_max=inc_max)
+        return qb
+
+    def _make_receivers(self, n=5):
+        from engine.player_card import PlayerCard, ThreeValueRow
+        recs = []
+        for i in range(n):
+            r = PlayerCard(f"WR{i}", "KC", "WR", 80+i, "B")
+            r.pass_gain = [ThreeValueRow(v1=5, v2=8, v3=15) for _ in range(12)]
+            recs.append(r)
+        return recs
+
+    def test_fs_away_on_double_coverage_suppresses_int(self):
+        """FS (box M) away on double coverage → INT in box M suppressed.
+
+        FL2 is covered by box M (FS). If FS has moved to double cover
+        another receiver, their intercept shouldn't fire.
+        """
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=20, inc_max=40)
+        recs = self._make_receivers(5)
+        # Target LE (recs[1]), covered by box K
+        # FS in box M has intercept_range=38 but has moved to double-cover someone else
+        fs = PlayerCard("FS Player", "DAL", "S", 21, "A",
+                        pass_defense_rating=0, intercept_range=38)
+        cb_k = PlayerCard("LCB", "DAL", "CB", 24, "B",
+                          pass_defense_rating=0, intercept_range=38)
+        defenders_by_box = {'K': cb_k, 'M': fs}
+
+        # PN=39 would trigger INT for the covering defender in box K
+        # The covering defender for LE is box K (cb_k), whose box is K, not M
+        # So double_coverage_defender_box='M' should NOT suppress box K INT
+        fac = self._make_fac_card(pn=39)
+        deck = FACDeck()
+
+        # Target LE (index 1) → covered by box K (cb_k)
+        # double_coverage_defender_box='M' means FS left box M
+        # Since cb_k is in box K (not M), cb_k's INT should still fire
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[1], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='M',
+        )
+        assert result.result == "INT", f"INT from box K should not be suppressed when M away"
+
+    def test_covering_defender_box_matches_away_box_suppresses(self):
+        """When the covering defender IS the one away on double coverage, suppress INT.
+
+        If FL2 is the target, covered by box M (FS), and FS is away on double coverage,
+        the FS's intercept is suppressed.
+        """
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=20, inc_max=40)
+        # Need FL2 target — that requires a specific FAC card and receiver setup
+        # FL2 maps to box M. Since we're targeting recs[0] = FL → box O, let's
+        # test with LE → box K and set double_coverage_defender_box='K'
+        recs = self._make_receivers(5)
+        cb_k = PlayerCard("LCB", "DAL", "CB", 24, "B",
+                          pass_defense_rating=0, intercept_range=38)
+        defenders_by_box = {'K': cb_k}
+
+        fac = self._make_fac_card(pn=39)
+        deck = FACDeck()
+        random.seed(42)
+        # Target LE (recs[1]) → covered by box K
+        # double_coverage_defender_box='K' → cb_k has left → INT suppressed
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[1], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='K',  # box K defender away
+        )
+        assert result.result == "INCOMPLETE", \
+            f"INT should be suppressed when covering defender away, got {result.result}"
