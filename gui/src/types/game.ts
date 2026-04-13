@@ -205,6 +205,33 @@ export interface DefensivePlayCall {
   formation: string;
   defensive_strategy?: string;
   defensive_play?: string;  // 5E defensive play card (PASS_DEFENSE, RUN_DEFENSE_KEY_BACK_1, etc.)
+  blitz_players?: string[];  // Names of LBs/DBs to blitz (2-5 players)
+}
+
+export interface DepthChartData {
+  team: string;
+  team_name: string;
+  depth_chart: Record<string, PlayerBrief[]>;
+}
+
+export interface DisplayBoxData {
+  defense_team: string;
+  boxes: Record<string, PlayerBrief | null>;
+  rows: {
+    row1_dl: Record<string, PlayerBrief | null>;
+    row2_lb: Record<string, PlayerBrief | null>;
+    row3_db: Record<string, PlayerBrief | null>;
+  };
+}
+
+export interface StartingLineupData {
+  team: string;
+  team_name: string;
+  record: { wins: number; losses: number; ties: number };
+  offense: Record<string, PlayerBrief | null>;
+  offensive_line: PlayerBrief[];
+  defense: PlayerBrief[];
+  returners: { KR: PlayerBrief | null; PR: PlayerBrief | null };
 }
 
 export const DEFENSIVE_FORMATIONS = [
