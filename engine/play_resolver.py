@@ -64,6 +64,7 @@ class PlayResult:
     defensive_play: Optional[str] = None        # DefensivePlay value used
     bv_tv_result: Optional[Dict[str, Any]] = None  # BV vs TV battle details
     interception_point: Optional[int] = None    # Yard line where INT occurred
+    personnel_note: Optional[str] = None        # Auto-substitution / availability note
     debug_log: List[str] = field(default_factory=list)  # Step-by-step resolution log
 
 
@@ -931,8 +932,21 @@ class PlayResolver:
 
     # ── Punt (slot-based) ────────────────────────────────────────────
 
+    @staticmethod
+    def _returner_modifier(returner: Optional[PlayerCard], kind: str) -> int:
+        if returner is None:
+            return 0
+        stats = returner.stats_summary or {}
+        grade_bonus = {"A+": 2, "A": 2, "B": 1, "C": 0, "D": -1}.get(returner.overall_grade, 0)
+        ypc_bonus = round((float(stats.get("ypc", 4.0)) - 4.0) * (1.0 if kind == "PR" else 1.5))
+        rec_bonus = round((float(stats.get("avg_yards", 10.0)) - 10.0) / (5.0 if kind == "PR" else 6.0))
+        position_bonus = 1 if returner.position.upper() in ("RB", "WR", "CB", "S", "SS", "FS", "DB") else 0
+        modifier = grade_bonus + ypc_bonus + rec_bonus + position_bonus
+        return max(-2, min(6, modifier))
+
     def resolve_punt(self, punter: PlayerCard,
-                     dice: Optional[DiceResult] = None) -> PlayResult:
+                     dice: Optional[DiceResult] = None,
+                     returner: Optional[PlayerCard] = None) -> PlayResult:
         # Use slot-based punt column if available
         if punter.punt_column and dice is not None:
             slot = dice.slot
@@ -965,10 +979,18 @@ class PlayResolver:
                 )
             else:
                 distance = punt_data.get("yards", int(punter.avg_distance))
-                return_yards = Charts.roll_punt_return()
+                fair_catch = Charts.check_fair_catch(punter.punt_return_pct)
+                return_yards = 0 if fair_catch else max(
+                    0, Charts.roll_punt_return() + self._returner_modifier(returner, "PR")
+                )
                 desc = f"{punter.player_name} punts {distance} yards"
-                if return_yards > 0:
-                    desc += f", returned {return_yards} yards"
+                if fair_catch:
+                    desc += f", fair catch by {returner.player_name}" if returner else ", fair catch"
+                elif return_yards > 0:
+                    desc += (
+                        f", {returner.player_name} returns it {return_yards} yards"
+                        if returner else f", returned {return_yards} yards"
+                    )
                 return PlayResult(
                     play_type="PUNT",
                     yards_gained=distance - return_yards,
@@ -982,12 +1004,19 @@ class PlayResolver:
         distance = max(20, int(avg + variance))
 
         inside_20 = random.random() < punter.inside_20_rate
-        return_yards = Charts.roll_punt_return()
+        fair_catch = Charts.check_fair_catch(punter.punt_return_pct)
+        return_yards = 0 if fair_catch else max(
+            0, Charts.roll_punt_return() + self._returner_modifier(returner, "PR")
+        )
 
         desc = f"{punter.player_name} punts {distance} yards"
         if inside_20:
             desc += ", downed inside the 20"
             return_yards = 0
+        elif fair_catch:
+            desc += f", fair catch by {returner.player_name}" if returner else ", fair catch"
+        elif return_yards > 0 and returner:
+            desc += f", {returner.player_name} returns it {return_yards} yards"
 
         return PlayResult(
             play_type="PUNT",
@@ -1017,7 +1046,7 @@ class PlayResolver:
             description=f"2-point conversion {'successful!' if success else 'fails.'}",
         )
 
-    def resolve_kickoff(self) -> PlayResult:
+    def resolve_kickoff(self, returner: Optional[PlayerCard] = None) -> PlayResult:
         if Charts.is_kickoff_touchback():
             return PlayResult(
                 play_type="KICKOFF",
@@ -1025,12 +1054,16 @@ class PlayResolver:
                 result="TOUCHBACK",
                 description="Kickoff - touchback, ball at 25-yard line",
             )
-        return_yards = Charts.roll_kick_return()
+        start_yard = Charts.roll_kick_return() + self._returner_modifier(returner, "KR")
+        start_yard = max(1, min(99, start_yard))
         return PlayResult(
             play_type="KICKOFF",
-            yards_gained=return_yards,
+            yards_gained=start_yard,
             result="RETURN",
-            description=f"Kickoff returned {return_yards} yards",
+            description=(
+                f"Kickoff to {returner.player_name}, returned to the {start_yard}-yard line"
+                if returner else f"Kickoff returned to the {start_yard}-yard line"
+            ),
         )
 
     # ══════════════════════════════════════════════════════════════════

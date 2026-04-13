@@ -340,6 +340,9 @@ class PlayerCard:
             "xp_rate": self.xp_rate,
             "avg_distance": self.avg_distance,
             "inside_20_rate": self.inside_20_rate,
+            "blocked_punt_number": self.blocked_punt_number,
+            "punt_return_pct": self.punt_return_pct,
+            "longest_kick": self.longest_kick,
             # Offensive Line
             "run_block_rating": self.run_block_rating,
             "pass_block_rating": self.pass_block_rating,
@@ -411,6 +414,9 @@ class PlayerCard:
         card.xp_rate = data.get("xp_rate", 0.95)
         card.avg_distance = data.get("avg_distance", 44.0)
         card.inside_20_rate = data.get("inside_20_rate", 0.35)
+        card.blocked_punt_number = data.get("blocked_punt_number", 0)
+        card.punt_return_pct = data.get("punt_return_pct", 0.60)
+        card.longest_kick = data.get("longest_kick", 50)
 
         # Offensive Line
         card.run_block_rating = data.get("run_block_rating", 0)

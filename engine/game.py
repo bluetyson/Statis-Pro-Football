@@ -138,11 +138,14 @@ class Game:
         self._two_minute_declared: bool = False
         # 5E: Big play defense state per team
         self._big_play_defense = {"home": BigPlayDefense(), "away": BigPlayDefense()}
+        self._current_play_personnel_note: Optional[str] = None
 
         self.state.possession = random.choice(["home", "away"])
         self.state.play_log.append(f"Coin flip: {self.state.possession} team receives")
 
-        kickoff_result = self.resolver.resolve_kickoff()
+        kickoff_result = self.resolver.resolve_kickoff(
+            returner=self.get_returner(self.get_offense_team(), "KR")
+        )
         start_yard = 25 if kickoff_result.result == "TOUCHBACK" else kickoff_result.yards_gained
         self.state.yard_line = start_yard
         self.state.play_log.append(kickoff_result.description)
@@ -153,38 +156,86 @@ class Game:
     def get_defense_team(self) -> Team:
         return self.away_team if self.state.possession == "home" else self.home_team
 
-    def get_qb(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
+    def _is_player_unavailable(self, player: Optional[PlayerCard]) -> bool:
+        return bool(player and self.state.injuries.get(player.player_name, 0) > 0)
+
+    def _record_personnel_note(self, note: Optional[str]) -> None:
+        if not note:
+            return
+        if self._current_play_personnel_note == note:
+            return
+        if self._current_play_personnel_note:
+            self._current_play_personnel_note = f"{self._current_play_personnel_note} {note}"
+        else:
+            self._current_play_personnel_note = note
+        self.state.play_log.append(f"  🔄 {note}")
+
+    def _apply_current_personnel_note(self, result: PlayResult) -> PlayResult:
+        self._apply_current_personnel_note(result)
+        return result
+
+    def _resolve_position_player(
+        self,
+        players: List[PlayerCard],
+        position: str,
+        player_name: Optional[str] = None,
+    ) -> Optional[PlayerCard]:
         if player_name:
-            for p in self.get_offense_team().roster.qbs:
-                if p.player_name == player_name:
-                    return p
-        return self.get_offense_team().roster.get_starter("QB")
+            for player in players:
+                if player.player_name == player_name:
+                    return None if self._is_player_unavailable(player) else player
+            return None
+
+        if not players:
+            return None
+
+        starter = players[0]
+        if not self._is_player_unavailable(starter):
+            return starter
+
+        for idx, player in enumerate(players[1:], start=1):
+            if self._is_player_unavailable(player):
+                continue
+            players[0], players[idx] = players[idx], players[0]
+            self._record_personnel_note(
+                f"Auto-sub at {position}: {player.player_name} replaces injured {starter.player_name}."
+            )
+            return player
+        return None
+
+    def validate_player_availability(self, player_name: str) -> PlayerCard:
+        for player in self.get_offense_team().roster.all_players():
+            if player.player_name == player_name:
+                if self._is_player_unavailable(player):
+                    raise ValueError(f"{player_name} is injured and unavailable.")
+                return player
+        raise ValueError(f"{player_name} is not on the current offense.")
+
+    def get_returner(self, team: Team, kind: str) -> Optional[PlayerCard]:
+        return team.get_return_specialist(kind, unavailable_names=set(self.state.injuries))
+
+    def get_qb(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
+        return self._resolve_position_player(self.get_offense_team().roster.qbs, "QB", player_name)
 
     def get_rb(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
-        if player_name:
-            for p in self.get_offense_team().roster.rbs:
-                if p.player_name == player_name:
-                    return p
-        return self.get_offense_team().roster.get_starter("RB")
+        return self._resolve_position_player(self.get_offense_team().roster.rbs, "RB", player_name)
 
     def get_wr(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         if player_name:
-            for p in self.get_offense_team().roster.wrs:
-                if p.player_name == player_name:
-                    return p
-        wrs = self.get_offense_team().roster.wrs
-        if not wrs:
-            return None
-        return random.choice(wrs[:3]) if len(wrs) >= 3 else wrs[0]
+            return self._resolve_position_player(self.get_offense_team().roster.wrs, "WR", player_name)
+        for wr in self.get_offense_team().roster.wrs[:3]:
+            if not self._is_player_unavailable(wr):
+                return wr
+        return self._resolve_position_player(self.get_offense_team().roster.wrs, "WR")
 
     def get_te(self) -> Optional[PlayerCard]:
-        return self.get_offense_team().roster.get_starter("TE")
+        return self._resolve_position_player(self.get_offense_team().roster.tes, "TE")
 
     def get_kicker(self) -> Optional[PlayerCard]:
-        return self.get_offense_team().roster.get_starter("K")
+        return self._resolve_position_player(self.get_offense_team().roster.kickers, "K")
 
     def get_punter(self) -> Optional[PlayerCard]:
-        return self.get_offense_team().roster.get_starter("P")
+        return self._resolve_position_player(self.get_offense_team().roster.punters, "P")
 
     def _track_play_stats(self, result) -> None:
         """Track player stats and game-level penalty/turnover counts."""
@@ -316,6 +367,7 @@ class Game:
             player_name: Optional specific player to use for the play.
             defensive_strategy: Optional human-specified defensive strategy (5E).
         """
+        self._current_play_personnel_note = None
         if self.use_5e:
             return self._execute_play_5e(play_call, defense_formation,
                                          player_name=player_name,
@@ -353,6 +405,7 @@ class Game:
         else:
             result = self._execute_pass(dice, play_call, defense_formation)
 
+        self._apply_current_personnel_note(result)
         self.state.play_log.append(f"  \u2192 {result.description}")
 
         # Track stats
@@ -368,7 +421,9 @@ class Game:
 
         if result.is_touchdown or result.result == "TD":
             self._score_touchdown()
-            kickoff = self.resolver.resolve_kickoff()
+            kickoff = self.resolver.resolve_kickoff(
+                returner=self.get_returner(self.get_defense_team(), "KR")
+            )
             self.state.play_log.append(kickoff.description)
             new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
             self._change_possession(new_yl)
@@ -484,13 +539,16 @@ class Game:
         if player_name:
             for p in team.roster.wrs + team.roster.tes + team.roster.rbs:
                 if p.player_name == player_name:
-                    return p
+                    return None if self._is_player_unavailable(p) else p
 
         if "DEEP" in play_call.direction:
-            receivers = team.roster.wrs
+            receivers = [p for p in team.roster.wrs if not self._is_player_unavailable(p)]
             return random.choice(receivers) if receivers else None
 
-        options = team.roster.wrs + team.roster.tes
+        options = [
+            p for p in (team.roster.wrs + team.roster.tes)
+            if not self._is_player_unavailable(p)
+        ]
         return random.choice(options) if options else None
 
     def _execute_field_goal(self) -> PlayResult:
@@ -508,9 +566,10 @@ class Game:
     def _execute_punt(self) -> PlayResult:
         punter = self.get_punter()
         punt_dice = self.dice.roll()
+        returner = self.get_returner(self.get_defense_team(), "PR")
 
         if punter:
-            result = self.resolver.resolve_punt(punter, dice=punt_dice)
+            result = self.resolver.resolve_punt(punter, dice=punt_dice, returner=returner)
         else:
             dist = random.randint(38, 52)
             result = PlayResult("PUNT", dist - 8, "PUNT",
@@ -682,7 +741,9 @@ class Game:
                     self.state.possession = (
                         "home" if self.state.possession == "away" else "away"
                     )
-                    kickoff = self.resolver.resolve_kickoff()
+                    kickoff = self.resolver.resolve_kickoff(
+                        returner=self.get_returner(self.get_offense_team(), "KR")
+                    )
                     self.state.play_log.append(f"Second half kickoff: {kickoff.description}")
                     new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
                     self.state.yard_line = new_yl
@@ -694,7 +755,10 @@ class Game:
     def _get_all_receivers(self) -> list:
         """Get all WR + TE receivers ordered by receiver letter."""
         team = self.get_offense_team()
-        receivers = list(team.roster.wrs) + list(team.roster.tes)
+        receivers = [
+            rec for rec in (list(team.roster.wrs) + list(team.roster.tes))
+            if not self._is_player_unavailable(rec)
+        ]
         # Assign receiver letters if not already set
         letters = ["A", "B", "C", "D", "E"]
         for i, rec in enumerate(receivers[:5]):
@@ -769,6 +833,7 @@ class Game:
             qb = self.get_qb(player_name)
             if qb:
                 result = self.resolver.resolve_flop(qb)
+                self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
                 self._advance_down(result.yards_gained)
                 self._advance_time(self.TIME_STANDARD_PLAY)
@@ -777,6 +842,7 @@ class Game:
             qb = self.get_qb(player_name)
             if qb:
                 result = self.resolver.resolve_sneak(qb, self.deck)
+                self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
                 self._advance_down(result.yards_gained)
                 self._advance_time(self.TIME_STANDARD_PLAY)
@@ -790,6 +856,7 @@ class Game:
                     fac_card, self.deck, rb, def_form,
                     defense_run_stop=defense.defense_rating,
                 )
+                self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
                 self._advance_down(result.yards_gained)
                 time_used = self._calculate_time(result)
@@ -817,13 +884,16 @@ class Game:
                     defensive_strategy=defensive_strategy or "NONE",
                     defenders=defenders,
                 )
+                self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
                 if result.turnover:
                     self._handle_turnover(result)
                     return result
                 if result.is_touchdown or result.result == "TD":
                     self._score_touchdown()
-                    kickoff = self.resolver.resolve_kickoff()
+                    kickoff = self.resolver.resolve_kickoff(
+                        returner=self.get_returner(self.get_defense_team(), "KR")
+                    )
                     self.state.play_log.append(kickoff.description)
                     new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
                     self._change_possession(new_yl)
@@ -848,6 +918,9 @@ class Game:
             result = self._execute_pass_5e(fac_card, play_call, defense_formation, defensive_strategy, player_name)
         else:
             result = self._execute_pass_5e(fac_card, play_call, defense_formation, defensive_strategy, player_name)
+
+        if self._current_play_personnel_note:
+            result.personnel_note = self._current_play_personnel_note
 
         self.state.play_log.append(f"  → {result.description}")
 
@@ -907,7 +980,9 @@ class Game:
 
         if result.is_touchdown or result.result == "TD":
             self._score_touchdown()
-            kickoff = self.resolver.resolve_kickoff()
+            kickoff = self.resolver.resolve_kickoff(
+                returner=self.get_returner(self.get_defense_team(), "KR")
+            )
             self.state.play_log.append(kickoff.description)
             new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
             self._change_possession(new_yl)
@@ -1172,7 +1247,9 @@ class Game:
             self._handle_turnover(result)
         elif result.is_touchdown or result.result == "TD":
             self._score_touchdown()
-            kickoff = self.resolver.resolve_kickoff()
+            kickoff = self.resolver.resolve_kickoff(
+                returner=self.get_returner(self.get_defense_team(), "KR")
+            )
             self.state.play_log.append(kickoff.description)
             new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
             self._change_possession(new_yl)
@@ -1201,7 +1278,9 @@ class Game:
             self._handle_turnover(result)
         elif result.is_touchdown or result.result == "TD":
             self._score_touchdown()
-            kickoff = self.resolver.resolve_kickoff()
+            kickoff = self.resolver.resolve_kickoff(
+                returner=self.get_returner(self.get_defense_team(), "KR")
+            )
             self.state.play_log.append(kickoff.description)
             new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
             self._change_possession(new_yl)

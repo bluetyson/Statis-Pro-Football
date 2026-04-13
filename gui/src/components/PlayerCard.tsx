@@ -200,6 +200,9 @@ export function PlayerCardView({ card }: PlayerCardProps) {
       {card.fg_chart && (
         <div className="fg-chart">
           <div className="fg-chart-title">Field Goal Chart</div>
+          {typeof card.longest_kick === 'number' && card.longest_kick > 0 && (
+            <div className="card-sub-info">Longest Field Goal: {card.longest_kick} yds</div>
+          )}
           {Object.entries(card.fg_chart).map(([range, rate]) => (
             <div key={range} className="fg-row">
               <span className="fg-range">{range} yds</span>
@@ -214,7 +217,38 @@ export function PlayerCardView({ card }: PlayerCardProps) {
           ))}
         </div>
       )}
+
+      {card.position === 'P' && (
+        <div className="card-section">
+          <div className="section-title">Punting</div>
+          <div className="def-rating-grid">
+            {typeof card.avg_distance === 'number' && (
+              <div className="def-rating-item">
+                <span className="def-label">Average</span>
+                <span className="def-value">{card.avg_distance.toFixed(1)}</span>
+              </div>
+            )}
+            {typeof card.inside_20_rate === 'number' && (
+              <div className="def-rating-item">
+                <span className="def-label">Inside 20</span>
+                <span className="def-value">{(card.inside_20_rate * 100).toFixed(0)}%</span>
+              </div>
+            )}
+            {typeof card.blocked_punt_number === 'number' && card.blocked_punt_number > 0 && (
+              <div className="def-rating-item">
+                <span className="def-label">Blocked</span>
+                <span className="def-value">1-{card.blocked_punt_number}</span>
+              </div>
+            )}
+            {typeof card.punt_return_pct === 'number' && (
+              <div className="def-rating-item">
+                <span className="def-label">Returned</span>
+                <span className="def-value">{(card.punt_return_pct * 100).toFixed(0)}%</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

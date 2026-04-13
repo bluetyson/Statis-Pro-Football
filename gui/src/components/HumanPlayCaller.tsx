@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GameState, HumanPlayCall, PersonnelData } from '../types/game';
 import { OFFENSIVE_STRATEGIES } from '../types/game';
 
@@ -101,10 +101,23 @@ export function HumanPlayCaller({
       p.position === 'RB' || p.position === 'QB' || p.position === 'WR'
     )
   ) : [];
+  const availableBallCarriers = ballCarriers.filter((p) => !p.injured);
 
   const receiverTargets = personnel ? (
     personnel.offense_receivers
   ) : [];
+  const availableReceiverTargets = receiverTargets.filter((p) => !p.injured);
+  const autoBallCarrier = availableBallCarriers.find((p) => p.position === 'RB') ?? availableBallCarriers[0] ?? null;
+  const noEligiblePlayer =
+    (isRunPlay && availableBallCarriers.length === 0) ||
+    (isPassPlay && availableReceiverTargets.length === 0);
+
+  useEffect(() => {
+    const pool = isRunPlay ? availableBallCarriers : availableReceiverTargets;
+    if (selectedPlayer && !pool.some((p) => p.name === selectedPlayer)) {
+      setSelectedPlayer('');
+    }
+  }, [availableBallCarriers, availableReceiverTargets, isRunPlay, selectedPlayer]);
 
   const handleCallPlay = () => {
     onCallPlay({
@@ -232,10 +245,10 @@ export function HumanPlayCaller({
             onChange={(e) => setSelectedPlayer(e.target.value)}
             disabled={disabled}
           >
-            <option value="">Auto (Starter RB)</option>
+            <option value="">{autoBallCarrier ? `Auto (${autoBallCarrier.name})` : 'Auto (no healthy ball carrier)'}</option>
             {ballCarriers.map((p) => (
-              <option key={p.name} value={p.name}>
-                {p.name} ({p.position}) - {p.overall_grade}
+              <option key={p.name} value={p.name} disabled={p.injured}>
+                {p.name} ({p.position}) - {p.overall_grade}{p.injured ? ' [INJ]' : ''}
               </option>
             ))}
           </select>
@@ -252,8 +265,8 @@ export function HumanPlayCaller({
           >
             <option value="">Auto (FAC card determines)</option>
             {receiverTargets.map((p) => (
-              <option key={p.name} value={p.name}>
-                {p.name} ({p.position}{p.receiver_letter ? ` [${p.receiver_letter}]` : ''}) - {p.overall_grade}
+              <option key={p.name} value={p.name} disabled={p.injured}>
+                {p.name} ({p.position}{p.receiver_letter ? ` [${p.receiver_letter}]` : ''}) - {p.overall_grade}{p.injured ? ' [INJ]' : ''}
               </option>
             ))}
           </select>
@@ -265,11 +278,26 @@ export function HumanPlayCaller({
         <button
           className="btn btn-primary btn-lg"
           onClick={handleCallPlay}
-          disabled={disabled}
+          disabled={disabled || noEligiblePlayer}
         >
           {loading ? '⏳ Running...' : '▶ Call Play'}
         </button>
       </div>
+
+      {isRunPlay && (
+        <div className="timeout-info">
+          <span>
+            {autoBallCarrier
+              ? `🔄 Auto ball carrier: ${autoBallCarrier.name}`
+              : '⚠ No healthy ball carrier available'}
+          </span>
+        </div>
+      )}
+      {isPassPlay && availableReceiverTargets.length === 0 && (
+        <div className="timeout-info">
+          <span>⚠ No healthy eligible receiver available</span>
+        </div>
+      )}
 
       {/* Timeout info */}
       <div className="timeout-info">

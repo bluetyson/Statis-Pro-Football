@@ -91,3 +91,57 @@ def test_human_defense_response_keeps_called_formation():
     assert response.status_code == 200
     play_result = response.json()["play_result"]
     assert play_result["defense_formation"] == "NICKEL_BLITZ"
+
+
+def test_team_endpoint_includes_team_card_and_returners():
+    response = client.get("/teams/CHI?season=2025_5e")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "team_card" in body
+    assert body["team_card"]["offense"]["QB"]["position"] == "QB"
+    assert len(body["team_card"]["kick_returners"]) >= 1
+    assert len(body["team_card"]["punt_returners"]) >= 1
+
+
+def test_human_play_rejects_explicit_injured_player():
+    game_id = _new_game()
+    game = _active_games[game_id]
+    injured_rb = game.get_offense_team().roster.rbs[0].player_name
+    game.state.injuries[injured_rb] = 4
+
+    response = client.post(
+        f"/games/{game_id}/human-play",
+        json={
+            "play_type": "RUN",
+            "direction": "MIDDLE",
+            "formation": "UNDER_CENTER",
+            "player_name": injured_rb,
+        },
+    )
+
+    assert response.status_code == 400
+    assert "injured and unavailable" in response.json()["detail"]
+
+
+def test_human_play_auto_subs_injured_starter():
+    game_id = _new_game()
+    game = _active_games[game_id]
+    injured_rb = game.get_offense_team().roster.rbs[0].player_name
+    backup_rb = game.get_offense_team().roster.rbs[1].player_name
+    game.state.injuries[injured_rb] = 4
+
+    response = client.post(
+        f"/games/{game_id}/human-play",
+        json={
+            "play_type": "RUN",
+            "direction": "MIDDLE",
+            "formation": "UNDER_CENTER",
+        },
+    )
+
+    assert response.status_code == 200
+    play_result = response.json()["play_result"]
+    assert play_result["personnel_note"] is not None
+    assert backup_rb in play_result["personnel_note"]
+    assert injured_rb not in {play_result.get("rusher"), play_result.get("receiver")}

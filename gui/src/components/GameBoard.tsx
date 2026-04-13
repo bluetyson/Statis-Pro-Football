@@ -380,6 +380,9 @@ export function GameBoard({
           {lastPlay && (
             <div className={`last-play-card ${lastPlay.is_touchdown ? 'play-td' : lastPlay.turnover ? 'play-turnover' : ''}`}>
               <div className="last-play-label">Last Play</div>
+              {lastPlay.personnel_note && (
+                <div className="last-play-note">{lastPlay.personnel_note}</div>
+              )}
               <div className="last-play-desc">{lastPlay.description}</div>
               {(lastPlay.run_number != null || lastPlay.pass_number != null || lastPlay.defense_formation) && (
                 <div className="last-play-resolution">

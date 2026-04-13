@@ -59,7 +59,78 @@ def _serialize_play_result(result) -> dict:
         "receiver": result.receiver,
         "bv_tv_result": result.bv_tv_result,
         "interception_point": result.interception_point,
+        "personnel_note": getattr(result, "personnel_note", None),
         "debug_log": getattr(result, 'debug_log', []),
+    }
+
+
+def _player_brief(p, unavailable_names: Optional[set[str]] = None):
+    unavailable = unavailable_names or set()
+    return {
+        "name": p.player_name,
+        "position": p.position,
+        "number": p.number,
+        "overall_grade": p.overall_grade,
+        "receiver_letter": getattr(p, "receiver_letter", ""),
+        "defender_letter": getattr(p, "defender_letter", ""),
+        "injured": p.player_name in unavailable,
+        # Offensive Line ratings
+        "run_block_rating": getattr(p, "run_block_rating", 0),
+        "pass_block_rating": getattr(p, "pass_block_rating", 0),
+        # Defensive ratings (legacy)
+        "pass_rush_rating": getattr(p, "pass_rush_rating", 0),
+        "coverage_rating": getattr(p, "coverage_rating", 0),
+        "run_stop_rating": getattr(p, "run_stop_rating", 0),
+        # Authentic 5E defensive ratings
+        "tackle_rating": getattr(p, "tackle_rating", 0),
+        "pass_defense_rating": getattr(p, "pass_defense_rating", 0),
+        "intercept_range": getattr(p, "intercept_range", 0),
+        # QB passing ranges
+        "passing_quick": p.passing_quick.to_dict() if getattr(p, "passing_quick", None) else None,
+        "passing_short": p.passing_short.to_dict() if getattr(p, "passing_short", None) else None,
+        "passing_long": p.passing_long.to_dict() if getattr(p, "passing_long", None) else None,
+        "pass_rush": p.pass_rush.to_dict() if getattr(p, "pass_rush", None) else None,
+        "qb_endurance": getattr(p, "qb_endurance", ""),
+        # Rushing (12-row N/SG/LG)
+        "rushing": [r.to_list() if r else None for r in getattr(p, "rushing", [])],
+        "endurance_rushing": getattr(p, "endurance_rushing", 0),
+        # Pass gain (12-row Q/S/L)
+        "pass_gain": [r.to_list() if r else None for r in getattr(p, "pass_gain", [])],
+        "endurance_pass": getattr(p, "endurance_pass", 0),
+        "blocks": getattr(p, "blocks", 0),
+        # Kicker
+        "fg_chart": getattr(p, "fg_chart", None) or None,
+        "xp_rate": getattr(p, "xp_rate", 0),
+        "longest_kick": getattr(p, "longest_kick", 0),
+        # Punter
+        "avg_distance": getattr(p, "avg_distance", 0),
+        "inside_20_rate": getattr(p, "inside_20_rate", 0),
+        "blocked_punt_number": getattr(p, "blocked_punt_number", 0),
+        "punt_return_pct": getattr(p, "punt_return_pct", 0),
+    }
+
+
+def _build_team_card(team: Team, unavailable_names: Optional[set[str]] = None) -> dict:
+    lineup = team.get_standard_lineup()
+    kr_depth = team.get_return_candidates("KR")[:3]
+    pr_depth = team.get_return_candidates("PR")[:4]
+    return {
+        "team": team.abbreviation,
+        "city": team.city,
+        "name": team.name,
+        "record": {"wins": team.wins, "losses": team.losses, "ties": team.ties},
+        "offense": {
+            pos: _player_brief(player, unavailable_names) if player else None
+            for pos, player in lineup["offense"].items()
+        },
+        "offensive_line": [_player_brief(player, unavailable_names) for player in lineup["offensive_line"]],
+        "defense": [_player_brief(player, unavailable_names) for player in lineup["defense"]],
+        "returners": {
+            kind: _player_brief(player, unavailable_names) if player else None
+            for kind, player in lineup["returners"].items()
+        },
+        "kick_returners": [_player_brief(player, unavailable_names) for player in kr_depth],
+        "punt_returners": [_player_brief(player, unavailable_names) for player in pr_depth],
     }
 
 
@@ -119,7 +190,9 @@ def get_team(team_abbr: str, season: str = "2025_5e"):
     """Get team data."""
     try:
         team = Team.load(team_abbr.upper(), season)
-        return team.to_dict()
+        data = team.to_dict()
+        data["team_card"] = _build_team_card(team)
+        return data
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Team {team_abbr} not found")
 
@@ -197,6 +270,12 @@ def execute_human_play(game_id: str, request: HumanPlayCallRequest):
         reasoning="Human play call",
         strategy=request.strategy.upper() if request.strategy else None,
     )
+
+    if request.player_name:
+        try:
+            game.validate_player_availability(request.player_name)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
 
     result = game.execute_play(
         play_call=play_call,
@@ -354,73 +433,32 @@ def get_personnel(game_id: str):
 
     offense_team = game.get_offense_team()
     defense_team = game.get_defense_team()
-
-    def _player_brief(p):
-        """Build a player summary including card data for board display."""
-        brief = {
-            "name": p.player_name,
-            "position": p.position,
-            "number": p.number,
-            "overall_grade": p.overall_grade,
-            "receiver_letter": getattr(p, "receiver_letter", ""),
-            "defender_letter": getattr(p, "defender_letter", ""),
-            # Offensive Line ratings
-            "run_block_rating": getattr(p, "run_block_rating", 0),
-            "pass_block_rating": getattr(p, "pass_block_rating", 0),
-            # Defensive ratings (legacy)
-            "pass_rush_rating": getattr(p, "pass_rush_rating", 0),
-            "coverage_rating": getattr(p, "coverage_rating", 0),
-            "run_stop_rating": getattr(p, "run_stop_rating", 0),
-            # Authentic 5E defensive ratings
-            "tackle_rating": getattr(p, "tackle_rating", 0),
-            "pass_defense_rating": getattr(p, "pass_defense_rating", 0),
-            "intercept_range": getattr(p, "intercept_range", 0),
-            # QB passing ranges
-            "passing_quick": p.passing_quick.to_dict() if getattr(p, "passing_quick", None) else None,
-            "passing_short": p.passing_short.to_dict() if getattr(p, "passing_short", None) else None,
-            "passing_long": p.passing_long.to_dict() if getattr(p, "passing_long", None) else None,
-            "pass_rush": p.pass_rush.to_dict() if getattr(p, "pass_rush", None) else None,
-            "qb_endurance": getattr(p, "qb_endurance", ""),
-            # Rushing (12-row N/SG/LG)
-            "rushing": [r.to_list() if r else None for r in getattr(p, "rushing", [])],
-            "endurance_rushing": getattr(p, "endurance_rushing", 0),
-            # Pass gain (12-row Q/S/L)
-            "pass_gain": [r.to_list() if r else None for r in getattr(p, "pass_gain", [])],
-            "endurance_pass": getattr(p, "endurance_pass", 0),
-            "blocks": getattr(p, "blocks", 0),
-            # Kicker
-            "fg_chart": getattr(p, "fg_chart", None) or None,
-            "xp_rate": getattr(p, "xp_rate", 0),
-            # Punter
-            "avg_distance": getattr(p, "avg_distance", 0),
-            "inside_20_rate": getattr(p, "inside_20_rate", 0),
-        }
-        return brief
+    unavailable = set(game.state.injuries)
 
     offense_starters = {}
     for pos in ["QB", "RB", "WR", "TE", "K", "P"]:
         starter = offense_team.roster.get_starter(pos)
         if starter:
-            offense_starters[pos] = _player_brief(starter)
+            offense_starters[pos] = _player_brief(starter, unavailable)
 
     # Include WR2, WR3, TE if available
     offense_receivers = []
     for wr in offense_team.roster.wrs[:3]:
-        offense_receivers.append(_player_brief(wr))
+        offense_receivers.append(_player_brief(wr, unavailable))
     for te in offense_team.roster.tes[:1]:
-        offense_receivers.append(_player_brief(te))
+        offense_receivers.append(_player_brief(te, unavailable))
 
     # Offensive line
-    offense_line = [_player_brief(p) for p in offense_team.roster.offensive_line[:5]]
+    offense_line = [_player_brief(p, unavailable) for p in offense_team.roster.offensive_line[:5]]
 
-    defense_players = [_player_brief(p) for p in defense_team.roster.defenders[:11]]
+    defense_players = [_player_brief(p, unavailable) for p in defense_team.roster.defenders[:11]]
 
     # Group defenders by position for board layout (DL/LB/DB rows)
     defense_line = []
     linebackers = []
     defensive_backs = []
     for p in defense_team.roster.defenders[:11]:
-        brief = _player_brief(p)
+        brief = _player_brief(p, unavailable)
         pos = p.position.upper()
         if pos in ("DE", "DT", "DL", "NT"):
             defense_line.append(brief)
@@ -443,8 +481,14 @@ def get_personnel(game_id: str):
         "defense_line": defense_line,
         "linebackers": linebackers,
         "defensive_backs": defensive_backs,
-        "offense_all": [_player_brief(p) for p in offense_team.roster.all_players()],
-        "defense_all": [_player_brief(p) for p in defense_team.roster.all_players()],
+        "offense_all": [_player_brief(p, unavailable) for p in offense_team.roster.all_players()],
+        "defense_all": [_player_brief(p, unavailable) for p in defense_team.roster.all_players()],
+        "return_specialists": {
+            "KR": _player_brief(game.get_returner(offense_team, "KR"), unavailable)
+            if game.get_returner(offense_team, "KR") else None,
+            "PR": _player_brief(game.get_returner(offense_team, "PR"), unavailable)
+            if game.get_returner(offense_team, "PR") else None,
+        },
     }
 
 

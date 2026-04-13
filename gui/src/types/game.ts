@@ -47,6 +47,7 @@ export interface PlayResult {
   receiver?: string | null;
   bv_tv_result?: { blocker_bv: number; defender_tv: number; modifier: number } | null;
   interception_point?: number | null;
+  personnel_note?: string | null;
   debug_log?: string[];
 }
 
@@ -86,12 +87,28 @@ export interface PlayerCard {
   receiver_letter?: string;
   fg_chart?: FGChart;
   xp_rate?: number;
+  longest_kick?: number;
   avg_distance?: number;
   inside_20_rate?: number;
+  blocked_punt_number?: number;
+  punt_return_pct?: number;
   pass_rush_rating?: number;
   coverage_rating?: number;
   run_stop_rating?: number;
   stats_summary?: Record<string, number | string>;
+}
+
+export interface TeamCardData {
+  team: string;
+  city: string;
+  name: string;
+  record: { wins: number; losses: number; ties: number };
+  offense: Record<string, PlayerBrief | null>;
+  offensive_line: PlayerBrief[];
+  defense: PlayerBrief[];
+  returners: { KR: PlayerBrief | null; PR: PlayerBrief | null };
+  kick_returners: PlayerBrief[];
+  punt_returners: PlayerBrief[];
 }
 
 export interface TeamData {
@@ -104,6 +121,7 @@ export interface TeamData {
   offense_rating: number;
   defense_rating: number;
   players: PlayerCard[];
+  team_card?: TeamCardData;
 }
 
 export type GamePhase = 'setup' | 'playing' | 'gameover';
@@ -122,6 +140,7 @@ export interface PlayerBrief {
   overall_grade: string;
   receiver_letter: string;
   defender_letter: string;
+  injured: boolean;
   // Offensive Line ratings
   run_block_rating: number;
   pass_block_rating: number;
@@ -149,9 +168,12 @@ export interface PlayerBrief {
   // Kicker
   fg_chart: FGChart | null;
   xp_rate: number;
+  longest_kick: number;
   // Punter
   avg_distance: number;
   inside_20_rate: number;
+  blocked_punt_number: number;
+  punt_return_pct: number;
 }
 
 export interface PersonnelData {
@@ -167,6 +189,7 @@ export interface PersonnelData {
   defensive_backs: PlayerBrief[];
   offense_all: PlayerBrief[];
   defense_all: PlayerBrief[];
+  return_specialists?: { KR: PlayerBrief | null; PR: PlayerBrief | null };
 }
 
 export interface HumanPlayCall {

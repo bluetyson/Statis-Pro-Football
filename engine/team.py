@@ -2,7 +2,7 @@
 import json
 import os
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Set
 from .player_card import PlayerCard
 
 
@@ -49,6 +49,11 @@ class Team:
     offense_rating: int = 0
     defense_rating: int = 0
 
+    _RETURN_POSITION_BONUS = {
+        "KR": {"RB": 14, "WR": 12, "CB": 9, "S": 8, "SS": 8, "FS": 8, "DB": 8, "TE": 4, "QB": 2},
+        "PR": {"WR": 15, "CB": 12, "S": 11, "SS": 11, "FS": 11, "DB": 11, "RB": 10, "TE": 3, "QB": 1},
+    }
+
     def to_dict(self) -> dict:
         return {
             "abbreviation": self.abbreviation,
@@ -60,6 +65,69 @@ class Team:
             "offense_rating": self.offense_rating,
             "defense_rating": self.defense_rating,
             "players": [p.to_dict() for p in self.roster.all_players()],
+        }
+
+    @staticmethod
+    def _grade_score(grade: str) -> int:
+        return {"A+": 5, "A": 4, "B": 3, "C": 2, "D": 1}.get(grade.upper(), 0)
+
+    @classmethod
+    def _return_score(cls, player: PlayerCard, kind: str) -> float:
+        pos = player.position.upper()
+        if pos in {"K", "P", "LT", "LG", "C", "RG", "RT", "OL", "DE", "DT", "DL", "NT", "LB", "OLB", "ILB", "MLB"}:
+            return float("-inf")
+
+        stats = player.stats_summary or {}
+        score = cls._grade_score(player.overall_grade) * 10
+        score += cls._RETURN_POSITION_BONUS.get(kind, {}).get(pos, 0)
+        score += len([row for row in getattr(player, "rushing", []) if row is not None]) * 0.25
+        score += len([row for row in getattr(player, "pass_gain", []) if row is not None]) * 0.15
+        score += float(stats.get("ypc", 0)) * 2.0
+        score += float(stats.get("avg_yards", 0)) * 0.35
+        score += float(stats.get("catch_rate", 0)) * 4.0
+        score += max(0, getattr(player, "blocks", 0)) * 0.5
+        return score
+
+    def get_return_candidates(self, kind: str) -> List[PlayerCard]:
+        kind = kind.upper()
+        candidates = [
+            p for p in self.roster.all_players()
+            if self._return_score(p, kind) != float("-inf")
+        ]
+        return sorted(
+            candidates,
+            key=lambda p: (-self._return_score(p, kind), p.number, p.player_name),
+        )
+
+    def get_return_specialist(
+        self,
+        kind: str,
+        unavailable_names: Optional[Set[str]] = None,
+    ) -> Optional[PlayerCard]:
+        unavailable = unavailable_names or set()
+        for player in self.get_return_candidates(kind):
+            if player.player_name not in unavailable:
+                return player
+        return None
+
+    def get_standard_lineup(self) -> Dict[str, Any]:
+        return {
+            "offense": {
+                "QB": self.roster.qbs[0] if self.roster.qbs else None,
+                "RB": self.roster.rbs[0] if self.roster.rbs else None,
+                "WR1": self.roster.wrs[0] if len(self.roster.wrs) > 0 else None,
+                "WR2": self.roster.wrs[1] if len(self.roster.wrs) > 1 else None,
+                "WR3": self.roster.wrs[2] if len(self.roster.wrs) > 2 else None,
+                "TE": self.roster.tes[0] if self.roster.tes else None,
+                "K": self.roster.kickers[0] if self.roster.kickers else None,
+                "P": self.roster.punters[0] if self.roster.punters else None,
+            },
+            "offensive_line": self.roster.offensive_line[:5],
+            "defense": self.roster.defenders[:11],
+            "returners": {
+                "KR": self.get_return_specialist("KR"),
+                "PR": self.get_return_specialist("PR"),
+            },
         }
 
     @classmethod
