@@ -370,6 +370,7 @@ def execute_human_defense(game_id: str, request: DefensivePlayCallRequest):
 
     result = game.execute_play(
         defense_formation=formation,
+        defensive_play=defensive_play,
         defensive_strategy=defensive_strategy if defensive_strategy != "NONE" else None,
         blitz_players=blitz_players,
     )

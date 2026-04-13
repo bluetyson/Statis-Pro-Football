@@ -266,6 +266,41 @@ export function HumanPlayCaller({
           </select>
         </div>
       )}
+
+      {/* QB/RB Rushing stats preview when DRAW strategy is selected */}
+      {!isSpecialPlay && isRunPlay && selectedStrategy === 'DRAW' && (() => {
+        const carrierName = selectedPlayer || (autoBallCarrier ? autoBallCarrier.name : '');
+        const carrier = carrierName ? ballCarriers.find((p) => p.name === carrierName) : null;
+        if (!carrier || !carrier.rushing || carrier.rushing.length === 0) return null;
+        return (
+          <div className="play-option">
+            <label className="section-label">
+              {carrier.position === 'QB' ? `QB Draw — ${carrier.name} Rush Card` : `Draw — ${carrier.name} Rush Card`}
+            </label>
+            <table className="card-data-table" style={{ fontSize: '0.75rem', width: '100%' }}>
+              <thead>
+                <tr><th>RN</th><th>N</th><th>SG</th><th>LG</th></tr>
+              </thead>
+              <tbody>
+                {carrier.rushing.map((row, i) => (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td>{row ? (row[0] === 'Sg' ? 'Sg*' : row[0]) : '—'}</td>
+                    <td>{row ? row[1] : '—'}</td>
+                    <td>{row ? row[2] : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {carrier.position === 'QB' && (
+              <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '2px' }}>
+                * Sg = Special Gain (breakaway) | Endurance: {carrier.endurance_rushing}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {!isSpecialPlay && isPassPlay && receiverTargets.length > 0 && (
         <div className="play-option">
           <label className="section-label">Receiver Target</label>

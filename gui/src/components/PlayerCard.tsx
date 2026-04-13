@@ -70,7 +70,7 @@ export function PlayerCardView({ card }: PlayerCardProps) {
       {extCard.rushing && Array.isArray(extCard.rushing) &&
        (extCard.rushing as unknown[]).length > 0 && (
         <div className="card-section">
-          <div className="section-title">Rushing (N/SG/LG)</div>
+          <div className="section-title">{card.position === 'QB' ? 'QB Rushing (N/SG/LG)' : 'Rushing (N/SG/LG)'}</div>
           {typeof extCard.endurance_rushing === 'number' && (
             <div className="card-sub-info">Endurance: {extCard.endurance_rushing as number}</div>
           )}
@@ -79,16 +79,19 @@ export function PlayerCardView({ card }: PlayerCardProps) {
               <tr><th>#</th><th>N</th><th>SG</th><th>LG</th></tr>
             </thead>
             <tbody>
-              {(extCard.rushing as (number[] | null)[]).map((row, i) => (
+              {(extCard.rushing as ((number | string)[] | null)[]).map((row, i) => (
                 <tr key={i}>
                   <td>{i + 1}</td>
-                  <td>{row ? row[0] : '—'}</td>
+                  <td>{row ? (row[0] === 'Sg' ? 'Sg*' : row[0]) : '—'}</td>
                   <td>{row ? row[1] : '—'}</td>
                   <td>{row ? row[2] : '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {card.position === 'QB' && (
+            <div className="card-sub-info">* Sg = Special Gain (breakaway run)</div>
+          )}
         </div>
       )}
 

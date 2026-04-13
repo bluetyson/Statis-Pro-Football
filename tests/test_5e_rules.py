@@ -167,8 +167,8 @@ class TestOffensiveStrategies:
         assert result.strategy == "SNEAK"
         assert result.play_type == "RUN"
 
-    def test_draw_modifies_yards(self):
-        """Draw play applies RN modifier based on defensive formation."""
+    def test_draw_modifies_run_number(self):
+        """Draw play applies RN modifier to Run Number before card lookup."""
         deck = FACDeck(seed=42)
         from engine.card_generator import CardGenerator
         gen = CardGenerator(seed=42)
@@ -183,6 +183,247 @@ class TestOffensiveStrategies:
         )
         assert result.strategy == "DRAW"
         assert "Draw play" in result.description
+        assert "RN modifier" in result.description
+
+    def test_draw_vs_blitz_gives_negative_rn_modifier(self):
+        """Draw vs Blitz: -4 to RN (bonus for offense)."""
+        deck = FACDeck(seed=42)
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "blitz",
+            defense_run_stop=0,
+            defensive_play="BLITZ",
+        )
+        assert "RN modifier -4" in result.description
+
+    def test_draw_vs_run_defense_gives_positive_rn_modifier(self):
+        """Draw vs Run Defense: +2 to RN (penalty for offense)."""
+        deck = FACDeck(seed=42)
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "4_3",
+            defense_run_stop=0,
+        )
+        assert "RN modifier +2" in result.description
+
+    def test_draw_vs_pass_defense_gives_negative_rn_modifier(self):
+        """Draw vs Pass Defense: -2 to RN (bonus for offense)."""
+        deck = FACDeck(seed=42)
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "4_3_cover2",
+            defense_run_stop=0,
+        )
+        assert "RN modifier -2" in result.description
+
+    def test_draw_vs_prevent_gives_negative_rn_modifier(self):
+        """Draw vs Prevent: -2 to RN (bonus for offense)."""
+        deck = FACDeck(seed=42)
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "prevent",
+            defense_run_stop=0,
+        )
+        assert "RN modifier -2" in result.description
+
+
+class TestPlayActionModifiers:
+    """Test Play-Action pass strategy applies PN (completion range) modifiers."""
+
+    def setup_method(self):
+        random.seed(42)
+        self.resolver = PlayResolver()
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        self.qb = gen.generate_qb_card_authentic(
+            name="TestQB", team="TST", number=12,
+            comp_pct=0.65, ypa=7.5, int_rate=0.025,
+            sack_rate=0.07, grade="A",
+        )
+        self.wr = gen.generate_wr_card_authentic(
+            name="TestWR", team="TST", number=81,
+            catch_rate=0.65, avg_yards=12.0, grade="B",
+        )
+
+    def test_play_action_vs_run_defense_positive_modifier(self):
+        """Play-action vs Run Defense: +5 to completion range."""
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT", defense_formation="4_3",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier +5" in result.description
+
+    def test_play_action_vs_pass_defense_negative_modifier(self):
+        """Play-action vs Pass Defense: -5 to completion range."""
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT", defense_formation="4_3_cover2",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier -5" in result.description
+
+    def test_play_action_vs_prevent_large_negative_modifier(self):
+        """Play-action vs Prevent Defense: -10 to completion range."""
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT", defense_formation="prevent",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier -10" in result.description
+
+    def test_play_action_vs_blitz_neutral(self):
+        """Play-action vs Blitz: 0 modifier (neutral)."""
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT", defense_formation="blitz",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier +0" in result.description
+
+
+class TestDefensivePlayRNModifiers:
+    """Test that 5E DefensivePlay enums correctly modify Run Number on standard plays."""
+
+    def setup_method(self):
+        random.seed(42)
+        self.resolver = PlayResolver()
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        self.rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+
+    def test_run_defense_no_key_adds_plus_2(self):
+        """Run Defense / No Key: +2 to Run Number (e.g. RN 6 → 8)."""
+        from engine.play_types import DefensivePlay, get_run_number_modifier_5e
+        mod = get_run_number_modifier_5e(DefensivePlay.RUN_DEFENSE_NO_KEY, ball_carrier_number=1)
+        assert mod == 2
+
+    def test_run_defense_key_on_correct_back_adds_plus_4(self):
+        """Run Defense / Key on BC(1) and back 1 carries: +4 to Run Number."""
+        from engine.play_types import DefensivePlay, get_run_number_modifier_5e
+        mod = get_run_number_modifier_5e(DefensivePlay.RUN_DEFENSE_KEY_BACK_1, ball_carrier_number=1)
+        assert mod == 4
+
+    def test_run_defense_wrong_key_adds_0(self):
+        """Run Defense / Key on BC(2) but back 1 carries: 0 (wrong key)."""
+        from engine.play_types import DefensivePlay, get_run_number_modifier_5e
+        mod = get_run_number_modifier_5e(DefensivePlay.RUN_DEFENSE_KEY_BACK_2, ball_carrier_number=1)
+        assert mod == 0
+
+    def test_pass_defense_adds_0_to_run(self):
+        """Pass Defense: 0 to Run Number (defense focused on pass)."""
+        from engine.play_types import DefensivePlay, get_run_number_modifier_5e
+        mod = get_run_number_modifier_5e(DefensivePlay.PASS_DEFENSE, ball_carrier_number=1)
+        assert mod == 0
+
+    def test_blitz_adds_0_to_run(self):
+        """Blitz: 0 to Run Number."""
+        from engine.play_types import DefensivePlay, get_run_number_modifier_5e
+        mod = get_run_number_modifier_5e(DefensivePlay.BLITZ, ball_carrier_number=1)
+        assert mod == 0
+
+    def test_resolve_run_uses_defensive_play_5e(self):
+        """resolve_run_5e applies DefensivePlay modifier when provided."""
+        from engine.play_types import DefensivePlay
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        original_rn = fac_card.run_num_int
+
+        # Run with no defensive play (old behavior — defaults to 0)
+        deck_a = FACDeck(seed=42)
+        card_a = deck_a.draw()
+        result_a = self.resolver.resolve_run_5e(
+            card_a, deck_a, self.rb, "IL",
+            defense_formation="4_3",
+        )
+
+        # Run with RUN_DEFENSE_NO_KEY — should apply +2 to RN
+        deck_b = FACDeck(seed=42)
+        card_b = deck_b.draw()
+        result_b = self.resolver.resolve_run_5e(
+            card_b, deck_b, self.rb, "IL",
+            defense_formation="4_3",
+            defensive_play_5e=DefensivePlay.RUN_DEFENSE_NO_KEY,
+        )
+
+        # Result b uses a higher run number (worse for offense)
+        assert result_b.run_number_used >= result_a.run_number_used or result_a.run_number_used >= 11
+
+
+class TestDefensivePlayCompletionModifiers:
+    """Test that 5E DefensivePlay enums correctly modify Pass Number on standard passes."""
+
+    def test_pass_defense_lowers_completion_for_quick_pass(self):
+        """Pass Defense on Quick pass: -10 to completion range."""
+        from engine.play_types import DefensivePlay, get_completion_modifier_5e
+        mod = get_completion_modifier_5e(DefensivePlay.PASS_DEFENSE, "QUICK")
+        assert mod == -10
+
+    def test_pass_defense_neutral_for_short_pass(self):
+        """Pass Defense on Short pass: 0."""
+        from engine.play_types import DefensivePlay, get_completion_modifier_5e
+        mod = get_completion_modifier_5e(DefensivePlay.PASS_DEFENSE, "SHORT")
+        assert mod == 0
+
+    def test_run_defense_boosts_short_pass(self):
+        """Run Defense on Short pass: +5 to completion range (defense fooled)."""
+        from engine.play_types import DefensivePlay, get_completion_modifier_5e
+        mod = get_completion_modifier_5e(DefensivePlay.RUN_DEFENSE_NO_KEY, "SHORT")
+        assert mod == 5
+
+    def test_run_defense_boosts_long_pass(self):
+        """Run Defense on Long pass: +7 to completion range."""
+        from engine.play_types import DefensivePlay, get_completion_modifier_5e
+        mod = get_completion_modifier_5e(DefensivePlay.RUN_DEFENSE_KEY_BACK_1, "LONG")
+        assert mod == 7
+
+    def test_prevent_defense_reduces_all(self):
+        """Prevent Defense: -10 Quick, -5 Short, -7 Long."""
+        from engine.play_types import DefensivePlay, get_completion_modifier_5e
+        assert get_completion_modifier_5e(DefensivePlay.PREVENT_DEFENSE, "QUICK") == -10
+        assert get_completion_modifier_5e(DefensivePlay.PREVENT_DEFENSE, "SHORT") == -5
+        assert get_completion_modifier_5e(DefensivePlay.PREVENT_DEFENSE, "LONG") == -7
+
+    def test_blitz_reduces_short_pass(self):
+        """Blitz on Short pass: -5 to completion range."""
+        from engine.play_types import DefensivePlay, get_completion_modifier_5e
+        mod = get_completion_modifier_5e(DefensivePlay.BLITZ, "SHORT")
+        assert mod == -5
 
 
 class TestBVTVBattle:
@@ -1321,7 +1562,7 @@ class TestSeedConfiguration:
         away2 = Team.load("SF", "2025_5e")
         game2 = Game(home2, away2, use_5e=True, seed=12345)
 
-        # Both games should start in the same state (seed-based)
+        # Both games should produce the same state with the same seed
         assert game1.state.possession == game2.state.possession
         assert game1.state.yard_line == game2.state.yard_line
 

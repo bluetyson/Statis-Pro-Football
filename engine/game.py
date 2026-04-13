@@ -126,6 +126,10 @@ class Game:
         self.solitaire_home = solitaire_home
         self.solitaire_away = solitaire_away
 
+        # Seed global random for deterministic game resolution
+        if seed is not None:
+            random.seed(seed)
+
         self.state = GameState(
             home_team=home_team.abbreviation,
             away_team=away_team.abbreviation,
@@ -357,6 +361,7 @@ class Game:
                      defense_formation: Optional[str] = None,
                      player_name: Optional[str] = None,
                      defensive_strategy: Optional[str] = None,
+                     defensive_play: Optional[str] = None,
                      blitz_players: Optional[List[str]] = None) -> PlayResult:
         """Execute a single play.
 
@@ -365,6 +370,7 @@ class Game:
             defense_formation: Optional human-specified defensive formation.
             player_name: Optional specific player to use for the play.
             defensive_strategy: Optional human-specified defensive strategy (5E).
+            defensive_play: Optional defensive play type (PASS_DEFENSE, BLITZ, etc.).
             blitz_players: Optional list of player names to blitz (2-5 LBs/DBs).
         """
         self._current_play_personnel_note = None
@@ -372,6 +378,7 @@ class Game:
             return self._execute_play_5e(play_call, defense_formation,
                                          player_name=player_name,
                                          defensive_strategy=defensive_strategy,
+                                         defensive_play=defensive_play,
                                          blitz_players=blitz_players)
         return self._execute_play_legacy(play_call, defense_formation, player_name=player_name)
 
@@ -770,6 +777,7 @@ class Game:
     def _execute_play_5e(self, play_call: Optional[PlayCall] = None,
                         defense_formation: Optional[str] = None,
                         defensive_strategy: Optional[str] = None,
+                        defensive_play: Optional[str] = None,
                         player_name: Optional[str] = None,
                         blitz_players: Optional[List[str]] = None) -> PlayResult:
         """Execute a single play using 5th-edition FAC deck."""
@@ -852,13 +860,17 @@ class Game:
                 self._advance_time(self.TIME_STANDARD_PLAY)
                 return result
         elif strategy == "DRAW":
-            rb = self.get_rb(player_name)
+            # Draw play can use any back (RB or QB) as ball carrier
+            rusher = self.get_rb(player_name)
+            if rusher is None:
+                rusher = self.get_qb(player_name)
             def_form = defense_formation or self.ai.call_defense_5e(situation, fac_card)
             defense = self.get_defense_team()
-            if rb:
+            if rusher:
                 result = self.resolver.resolve_draw(
-                    fac_card, self.deck, rb, def_form,
+                    fac_card, self.deck, rusher, def_form,
                     defense_run_stop=defense.defense_rating,
+                    defensive_play=defensive_play,
                 )
                 self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
@@ -915,13 +927,17 @@ class Game:
             result = PlayResult("KNEEL", -1, "KNEEL", description="QB kneels")
             self._advance_down(-1)
         elif play_call.play_type == "RUN":
-            result = self._execute_run_5e(fac_card, play_call, defense_formation, player_name)
+            result = self._execute_run_5e(fac_card, play_call, defense_formation, player_name,
+                                          defensive_play_5e=def_play_5e)
         elif play_call.play_type == "SCREEN":
-            result = self._execute_screen_5e(fac_card, defense_formation)
+            result = self._execute_screen_5e(fac_card, defense_formation,
+                                             defensive_play_5e=def_play_5e)
         elif play_call.play_type in ("LONG_PASS", "QUICK_PASS"):
-            result = self._execute_pass_5e(fac_card, play_call, defense_formation, defensive_strategy, player_name)
+            result = self._execute_pass_5e(fac_card, play_call, defense_formation, defensive_strategy, player_name,
+                                           defensive_play_5e=def_play_5e)
         else:
-            result = self._execute_pass_5e(fac_card, play_call, defense_formation, defensive_strategy, player_name)
+            result = self._execute_pass_5e(fac_card, play_call, defense_formation, defensive_strategy, player_name,
+                                           defensive_play_5e=def_play_5e)
 
         if self._current_play_personnel_note:
             result.personnel_note = self._current_play_personnel_note
@@ -1024,7 +1040,8 @@ class Game:
 
     def _execute_run_5e(self, fac_card: FACCard, play_call: PlayCall,
                         defense_formation: Optional[str] = None,
-                        player_name: Optional[str] = None) -> PlayResult:
+                        player_name: Optional[str] = None,
+                        defensive_play_5e: Optional[DefensivePlay] = None) -> PlayResult:
         # Allow QB or WR as ball carrier (end-around, designed QB run)
         rusher = self.get_rb(player_name)
         if player_name and (rusher is None or rusher.player_name != player_name):
@@ -1053,6 +1070,7 @@ class Game:
                 fac_card, self.deck, rusher, direction,
                 defense_run_stop=def_run_stop,
                 defense_formation=def_formation,
+                defensive_play_5e=defensive_play_5e,
             )
             result.defense_formation = def_formation
             return result
@@ -1065,7 +1083,8 @@ class Game:
         )
 
     def _execute_screen_5e(self, fac_card: FACCard,
-                           defense_formation: Optional[str] = None) -> PlayResult:
+                           defense_formation: Optional[str] = None,
+                           defensive_play_5e: Optional[DefensivePlay] = None) -> PlayResult:
         qb = self.get_qb()
         rb = self.get_rb()
         receivers = self._get_all_receivers()
@@ -1076,6 +1095,8 @@ class Game:
             result = self.resolver.resolve_pass_5e(
                 fac_card, self.deck, qb, rb, receivers,
                 pass_type="SCREEN",
+                defense_formation=def_formation,
+                defensive_play_5e=defensive_play_5e,
             )
             result.defense_formation = def_formation
             return result
@@ -1089,7 +1110,8 @@ class Game:
     def _execute_pass_5e(self, fac_card: FACCard, play_call: PlayCall,
                          defense_formation: Optional[str] = None,
                          defensive_strategy: Optional[str] = None,
-                         player_name: Optional[str] = None) -> PlayResult:
+                         player_name: Optional[str] = None,
+                         defensive_play_5e: Optional[DefensivePlay] = None) -> PlayResult:
         # player_name on a pass play targets a specific receiver (not QB)
         # Try to find them as a receiver first; fall back to QB selection
         qb = self.get_qb()
@@ -1126,6 +1148,7 @@ class Game:
                 defensive_strategy=defensive_strategy or "NONE",
                 defenders=defenders,
                 two_minute_offense=self._is_two_minute_offense(),
+                defensive_play_5e=defensive_play_5e,
             )
             result.defense_formation = def_formation
             return result
