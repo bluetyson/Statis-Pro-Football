@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import type { GameState, DefensivePlayCall } from '../types/game';
+import { useState, useCallback } from 'react';
+import type { GameState, DefensivePlayCall, PersonnelData } from '../types/game';
 import { DEFENSIVE_FORMATIONS, DEFENSIVE_STRATEGIES, DEFENSIVE_PLAYS } from '../types/game';
+import { BlitzPlayerSelector } from './BlitzPlayerSelector';
 
 interface DefensivePlayCallerProps {
   state: GameState;
   loading: boolean;
+  personnel: PersonnelData | null;
   onCallDefense: (call: DefensivePlayCall) => void;
   onSimulateDrive: () => void;
   onSimulateGame: () => void;
@@ -18,6 +20,7 @@ function ordinal(n: number) {
 export function DefensivePlayCaller({
   state,
   loading,
+  personnel,
   onCallDefense,
   onSimulateDrive,
   onSimulateGame,
@@ -26,15 +29,25 @@ export function DefensivePlayCaller({
   const [selectedFormation, setSelectedFormation] = useState<string>('4_3');
   const [selectedStrategy, setSelectedStrategy] = useState<string>('NONE');
   const [selectedPlay, setSelectedPlay] = useState<string>('PASS_DEFENSE');
+  const [blitzPlayers, setBlitzPlayers] = useState<string[]>([]);
 
   const disabled = loading || state.is_over;
+  const isBlitz = selectedPlay === 'BLITZ' || selectedFormation.includes('BLITZ');
+
+  const handleBlitzChange = useCallback((players: string[]) => {
+    setBlitzPlayers(players);
+  }, []);
 
   const handleCallDefense = () => {
-    onCallDefense({ 
+    const call: DefensivePlayCall = {
       formation: selectedFormation,
       defensive_strategy: selectedStrategy !== 'NONE' ? selectedStrategy : undefined,
       defensive_play: selectedPlay,
-    });
+    };
+    if (isBlitz && blitzPlayers.length >= 2) {
+      call.blitz_players = blitzPlayers;
+    }
+    onCallDefense(call);
   };
 
   return (
@@ -139,6 +152,15 @@ export function DefensivePlayCaller({
           ))}
         </div>
       </div>
+
+      {/* Blitz Player Selection (5E rules: choose 2-5 LBs/DBs) */}
+      <BlitzPlayerSelector
+        linebackers={personnel?.linebackers ?? []}
+        defensiveBacks={personnel?.defensive_backs ?? []}
+        isBlitz={isBlitz}
+        disabled={disabled}
+        onSelectionChange={handleBlitzChange}
+      />
 
       {/* Execute button */}
       <div className="action-buttons">

@@ -351,6 +351,7 @@ export function GameBoard({
             <DefensivePlayCaller
               state={state}
               loading={loading}
+              personnel={personnel}
               onCallDefense={onExecuteHumanDefense}
               onSimulateDrive={onSimulateDrive}
               onSimulateGame={onSimulateGame}
