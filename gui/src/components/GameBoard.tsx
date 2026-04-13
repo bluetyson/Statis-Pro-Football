@@ -467,6 +467,7 @@ export function GameBoard({
           {/* Substitution panel (interactive modes, on offense or defense) */}
           {isInteractive && (isHumanTurn || isHumanOnDefense) && (
             <SubstitutionPanel
+              gameId={gameId}
               personnel={personnel}
               loading={loading}
               onSubstitute={onSubstitute}
