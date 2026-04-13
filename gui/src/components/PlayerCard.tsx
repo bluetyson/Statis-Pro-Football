@@ -76,7 +76,7 @@ export function PlayerCardView({ card }: PlayerCardProps) {
           )}
           <table className="card-data-table">
             <thead>
-              <tr><th>RN</th><th>N</th><th>SG</th><th>LG</th></tr>
+              <tr><th>#</th><th>N</th><th>SG</th><th>LG</th></tr>
             </thead>
             <tbody>
               {(extCard.rushing as ((number | string)[] | null)[]).map((row, i) => (

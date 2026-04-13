@@ -285,7 +285,7 @@ export function HumanPlayCaller({
                 {carrier.rushing.map((row, i) => (
                   <tr key={i}>
                     <td>{i + 1}</td>
-                    <td>{row ? (row[0] === 'Sg' || (row[0] as unknown) === 'Sg' ? 'Sg*' : row[0]) : '—'}</td>
+                    <td>{row ? (row[0] === 'Sg' ? 'Sg*' : row[0]) : '—'}</td>
                     <td>{row ? row[1] : '—'}</td>
                     <td>{row ? row[2] : '—'}</td>
                   </tr>
