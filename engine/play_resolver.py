@@ -318,24 +318,32 @@ class PlayResolver:
 
     def resolve_draw(self, fac_card: FACCard, deck: FACDeck,
                      rusher: PlayerCard, defense_formation: str,
-                     defense_run_stop: int = 0) -> PlayResult:
+                     defense_run_stop: int = 0,
+                     defensive_play: Optional[str] = None) -> PlayResult:
         """Resolve a Draw Play strategy.
 
         5E Rules: Inside run to any back/QB.
-          vs Run Defense: +2 to Run Number (in addition to normal modifiers)
-          vs Pass/Prevent: -2 to Run Number
-          vs Blitz: -4 to Run Number
+          vs Blitz:          +2 to Run Number (blitzers commit hard, draw freezes them)
+          vs Prevent Defense: +2 to Run Number (spread defense, easy to run through)
+          vs Pass Defense:    0 (neutral — in coverage but not committing)
+          vs Run Defense:    -2 to Run Number (set up to stop the run)
+
+        The defensive_play value (BLITZ, PREVENT_DEFENSE, PASS_DEFENSE,
+        RUN_DEFENSE_*) takes priority over formation string when provided.
         """
-        # Draw play modifier
-        draw_mod = 0
+        # Draw play modifier — check explicit defensive play first, then formation
+        dp = (defensive_play or "").upper()
         form_lower = defense_formation.lower()
-        if "blitz" in form_lower or form_lower == "blz":
-            draw_mod = -4
-        elif form_lower in ("pass", "4_3_cover2", "nickel_zone", "nickel_cover2",
-                            "prevent", "3_4_zone"):
-            draw_mod = -2
+
+        if dp == "BLITZ" or "blitz" in form_lower or form_lower == "blz":
+            draw_mod = 2   # Bonus: blitzers commit to rush, creating lanes
+        elif dp == "PREVENT_DEFENSE" or "prevent" in form_lower or form_lower == "3_4_zone":
+            draw_mod = 2   # Bonus: spread/prevent defense is easy to run through
+        elif dp == "PASS_DEFENSE" or form_lower in ("4_3_cover2", "nickel_zone",
+                                                     "nickel_cover2", "nickel"):
+            draw_mod = 0   # Neutral: pass coverage, not committing to run stop
         else:
-            draw_mod = 2  # vs Run Defense
+            draw_mod = -2  # Penalty: Run Defense is set up to stop the run
 
         # Resolve as inside run with draw modifier applied to RN
         result = self.resolve_run_5e(

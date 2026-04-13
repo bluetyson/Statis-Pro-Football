@@ -357,6 +357,7 @@ class Game:
                      defense_formation: Optional[str] = None,
                      player_name: Optional[str] = None,
                      defensive_strategy: Optional[str] = None,
+                     defensive_play: Optional[str] = None,
                      blitz_players: Optional[List[str]] = None) -> PlayResult:
         """Execute a single play.
 
@@ -365,6 +366,7 @@ class Game:
             defense_formation: Optional human-specified defensive formation.
             player_name: Optional specific player to use for the play.
             defensive_strategy: Optional human-specified defensive strategy (5E).
+            defensive_play: Optional defensive play type (PASS_DEFENSE, BLITZ, etc.).
             blitz_players: Optional list of player names to blitz (2-5 LBs/DBs).
         """
         self._current_play_personnel_note = None
@@ -372,6 +374,7 @@ class Game:
             return self._execute_play_5e(play_call, defense_formation,
                                          player_name=player_name,
                                          defensive_strategy=defensive_strategy,
+                                         defensive_play=defensive_play,
                                          blitz_players=blitz_players)
         return self._execute_play_legacy(play_call, defense_formation, player_name=player_name)
 
@@ -770,6 +773,7 @@ class Game:
     def _execute_play_5e(self, play_call: Optional[PlayCall] = None,
                         defense_formation: Optional[str] = None,
                         defensive_strategy: Optional[str] = None,
+                        defensive_play: Optional[str] = None,
                         player_name: Optional[str] = None,
                         blitz_players: Optional[List[str]] = None) -> PlayResult:
         """Execute a single play using 5th-edition FAC deck."""
@@ -852,13 +856,17 @@ class Game:
                 self._advance_time(self.TIME_STANDARD_PLAY)
                 return result
         elif strategy == "DRAW":
-            rb = self.get_rb(player_name)
+            # Draw play can use any back (RB or QB) as ball carrier
+            rusher = self.get_rb(player_name)
+            if rusher is None:
+                rusher = self.get_qb(player_name)
             def_form = defense_formation or self.ai.call_defense_5e(situation, fac_card)
             defense = self.get_defense_team()
-            if rb:
+            if rusher:
                 result = self.resolver.resolve_draw(
-                    fac_card, self.deck, rb, def_form,
+                    fac_card, self.deck, rusher, def_form,
                     defense_run_stop=defense.defense_rating,
+                    defensive_play=defensive_play,
                 )
                 self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
