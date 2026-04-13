@@ -242,6 +242,120 @@ function OLSlot({ label }: { label: string }) {
   );
 }
 
+/* ─── Offense Formation (5E positional layout) ───────────────── */
+
+function gradeColor(grade: string): string {
+  if (grade.startsWith('A')) return '#22c55e';
+  if (grade === 'B') return '#3b82f6';
+  if (grade === 'C') return '#f59e0b';
+  return '#ef4444';
+}
+
+function shortName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  return parts.length > 1 ? parts[parts.length - 1] : fullName;
+}
+
+interface FormationSlotProps {
+  label: string;
+  player: PlayerBrief | null;
+  showBlocks?: boolean;
+  ghost?: boolean;
+}
+
+function FormationSlot({ label, player, showBlocks = false, ghost = false }: FormationSlotProps) {
+  if (ghost) return <div className="fmn-cell fmn-ghost" />;
+
+  return (
+    <div className="fmn-cell">
+      <div className="fmn-pos">{label}</div>
+      {player ? (
+        <div className={`fmn-player${player.injured ? ' fmn-player-inj' : ''}`}>
+          <div className="fmn-name" title={player.name}>{shortName(player.name)}</div>
+          <div className="fmn-grade" style={{ color: gradeColor(player.overall_grade) }}>
+            {player.overall_grade}
+          </div>
+          {player.receiver_letter && (
+            <div className="fmn-letter">[{player.receiver_letter}]</div>
+          )}
+          {showBlocks && player.blocks !== 0 && (
+            <div className="fmn-bv" style={{ color: player.blocks > 0 ? '#22c55e' : '#ef4444' }}>
+              BV{player.blocks > 0 ? '+' : ''}{player.blocks}
+            </div>
+          )}
+          {player.injured && <span className="fmn-inj">🏥</span>}
+        </div>
+      ) : (
+        <div className="fmn-player-empty">—</div>
+      )}
+    </div>
+  );
+}
+
+function OffenseFormation({ personnel }: { personnel: PersonnelData }) {
+  const line = personnel.offense_line; // [LT, LG, C, RG, RT]
+
+  // Split receivers into WRs and TEs
+  const wrs = personnel.offense_receivers.filter(r => r.position !== 'TE');
+  const tes = personnel.offense_receivers.filter(r => r.position === 'TE');
+
+  // LE = split end (first WR), RE = tight end (or second WR), FL = next WR
+  const le: PlayerBrief | null = wrs[0] ?? null;
+  const re: PlayerBrief | null = tes[0] ?? wrs[1] ?? null;
+  const fl: PlayerBrief | null = tes.length > 0 ? (wrs[1] ?? null) : (wrs[2] ?? null);
+
+  const qb: PlayerBrief | null = personnel.offense_starters['QB'] ?? null;
+  const bk1: PlayerBrief | null = personnel.offense_starters['RB'] ?? null;
+
+  // Find BK2: second RB/FB/HB in offense_all
+  const bk2: PlayerBrief | null = personnel.offense_all.find(p =>
+    (p.position === 'RB' || p.position === 'FB' || p.position === 'HB') &&
+    p.name !== bk1?.name
+  ) ?? null;
+
+  return (
+    <div className="offense-formation">
+      {/* Row 1: Line of scrimmage — LE LT LG C RG RT RE */}
+      <div className="fmn-row">
+        <FormationSlot label="LE" player={le} />
+        <FormationSlot label="LT" player={line[0] ?? null} />
+        <FormationSlot label="LG" player={line[1] ?? null} />
+        <FormationSlot label="C"  player={line[2] ?? null} />
+        <FormationSlot label="RG" player={line[3] ?? null} />
+        <FormationSlot label="RT" player={line[4] ?? null} />
+        <FormationSlot label="RE" player={re} />
+      </div>
+
+      {/* Scrimmage line indicator */}
+      <div className="fmn-los-line" />
+
+      {/* Row 2: QB behind center */}
+      <div className="fmn-row">
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="QB" player={qb} />
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="" player={null} ghost />
+      </div>
+
+      {/* Row 3: Backs + Flanker */}
+      <div className="fmn-row">
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="BK1" player={bk1} showBlocks />
+        <FormationSlot label="BK2" player={bk2} showBlocks />
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="" player={null} ghost />
+        <FormationSlot label="FL" player={fl} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Defensive slot type ─────────────────────────────────────── */
+
 type DefensiveSlot = {
   key: string;
   label: string;
@@ -390,9 +504,12 @@ export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps)
 
         {!collapsed.off && (
           <>
-            {/* Row 1: Offensive Line */}
+            {/* Formation view: LE LT LG C RG RT RE / QB / BK1 BK2 FL */}
+            <OffenseFormation personnel={personnel} />
+
+            {/* Detailed cards: OL block ratings */}
             <div className="board-row board-row-label">
-              <span className="row-label-text">LINE</span>
+              <span className="row-label-text">LINE RATINGS</span>
             </div>
             <div className="board-row board-row-ol">
               {personnel.offense_line && personnel.offense_line.length > 0
@@ -409,9 +526,9 @@ export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps)
               }
             </div>
 
-            {/* Row 2: Backfield + Receivers */}
+            {/* Backfield + Receivers detail cards */}
             <div className="board-row board-row-label">
-              <span className="row-label-text">BACKFIELD</span>
+              <span className="row-label-text">SKILL PLAYERS</span>
             </div>
             <div className="board-row board-row-backfield">
               {personnel.offense_starters.QB && (

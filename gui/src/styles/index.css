@@ -991,6 +991,131 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   OFFENSE FORMATION (5E positional layout)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.offense-formation {
+  margin: 4px 0 8px;
+  font-size: 0.7rem;
+}
+
+/* 7-column grid: LE LT LG C RG RT RE */
+.fmn-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+/* Scrimmage line between Row 1 and Row 2 */
+.fmn-los-line {
+  height: 2px;
+  background: linear-gradient(to right, transparent, #3b5998 20%, #3b5998 80%, transparent);
+  margin: 2px 0;
+  border-radius: 1px;
+  opacity: 0.7;
+}
+
+/* Individual slot */
+.fmn-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Empty/spacer slot — keeps grid alignment */
+.fmn-ghost {
+  visibility: hidden;
+}
+
+/* Position label (LE, LT, QB, BK1, …) */
+.fmn-pos {
+  font-size: 0.52rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 1px;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+/* Filled player box */
+.fmn-player {
+  background: #1e3458;
+  border: 1px solid #3b5998;
+  border-radius: 3px;
+  padding: 2px 2px 1px;
+  text-align: center;
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.fmn-player-inj {
+  border-color: #ef4444;
+  opacity: 0.7;
+}
+
+/* Last name (truncated) */
+.fmn-name {
+  font-size: 0.6rem;
+  color: #e2e8f0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+/* Grade A/B/C/D */
+.fmn-grade {
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Receiver letter badge */
+.fmn-letter {
+  font-size: 0.52rem;
+  color: #93c5fd;
+  line-height: 1.2;
+}
+
+/* Blocking value (BV) for backs */
+.fmn-bv {
+  font-size: 0.52rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Injury icon overlaid */
+.fmn-inj {
+  font-size: 0.5rem;
+}
+
+/* Empty slot placeholder */
+.fmn-player-empty {
+  color: #374151;
+  font-size: 0.65rem;
+  text-align: center;
+  border: 1px dashed #1f2937;
+  border-radius: 3px;
+  padding: 2px;
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    HUMAN PLAY CALLER
    ═══════════════════════════════════════════════════════════════════ */
 
