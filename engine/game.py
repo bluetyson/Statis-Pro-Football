@@ -197,6 +197,8 @@ class Game:
         for idx, player in enumerate(players[1:], start=1):
             if self._is_player_unavailable(player):
                 continue
+            # Promote the healthy backup into the starter slot so future auto-selection
+            # and personnel views reflect the active in-game lineup.
             players[0], players[idx] = players[idx], players[0]
             self._record_personnel_note(
                 f"Auto-sub at {position}: {player.player_name} replaces injured {starter.player_name}."

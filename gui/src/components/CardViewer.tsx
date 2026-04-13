@@ -41,7 +41,7 @@ export function CardViewer({ teamAbbr }: CardViewerProps) {
     const map = new Map<string, PlayerCard>();
     team?.players.forEach((player) => map.set(player.name, player));
     return map;
-  }, [team]);
+  }, [team?.players]);
 
   const teamCard = team?.team_card;
   const selectedCard =

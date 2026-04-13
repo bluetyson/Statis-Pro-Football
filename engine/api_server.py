@@ -65,6 +65,8 @@ def _serialize_play_result(result) -> dict:
 
 
 def _player_brief(p, unavailable_names: Optional[set[str]] = None):
+    if p is None:
+        raise ValueError("_player_brief requires a player")
     unavailable = unavailable_names or set()
     return {
         "name": p.player_name,
