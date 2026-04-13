@@ -65,6 +65,7 @@ class PlayResult:
     bv_tv_result: Optional[Dict[str, Any]] = None  # BV vs TV battle details
     interception_point: Optional[int] = None    # Yard line where INT occurred
     personnel_note: Optional[str] = None        # Auto-substitution / availability note
+    box_assignments: Optional[Dict[str, str]] = None  # Box letter → player name for this play
     debug_log: List[str] = field(default_factory=list)  # Step-by-step resolution log
 
 
@@ -323,7 +324,8 @@ class PlayResolver:
     def resolve_draw(self, fac_card: FACCard, deck: FACDeck,
                      rusher: PlayerCard, defense_formation: str,
                      defense_run_stop: int = 0,
-                     defensive_play: Optional[str] = None) -> PlayResult:
+                     defensive_play: Optional[str] = None,
+                     defenders_by_box: Optional[Dict[str, PlayerCard]] = None) -> PlayResult:
         """Resolve a Draw Play strategy.
 
         5E Rules: Inside run to any back/QB.
@@ -359,6 +361,7 @@ class PlayResolver:
             defense_run_stop=defense_run_stop,
             defense_formation=defense_formation,
             extra_rn_modifier=draw_mod,
+            defenders_by_box=defenders_by_box,
         )
         result.strategy = "DRAW"
         result.description += f" (Draw play, RN modifier {draw_mod:+d})"
@@ -476,7 +479,40 @@ class PlayResolver:
                 if all(len(p) == 1 and p.isupper() for p in parts):
                     return "TWO_DEF_BOX"
                 return "TWO_OL"
+        # Single uppercase letter = defensive box (A-O)
+        if len(m) == 1 and m.isupper():
+            return "OL_VS_BOX"
         return "OL_ONLY"
+
+    @staticmethod
+    def extract_box_letters(matchup: str) -> list:
+        """Extract defensive box letter(s) from a FAC blocking matchup string.
+
+        Returns a list of box letters (A-O) found in the matchup.
+        Examples:
+          "C"         → ["C"]
+          "LT vs B"   → ["B"]
+          "BK vs G"   → ["G"]
+          "A + F"     → ["A", "F"]
+          "LG"        → []      (no box letter)
+          "CN + LG"   → []      (no box letter)
+        """
+        m = matchup.strip()
+        if " vs " in m:
+            # "OL vs X" or "BK vs X" — box is after "vs "
+            box = m.split(" vs ")[-1].strip()
+            if len(box) == 1 and box.isupper():
+                return [box]
+            return []
+        if " + " in m:
+            parts = [p.strip() for p in m.split(" + ")]
+            if len(parts) == 2 and all(len(p) == 1 and p.isupper() for p in parts):
+                return parts
+            return []
+        # Single letter = defensive box
+        if len(m) == 1 and m.isupper():
+            return [m]
+        return []
 
     # ── Onside kick ──────────────────────────────────────────────────
 
@@ -1838,7 +1874,8 @@ class PlayResolver:
                        defensive_play_5e=None,
                        box_is_empty: bool = False,
                        both_boxes_empty: bool = False,
-                       blocking_back_bv: int = 0) -> PlayResult:
+                       blocking_back_bv: int = 0,
+                       defenders_by_box: Optional[Dict[str, PlayerCard]] = None) -> PlayResult:
         """Resolve a run play using 5th-edition FAC card mechanics.
 
         Authentic resolution:
@@ -1850,7 +1887,7 @@ class PlayResolver:
              - "BK vs Box" + empty box  → add blocking_back_bv (BK rating)
              - "OL vs Box" + empty box  → base yards + 2
              - "Box + Box" + both empty → base yards + 2
-             - otherwise               → base yards − defender's TV (eff_run_stop)
+             - otherwise               → base yards − defender's TV (tackle_rating)
 
         Parameters
         ----------
@@ -1936,12 +1973,57 @@ class PlayResolver:
         rn_str = str(run_num) if run_num is not None else "1"
         used_run_num = run_num if run_num is not None else 1
 
-        # Effective run-stop
-        eff_run_stop = effective_run_stop(defense_run_stop, defense_formation)
-        log.append(
-            f"[DEF] Run-stop: base={defense_run_stop}, "
-            f"formation={defense_formation}, effective={eff_run_stop}"
-        )
+        # Effective run-stop: use individual defender's tackle_rating from box
+        # Extract box letter(s) from the FAC card blocking matchup
+        box_letters = self.extract_box_letters(blocking_matchup)
+        defender_tv = None
+        defender_name = None
+
+        if defenders_by_box and box_letters:
+            # Look up the specific defender in the targeted box
+            for bl in box_letters:
+                defender = defenders_by_box.get(bl)
+                if defender is not None:
+                    defender_tv = getattr(defender, 'tackle_rating', 0)
+                    defender_name = getattr(defender, 'player_name', '?')
+                    break
+
+            if defender_tv is None:
+                # Box is empty — check empty-box conditions
+                if len(box_letters) == 1:
+                    box_is_empty = True
+                elif len(box_letters) == 2:
+                    both_empty = all(
+                        defenders_by_box.get(bl) is None for bl in box_letters
+                    )
+                    both_boxes_empty = both_empty
+
+        # Formation modifier applies to the defender's TV
+        from .fac_distributions import get_formation_modifier
+        form_mod = get_formation_modifier(defense_formation).get("run_stop", 0)
+
+        if defender_tv is not None:
+            eff_run_stop = defender_tv + form_mod
+            log.append(
+                f"[DEF] Tackle value: defender={defender_name} in box {box_letters[0]}, "
+                f"TV={defender_tv}, formation_mod={form_mod:+d}, effective={eff_run_stop}"
+            )
+        elif defense_run_stop <= 10:
+            # Already on 5E small scale (legacy fallback)
+            eff_run_stop = effective_run_stop(defense_run_stop, defense_formation)
+            log.append(
+                f"[DEF] Run-stop (fallback): base={defense_run_stop}, "
+                f"formation={defense_formation}, effective={eff_run_stop}"
+            )
+        else:
+            # Legacy 0-100 scale — convert to 5E scale before use
+            from .card_generator import _legacy_to_5e_tackle
+            converted = _legacy_to_5e_tackle(defense_run_stop)
+            eff_run_stop = converted + form_mod
+            log.append(
+                f"[DEF] Run-stop (legacy→5E): raw={defense_run_stop}, "
+                f"converted={converted}, formation_mod={form_mod:+d}, effective={eff_run_stop}"
+            )
 
         # ── Try authentic 12-row rushing first ───────────────────────
         if rusher.rushing and rusher.has_rushing():
@@ -2836,25 +2918,85 @@ class PlayResolver:
 
         Returns a dict mapping player_name -> box_letter.
         Follows 5E rules for Row 1/2/3 placement.
+
+        Row 1 (DL) layout mirrors the field:
+          A=LE, B=LDT, C=NT/C, D=RDT, E=RE (EDGE treated as DE)
+        Row 2 (LB) layout:
+          F=LOLB, G=LILB, H=MLB, I=RILB, J=ROLB
+        Row 3 (DB) layout:
+          K=LCB, L=extra DB, M=FS, N=SS, O=RCB
         """
         assignments: Dict[str, str] = {}
         dl_players = [d for d in defenders if getattr(d, 'position', '') in
-                      ('DE', 'DT', 'DL', 'NT')]
+                      ('DE', 'DT', 'DL', 'NT', 'EDGE')]
         lb_players = [d for d in defenders if getattr(d, 'position', '') in
                       ('LB', 'OLB', 'ILB', 'MLB')]
         db_players = [d for d in defenders if getattr(d, 'position', '') in
                       ('CB', 'S', 'SS', 'FS', 'DB')]
 
-        # Row 1: DL players to boxes A-E (0-2 per box)
-        row1_boxes = ['A', 'B', 'C', 'D', 'E']
-        for i, p in enumerate(dl_players[:5]):
-            box = row1_boxes[i % len(row1_boxes)]
-            assignments[p.player_name] = box
+        # Row 1: DL players by position — DEs on edges (A/E), DTs inside (B/D), NT center (C)
+        des = [d for d in dl_players if getattr(d, 'position', '') in ('DE', 'EDGE')]
+        dts = [d for d in dl_players if getattr(d, 'position', '') in ('DT', 'DL')]
+        nts = [d for d in dl_players if getattr(d, 'position', '') == 'NT']
 
-        # Row 2: LBs to boxes F-J (one per box)
-        row2_boxes = ['F', 'G', 'H', 'I', 'J']
-        for i, p in enumerate(lb_players[:5]):
-            assignments[p.player_name] = row2_boxes[i]
+        # Assign DEs to edge boxes (A, E)
+        if len(des) >= 1:
+            assignments[des[0].player_name] = 'A'
+        if len(des) >= 2:
+            assignments[des[1].player_name] = 'E'
+
+        # Assign NTs to center box (C)
+        if nts:
+            assignments[nts[0].player_name] = 'C'
+
+        # Assign DTs to inside boxes (B, D)
+        dt_boxes = ['B', 'D']
+        dt_idx = 0
+        for dt in dts:
+            if dt.player_name not in assignments:
+                while dt_idx < len(dt_boxes) and dt_boxes[dt_idx] in assignments.values():
+                    dt_idx += 1
+                if dt_idx < len(dt_boxes):
+                    assignments[dt.player_name] = dt_boxes[dt_idx]
+                    dt_idx += 1
+
+        # Fill remaining DL to first empty Row 1 box
+        for p in dl_players:
+            if p.player_name not in assignments:
+                for box in ['A', 'B', 'C', 'D', 'E']:
+                    if box not in assignments.values():
+                        assignments[p.player_name] = box
+                        break
+
+        # Row 2: LBs by position — OLBs on edges (F/J), ILBs inside (G/I), MLB center (H)
+        olbs = [d for d in lb_players if getattr(d, 'position', '') == 'OLB']
+        ilbs = [d for d in lb_players if getattr(d, 'position', '') == 'ILB']
+        mlbs = [d for d in lb_players if getattr(d, 'position', '') == 'MLB']
+        generic_lbs = [d for d in lb_players if getattr(d, 'position', '') == 'LB']
+
+        if len(olbs) >= 1:
+            assignments[olbs[0].player_name] = 'F'
+        if len(olbs) >= 2:
+            assignments[olbs[1].player_name] = 'J'
+        if mlbs:
+            assignments[mlbs[0].player_name] = 'H'
+        lb_inner = ['G', 'I']
+        lb_idx = 0
+        for ilb in ilbs:
+            if ilb.player_name not in assignments:
+                while lb_idx < len(lb_inner) and lb_inner[lb_idx] in assignments.values():
+                    lb_idx += 1
+                if lb_idx < len(lb_inner):
+                    assignments[ilb.player_name] = lb_inner[lb_idx]
+                    lb_idx += 1
+
+        # Fill generic LBs to first empty Row 2 box
+        for p in generic_lbs + olbs[2:] + ilbs + mlbs[1:]:
+            if p.player_name not in assignments:
+                for box in ['F', 'G', 'H', 'I', 'J']:
+                    if box not in assignments.values():
+                        assignments[p.player_name] = box
+                        break
 
         # Row 3: DBs to boxes K-O following position rules
         # CB→K/O, FS→M, SS→N, any DB→L
@@ -2874,7 +3016,9 @@ class PlayResolver:
                 assignments[s.player_name] = 'N'
             elif 'L' not in assignments.values():
                 assignments[s.player_name] = 'L'
-        for db in other_dbs:
+        for db in (other_dbs + cbs[2:]):
+            if db.player_name in assignments:
+                continue
             for box in ['L', 'M', 'N']:
                 if box not in assignments.values():
                     assignments[db.player_name] = box

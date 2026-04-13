@@ -160,6 +160,28 @@ class Game:
     def get_defense_team(self) -> Team:
         return self.away_team if self.state.possession == "home" else self.home_team
 
+    def _build_defenders_by_box(self, defense: Team) -> Dict[str, PlayerCard]:
+        """Build a mapping of box letter (A-O) → PlayerCard for current defenders.
+
+        Uses assign_default_display_boxes to get the assignments,
+        then builds the reverse mapping.
+        """
+        if not defense or not defense.roster:
+            return {}
+        defenders = list(defense.roster.defenders)[:11]
+        if not defenders:
+            return {}
+        # Get player_name → box_letter mapping
+        name_to_box = PlayResolver.assign_default_display_boxes(defenders)
+        # Reverse to box_letter → PlayerCard
+        box_to_defender: Dict[str, PlayerCard] = {}
+        name_to_card = {d.player_name: d for d in defenders}
+        for pname, box in name_to_box.items():
+            card = name_to_card.get(pname)
+            if card:
+                box_to_defender[box] = card
+        return box_to_defender
+
     def _is_player_unavailable(self, player: Optional[PlayerCard]) -> bool:
         return bool(player and self.state.injuries.get(player.player_name, 0) > 0)
 
@@ -866,11 +888,13 @@ class Game:
                 rusher = self.get_qb(player_name)
             def_form = defense_formation or self.ai.call_defense_5e(situation, fac_card)
             defense = self.get_defense_team()
+            defenders_by_box = self._build_defenders_by_box(defense)
             if rusher:
                 result = self.resolver.resolve_draw(
                     fac_card, self.deck, rusher, def_form,
                     defense_run_stop=defense.defense_rating,
                     defensive_play=defensive_play,
+                    defenders_by_box=defenders_by_box,
                 )
                 self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
@@ -1067,14 +1091,24 @@ class Game:
         direction_map = {"LEFT": "IL", "MIDDLE": "IL", "RIGHT": "IR"}
         direction = direction_map.get(direction, direction)
 
+        # Build defenders_by_box mapping for individual tackle ratings
+        defenders_by_box = self._build_defenders_by_box(defense)
+
         if rusher:
             result = self.resolver.resolve_run_5e(
                 fac_card, self.deck, rusher, direction,
                 defense_run_stop=def_run_stop,
                 defense_formation=def_formation,
                 defensive_play_5e=defensive_play_5e,
+                defenders_by_box=defenders_by_box,
             )
             result.defense_formation = def_formation
+            # Store box assignments on result for tracking
+            if defenders_by_box:
+                result.box_assignments = {
+                    box: getattr(d, 'player_name', '?')
+                    for box, d in defenders_by_box.items()
+                }
             return result
         yards = random.choices([-1, 0, 1, 2, 3, 4, 5],
                                 weights=[5, 8, 10, 15, 20, 15, 10])[0]

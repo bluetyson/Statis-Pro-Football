@@ -67,8 +67,8 @@ function MiniCard({ player, isDefender }: { player: PlayerBrief; isDefender?: bo
         </div>
       )}
 
-      {/* RB/WR/TE: rushing + pass gain tables */}
-      {!isDefender && player.position !== 'QB' && player.position !== 'K' && player.position !== 'P' && (
+      {/* RB/WR/TE/QB: rushing + pass gain tables */}
+      {!isDefender && player.position !== 'K' && player.position !== 'P' && (
         <div className="mc-data">
           {player.rushing && player.rushing.length > 0 && player.rushing.some(r => r !== null) && (
             <table className="mc-table">
@@ -454,7 +454,7 @@ export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps)
             {/* Row 1: Defensive Line (a-f) */}
             <div className="board-row board-row-label">
               <span className="row-label-text">DEFENSIVE LINE</span>
-              <span className="row-letters">DE DT NT DT DE</span>
+              <span className="row-letters">A(LE) B(LT) C(NT) D(RT) E(RE)</span>
             </div>
             <div className="board-row board-row-dl">
               {defensiveLineSlots.map(slot => (
@@ -465,7 +465,7 @@ export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps)
             {/* Row 2: Linebackers (g-k) */}
             <div className="board-row board-row-label">
               <span className="row-label-text">LINEBACKERS</span>
-              <span className="row-letters">OLB ILB MLB ILB OLB</span>
+              <span className="row-letters">F(LOLB) G(LILB) H(MLB) I(RILB) J(ROLB)</span>
             </div>
             <div className="board-row board-row-lb">
               {linebackerSlots.map(slot => (
@@ -476,7 +476,7 @@ export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps)
             {/* Row 3: Defensive Backs (l-p) */}
             <div className="board-row board-row-label">
               <span className="row-label-text">DEFENSIVE BACKS</span>
-              <span className="row-letters">CB SS FS OBOX CB</span>
+              <span className="row-letters">K(LCB) L(DB) M(FS) N(SS) O(RCB)</span>
             </div>
             <div className="board-row board-row-db">
               {secondarySlots.map(slot => (
