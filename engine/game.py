@@ -356,7 +356,8 @@ class Game:
     def execute_play(self, play_call: Optional[PlayCall] = None,
                      defense_formation: Optional[str] = None,
                      player_name: Optional[str] = None,
-                     defensive_strategy: Optional[str] = None) -> PlayResult:
+                     defensive_strategy: Optional[str] = None,
+                     blitz_players: Optional[List[str]] = None) -> PlayResult:
         """Execute a single play.
 
         Args:
@@ -364,12 +365,14 @@ class Game:
             defense_formation: Optional human-specified defensive formation.
             player_name: Optional specific player to use for the play.
             defensive_strategy: Optional human-specified defensive strategy (5E).
+            blitz_players: Optional list of player names to blitz (2-5 LBs/DBs).
         """
         self._current_play_personnel_note = None
         if self.use_5e:
             return self._execute_play_5e(play_call, defense_formation,
                                          player_name=player_name,
-                                         defensive_strategy=defensive_strategy)
+                                         defensive_strategy=defensive_strategy,
+                                         blitz_players=blitz_players)
         return self._execute_play_legacy(play_call, defense_formation, player_name=player_name)
 
     def _execute_play_legacy(self, play_call: Optional[PlayCall] = None,
@@ -767,7 +770,8 @@ class Game:
     def _execute_play_5e(self, play_call: Optional[PlayCall] = None,
                         defense_formation: Optional[str] = None,
                         defensive_strategy: Optional[str] = None,
-                        player_name: Optional[str] = None) -> PlayResult:
+                        player_name: Optional[str] = None,
+                        blitz_players: Optional[List[str]] = None) -> PlayResult:
         """Execute a single play using 5th-edition FAC deck."""
         fac_card = self.deck.draw()
         situation = self.state.to_situation()
@@ -804,6 +808,8 @@ class Game:
         )
         self.state.play_log.append(f"  OFFENSE: {off_call_str}")
         self.state.play_log.append(f"  DEFENSE: {def_call_str}")
+        if blitz_players:
+            self.state.play_log.append(f"  BLITZ PLAYERS: {', '.join(blitz_players)}")
 
         # ── 5E Play restrictions ─────────────────────────────────────
         # Long pass within opponent's 20 → auto-convert to short pass

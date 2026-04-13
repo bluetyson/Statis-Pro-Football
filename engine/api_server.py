@@ -160,12 +160,25 @@ class DefensivePlayCallRequest(BaseModel):
     formation: str = "4_3"  # 4_3, 3_4, 4_3_BLITZ, 3_4_ZONE, NICKEL_BLITZ, NICKEL_ZONE, NICKEL_COVER2, GOAL_LINE, 4_3_COVER2
     defensive_play: str = "PASS_DEFENSE"  # PASS_DEFENSE, PREVENT_DEFENSE, RUN_DEFENSE_NO_KEY, etc.
     defensive_strategy: str = "NONE"  # NONE, DOUBLE_COVERAGE, TRIPLE_COVERAGE
+    blitz_players: Optional[List[str]] = None  # Names of LBs/DBs to blitz (2-5 players)
 
 
 class SubstitutionRequest(BaseModel):
-    position: str  # QB, RB, WR, TE, K, P
+    position: str  # QB, RB, WR, TE, K, P, DL, LB, DB
     player_out: str  # player name to remove from starters
     player_in: str  # player name to put in as starter
+
+
+class PositionChangeRequest(BaseModel):
+    player_name: str  # player to move
+    new_position: str  # new position (compatible positions only)
+
+
+class StartingLineupRequest(BaseModel):
+    """Set starting lineup for a team."""
+    team: str  # 'home' or 'away'
+    offense: Optional[Dict[str, str]] = None  # {position: player_name} e.g. {"QB": "Patrick Mahomes"}
+    defense: Optional[List[str]] = None  # List of 11 defender names in order
 
 
 class PlayCallRequest(BaseModel):
@@ -340,9 +353,25 @@ def execute_human_defense(game_id: str, request: DefensivePlayCallRequest):
             detail=f"Invalid defensive strategy: {defensive_strategy}. Valid: {sorted(VALID_DEFENSIVE_STRATEGIES)}",
         )
 
+    # Validate blitz players if provided
+    blitz_players = None
+    if request.blitz_players:
+        if defensive_play != "BLITZ" and "BLITZ" not in formation:
+            raise HTTPException(
+                status_code=400,
+                detail="Blitz players can only be specified with BLITZ defense",
+            )
+        if len(request.blitz_players) < 2 or len(request.blitz_players) > 5:
+            raise HTTPException(
+                status_code=400,
+                detail="Must specify 2-5 blitz players (LBs/DBs)",
+            )
+        blitz_players = request.blitz_players
+
     result = game.execute_play(
         defense_formation=formation,
         defensive_strategy=defensive_strategy if defensive_strategy != "NONE" else None,
+        blitz_players=blitz_players,
     )
 
     return {
@@ -867,6 +896,272 @@ def declare_two_minute_offense(game_id: str):
         "game_id": game_id,
         "message": "Two-minute offense declared",
         "two_minute_offense": True,
+        "state": _serialize_state(game.state),
+    }
+
+
+# ─── Depth Chart Endpoint ──────────────────────────────────────────────────
+
+@app.get("/games/{game_id}/depth-chart")
+def get_depth_chart(game_id: str, team: str = "home"):
+    """Get full depth chart for a team in the current game."""
+    game = _get_game(game_id)
+    t = game.home_team if team == "home" else game.away_team
+    unavailable = set(game.state.injuries)
+
+    depth_chart: Dict[str, List[dict]] = {}
+
+    # Offense
+    pos_groups = {
+        "QB": t.roster.qbs,
+        "RB": t.roster.rbs,
+        "WR": t.roster.wrs,
+        "TE": t.roster.tes,
+        "OL": t.roster.offensive_line,
+        "K": t.roster.kickers,
+        "P": t.roster.punters,
+    }
+    for pos, players in pos_groups.items():
+        depth_chart[pos] = [_player_brief(p, unavailable) for p in players]
+
+    # Defense — group by position type
+    dl_players = [d for d in t.roster.defenders if d.position.upper() in
+                  ("DE", "DT", "DL", "NT")]
+    lb_players = [d for d in t.roster.defenders if d.position.upper() in
+                  ("LB", "OLB", "ILB", "MLB")]
+    db_players = [d for d in t.roster.defenders if d.position.upper() in
+                  ("CB", "S", "SS", "FS", "DB")]
+    depth_chart["DL"] = [_player_brief(p, unavailable) for p in dl_players]
+    depth_chart["LB"] = [_player_brief(p, unavailable) for p in lb_players]
+    depth_chart["DB"] = [_player_brief(p, unavailable) for p in db_players]
+
+    return {
+        "team": t.abbreviation,
+        "team_name": f"{t.city} {t.name}",
+        "depth_chart": depth_chart,
+    }
+
+
+# ─── Starting Lineup Endpoint ──────────────────────────────────────────────
+
+@app.get("/games/{game_id}/starting-lineup")
+def get_starting_lineup(game_id: str, team: str = "home"):
+    """Get the current starting lineup for a team."""
+    game = _get_game(game_id)
+    t = game.home_team if team == "home" else game.away_team
+    unavailable = set(game.state.injuries)
+    lineup = t.get_standard_lineup()
+
+    return {
+        "team": t.abbreviation,
+        "team_name": f"{t.city} {t.name}",
+        "record": {"wins": t.wins, "losses": t.losses, "ties": t.ties},
+        "offense": {
+            pos: _player_brief(player, unavailable) if player else None
+            for pos, player in lineup["offense"].items()
+        },
+        "offensive_line": [_player_brief(p, unavailable) for p in lineup["offensive_line"]],
+        "defense": [_player_brief(p, unavailable) for p in lineup["defense"]],
+        "returners": {
+            kind: _player_brief(player, unavailable) if player else None
+            for kind, player in lineup["returners"].items()
+        },
+    }
+
+
+@app.post("/games/{game_id}/starting-lineup")
+def set_starting_lineup(game_id: str, request: StartingLineupRequest):
+    """Set the starting lineup for a team before or during the game."""
+    game = _get_game(game_id)
+    t = game.home_team if request.team == "home" else game.away_team
+
+    changes_made = []
+
+    if request.offense:
+        pos_map = {
+            "QB": t.roster.qbs, "RB": t.roster.rbs, "WR": t.roster.wrs,
+            "WR1": t.roster.wrs, "WR2": t.roster.wrs, "WR3": t.roster.wrs,
+            "TE": t.roster.tes, "K": t.roster.kickers, "P": t.roster.punters,
+        }
+        for pos, player_name in request.offense.items():
+            player_list = pos_map.get(pos.upper())
+            if not player_list:
+                continue
+            for i, p in enumerate(player_list):
+                if p.player_name.lower() == player_name.lower() and i != 0:
+                    player_list[0], player_list[i] = player_list[i], player_list[0]
+                    changes_made.append(f"{player_name} → starter at {pos}")
+                    break
+
+    if request.defense:
+        defenders = t.roster.defenders
+        new_order = []
+        remaining = list(defenders)
+        for name in request.defense:
+            found = None
+            for d in remaining:
+                if d.player_name.lower() == name.lower():
+                    found = d
+                    break
+            if found:
+                new_order.append(found)
+                remaining.remove(found)
+        new_order.extend(remaining)
+        t.roster.defenders = new_order
+        changes_made.append(f"Defense reordered ({len(request.defense)} starters)")
+
+    return {
+        "message": f"Lineup updated: {'; '.join(changes_made)}" if changes_made else "No changes made",
+        "changes": changes_made,
+        "state": _serialize_state(game.state),
+    }
+
+
+# ─── Display Boxes Endpoint ────────────────────────────────────────────────
+
+@app.get("/games/{game_id}/display-boxes")
+def get_display_boxes(game_id: str):
+    """Get current defensive display box assignments (5E A-O boxes)."""
+    game = _get_game(game_id)
+    from .play_resolver import PlayResolver
+
+    defense_team = game.get_defense_team()
+    defenders = defense_team.roster.defenders[:11]
+    unavailable = set(game.state.injuries)
+
+    boxes = PlayResolver.assign_default_display_boxes(defenders)
+
+    # Build box-to-player mapping
+    box_assignments: Dict[str, Optional[dict]] = {}
+    for box in "ABCDEFGHIJKLMNO":
+        box_assignments[box] = None
+
+    for player in defenders:
+        box = boxes.get(player.player_name)
+        if box:
+            box_assignments[box] = _player_brief(player, unavailable)
+
+    return {
+        "defense_team": defense_team.abbreviation,
+        "boxes": box_assignments,
+        "rows": {
+            "row1_dl": {b: box_assignments[b] for b in "ABCDE"},
+            "row2_lb": {b: box_assignments[b] for b in "FGHIJ"},
+            "row3_db": {b: box_assignments[b] for b in "KLMNO"},
+        },
+    }
+
+
+# ─── Position Flexibility Endpoint ─────────────────────────────────────────
+
+COMPATIBLE_POSITIONS: Dict[str, set] = {
+    # Defensive position compatibility
+    "DE": {"DT", "DL", "NT", "LB", "OLB"},
+    "DT": {"DE", "DL", "NT"},
+    "DL": {"DE", "DT", "NT"},
+    "NT": {"DT", "DL", "DE"},
+    "LB": {"OLB", "ILB", "MLB", "DE"},
+    "OLB": {"LB", "ILB", "MLB", "DE"},
+    "ILB": {"LB", "OLB", "MLB"},
+    "MLB": {"LB", "OLB", "ILB"},
+    "CB": {"S", "SS", "FS", "DB"},
+    "S": {"SS", "FS", "CB", "DB"},
+    "SS": {"S", "FS", "CB", "DB"},
+    "FS": {"S", "SS", "CB", "DB"},
+    "DB": {"CB", "S", "SS", "FS"},
+    # Offensive position compatibility
+    "RB": {"WR", "TE"},
+    "WR": {"RB", "TE"},
+    "TE": {"WR", "RB"},
+}
+
+
+@app.post("/games/{game_id}/position-change")
+def change_player_position(game_id: str, request: PositionChangeRequest):
+    """Change a player's position (within compatible positions per 5E rules).
+
+    Note: Playing out of position incurs penalties per 5E rules:
+    - OL out of position: -1 to Blocking and Pass Blocking Values
+    - CB/S out of position: -1 to Pass Defense Values
+    """
+    game = _get_game(game_id)
+    new_pos = request.new_position.upper()
+
+    # Search all players on both teams
+    for t in [game.home_team, game.away_team]:
+        for player in t.roster.all_players():
+            if player.player_name.lower() == request.player_name.lower():
+                old_pos = player.position.upper()
+                compatible = COMPATIBLE_POSITIONS.get(old_pos, set())
+                if new_pos not in compatible:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"{old_pos} cannot move to {new_pos}. Compatible: {sorted(compatible)}",
+                    )
+                player.position = new_pos
+                game.state.play_log.append(
+                    f"POSITION CHANGE: {player.player_name} moved from {old_pos} to {new_pos}"
+                )
+                return {
+                    "message": f"{player.player_name} moved from {old_pos} to {new_pos}",
+                    "old_position": old_pos,
+                    "new_position": new_pos,
+                    "penalty_note": "Out-of-position penalty may apply (-1 to relevant ratings)",
+                    "state": _serialize_state(game.state),
+                }
+
+    raise HTTPException(status_code=404, detail=f"Player '{request.player_name}' not found")
+
+
+# ─── Defensive Substitution Endpoint ───────────────────────────────────────
+
+@app.post("/games/{game_id}/substitute-defense")
+def substitute_defense_player(game_id: str, request: SubstitutionRequest):
+    """Substitute a player on the defensive team."""
+    game = _get_game(game_id)
+
+    defense_team = game.get_defense_team()
+    defenders = defense_team.roster.defenders
+
+    pos = request.position.upper()
+    DEF_POS_MAP = {
+        "DL": ("DE", "DT", "DL", "NT"),
+        "LB": ("LB", "OLB", "ILB", "MLB"),
+        "DB": ("CB", "S", "SS", "FS", "DB"),
+        "DE": ("DE",), "DT": ("DT",), "NT": ("NT",),
+        "CB": ("CB",), "S": ("S",), "SS": ("SS",), "FS": ("FS",),
+        "OLB": ("OLB",), "ILB": ("ILB",), "MLB": ("MLB",),
+    }
+
+    valid_positions = DEF_POS_MAP.get(pos)
+    if not valid_positions:
+        raise HTTPException(status_code=400, detail=f"Invalid defensive position: {pos}")
+
+    player_in_obj = None
+    player_in_idx = None
+    player_out_idx = None
+    for i, p in enumerate(defenders):
+        if p.player_name.lower() == request.player_in.lower():
+            player_in_obj = p
+            player_in_idx = i
+        if p.player_name.lower() == request.player_out.lower():
+            player_out_idx = i
+
+    if player_in_obj is None:
+        raise HTTPException(status_code=404, detail=f"Player '{request.player_in}' not found on defense")
+    if player_out_idx is None:
+        raise HTTPException(status_code=404, detail=f"Player '{request.player_out}' not found on defense")
+
+    defenders[player_out_idx], defenders[player_in_idx] = (
+        defenders[player_in_idx], defenders[player_out_idx]
+    )
+
+    game.state.play_log.append(
+        f"DEF SUB: {request.player_in} replaces {request.player_out} at {pos}"
+    )
+
+    return {
+        "message": f"{request.player_in} now starting at {pos} on defense",
         "state": _serialize_state(game.state),
     }
 

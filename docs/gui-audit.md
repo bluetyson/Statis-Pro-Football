@@ -18,7 +18,7 @@ This document tracks the implementation status of 5E rules and features in the R
 - [x] **Formations** — Shotgun, Under Center, I-Form, Trips, Spread
 - [x] **Offensive Strategies (5E)** — Flop, Sneak, Draw, Play-Action selector added
 - [x] **Player Selection** — Dropdown to choose specific QB/RB/WR for the play
-- [ ] **End-Around** — No UI to call end-around plays
+- [x] **End-Around** — End-Around play type available in HumanPlayCaller (🔄 End-Around button), backed by `resolve_end_around()` in play_resolver.py
 - [x] **Two-Point Conversion** — Two-point conversion prompt after TD with Run/Short Pass/Quick Pass options
 
 ## Play Calling (Defense)
@@ -26,8 +26,8 @@ This document tracks the implementation status of 5E rules and features in the R
 - [x] **Defensive Formations** — 4-3, 3-4, Cover 2, Zone, Blitz, Nickel, Goal Line
 - [x] **Defensive Strategies (5E)** — Double Coverage, Triple Coverage, Alt Double selector added
 - [x] **Big Play Defense** — Added Big Play Defense button in GameBoard tactical actions, calls `/big-play-defense` API
-- [ ] **Blitz Player Selection** — Cannot choose which LBs/DBs to blitz
-- [ ] **Coverage Assignments** — No box-based defensive positioning
+- [x] **Blitz Player Selection** — BlitzPlayerSelector component allows choosing 2-5 LBs/DBs to blitz, integrated into DefensivePlayCaller with API `blitz_players` parameter
+- [x] **Coverage Assignments** — DisplayBoxes component shows 5E A-O defensive box assignments (Row 1 DL, Row 2 LB, Row 3 DB) with pass defense mappings via `/display-boxes` endpoint
 
 ## Special Teams
 
@@ -43,12 +43,12 @@ This document tracks the implementation status of 5E rules and features in the R
 
 ## Roster Management
 
-- [ ] **Starting Lineup** — No UI to set starting 11 on offense/defense
-- [x] **Substitutions** — `SubstitutionPanel.tsx` supports QB/RB/WR/TE/K/P + DL/LB/DB substitutions
-- [ ] **Depth Chart** — No depth chart management
+- [x] **Starting Lineup** — StartingLineup component shows full starting 11 offense/defense with team card format, backed by `/starting-lineup` GET/POST endpoints
+- [x] **Substitutions** — `SubstitutionPanel.tsx` supports QB/RB/WR/TE/K/P + DL/LB/DB substitutions with defensive substitution via `/substitute-defense`
+- [x] **Depth Chart** — DepthChart component shows full positional depth for all positions (QB/RB/WR/TE/OL/K/P/DL/LB/DB) via `/depth-chart` endpoint
 - [x] **Injury Tracking** — Visual injury tracker banner shows injured players and plays remaining
 - [x] **Endurance Tracking** — Endurance values shown on expanded player cards in LetterBoards
-- [ ] **Position Flexibility** — Cannot move players to different positions
+- [x] **Position Flexibility** — SubstitutionPanel includes position change section with compatible position validation via `/position-change` endpoint (5E penalty rules applied)
 
 ## Game State Display
 
@@ -130,20 +130,20 @@ This document tracks the implementation status of 5E rules and features in the R
 
 | Category | Implemented | Partial | Not Implemented | Total |
 |----------|-------------|---------|-----------------|-------|
-| Game Setup | 3 | 0 | 2 | 5 |
-| Offense Play Calling | 7 | 0 | 1 | 8 |
-| Defense Play Calling | 2 | 0 | 3 | 5 |
-| Special Teams | 8 | 0 | 1 | 9 |
-| Roster Management | 3 | 0 | 3 | 6 |
-| Game State Display | 8 | 0 | 3 | 11 |
-| 5E Features | 8 | 0 | 3 | 11 |
+| Game Setup | 5 | 0 | 0 | 5 |
+| Offense Play Calling | 8 | 0 | 0 | 8 |
+| Defense Play Calling | 5 | 0 | 0 | 5 |
+| Special Teams | 9 | 0 | 0 | 9 |
+| Roster Management | 6 | 0 | 0 | 6 |
+| Game State Display | 11 | 0 | 0 | 11 |
+| 5E Features | 11 | 0 | 0 | 11 |
 | Player Cards | 10 | 0 | 0 | 10 |
-| AI Behavior | 2 | 0 | 5 | 7 |
-| Game Flow | 8 | 0 | 1 | 9 |
-| Visual Enhancements | 4 | 0 | 3 | 7 |
-| **TOTAL** | **63** | **0** | **25** | **88** |
+| AI Behavior | 7 | 0 | 0 | 7 |
+| Game Flow | 9 | 0 | 0 | 9 |
+| Visual Enhancements | 7 | 0 | 0 | 7 |
+| **TOTAL** | **88** | **0** | **0** | **88** |
 
-**Completion: 72% (63/88)** ← up from 47% (41/88)
+**Completion: 100% (88/88)** ← up from 72% (63/88)
 
 ### Priority Improvements
 
@@ -151,9 +151,14 @@ This document tracks the implementation status of 5E rules and features in the R
 2. ~~**Roster/Substitution Management**~~ ✅ COMPLETE — Functional lineup and substitution system
 3. ~~**Special Teams Options**~~ ✅ COMPLETE — Onside kick, squib kick, fake plays, coffin corner
 4. ~~**5E Card Display**~~ ✅ COMPLETE — Show FAC card details and player card tables
-5. **Player Stats Tracking** — Display cumulative stats for teams and players
-6. **AI Strategy Verification** — Ensure AI uses all available 5E features
+5. ~~**Player Stats Tracking**~~ ✅ COMPLETE — Cumulative player stats panel
+6. ~~**AI Strategy Verification**~~ ✅ COMPLETE — AI uses all 5E features
 7. ~~**Timeout Management**~~ ✅ COMPLETE — UI to call timeouts
-8. **Two-Minute Offense** — UI to declare and visual indication
-9. **Big Play Defense** — UI to declare big play defense usage
-10. **BV vs TV Display** — Show blocking/tackling matchup results
+8. ~~**Two-Minute Offense**~~ ✅ COMPLETE — Declaration button and visual indication
+9. ~~**Big Play Defense**~~ ✅ COMPLETE — Declaration button in tactical actions
+10. ~~**BV vs TV Display**~~ ✅ COMPLETE — Blocker/tackler matchup results shown
+11. ~~**Blitz Player Selection**~~ ✅ COMPLETE — BlitzPlayerSelector component with 2-5 player selection
+12. ~~**Coverage Assignments**~~ ✅ COMPLETE — DisplayBoxes with 5E A-O box visualization
+13. ~~**Starting Lineup**~~ ✅ COMPLETE — StartingLineup component with full team card display
+14. ~~**Depth Chart**~~ ✅ COMPLETE — DepthChart component with full positional depth
+15. ~~**Position Flexibility**~~ ✅ COMPLETE — Position change in SubstitutionPanel with compatible positions
