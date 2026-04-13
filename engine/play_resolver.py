@@ -1031,6 +1031,10 @@ class PlayResolver:
     def resolve_punt(self, punter: PlayerCard,
                      dice: Optional[DiceResult] = None,
                      returner: Optional[PlayerCard] = None) -> PlayResult:
+        log: List[str] = []
+        returner_name = returner.player_name if returner else "unknown"
+        returner_grade = getattr(returner, 'overall_grade', '?') if returner else '?'
+
         # Use slot-based punt column if available
         if punter.punt_column and dice is not None:
             slot = dice.slot
@@ -1044,29 +1048,41 @@ class PlayResolver:
                     max(30, int(punter.avg_distance - 5)),
                     int(punter.avg_distance + 5),
                 )
-                return PlayResult(
+                log.append(f"[PR] Punt by {punter.player_name}: {distance} yards, downed inside 20 (no return)")
+                r = PlayResult(
                     play_type="PUNT",
                     yards_gained=distance,
                     result="PUNT",
                     description=f"{punter.player_name} punts {distance} yards, downed inside the 20",
                 )
+                r.debug_log = log
+                return r
             elif punt_result == "TOUCHBACK":
                 distance = random.randint(
                     int(punter.avg_distance + 5),
                     int(punter.avg_distance + 15),
                 )
-                return PlayResult(
+                log.append(f"[PR] Punt by {punter.player_name}: {distance} yards, touchback (no return)")
+                r = PlayResult(
                     play_type="PUNT",
                     yards_gained=distance,
                     result="PUNT",
                     description=f"{punter.player_name} punts {distance} yards, touchback",
                 )
+                r.debug_log = log
+                return r
             else:
                 distance = punt_data.get("yards", int(punter.avg_distance))
                 fair_catch = Charts.check_fair_catch(punter.punt_return_pct)
-                return_yards = 0 if fair_catch else max(
-                    0, Charts.roll_punt_return() + self._returner_modifier(returner, "PR")
-                )
+                base_return = 0 if fair_catch else Charts.roll_punt_return()
+                modifier = 0 if fair_catch else self._returner_modifier(returner, "PR")
+                return_yards = 0 if fair_catch else max(0, base_return + modifier)
+                log.append(f"[PR] Punt by {punter.player_name}: {distance} yards")
+                log.append(f"[PR] Returner: {returner_name} (grade {returner_grade})")
+                if fair_catch:
+                    log.append(f"[PR] Fair catch by {returner_name}")
+                else:
+                    log.append(f"[PR] Base return yards={base_return}, returner modifier={modifier:+d}, return yards={return_yards}")
                 desc = f"{punter.player_name} punts {distance} yards"
                 if fair_catch:
                     desc += f", fair catch by {returner.player_name}" if returner else ", fair catch"
@@ -1075,12 +1091,15 @@ class PlayResolver:
                         f", {returner.player_name} returns it {return_yards} yards"
                         if returner else f", returned {return_yards} yards"
                     )
-                return PlayResult(
+                log.append(f"[PR] Net punt: {distance - return_yards} yards")
+                r = PlayResult(
                     play_type="PUNT",
                     yards_gained=distance - return_yards,
                     result="PUNT",
                     description=desc,
                 )
+                r.debug_log = log
+                return r
 
         # Legacy fallback for punters without a punt_column
         avg = punter.avg_distance
@@ -1089,25 +1108,35 @@ class PlayResolver:
 
         inside_20 = random.random() < punter.inside_20_rate
         fair_catch = Charts.check_fair_catch(punter.punt_return_pct)
-        return_yards = 0 if fair_catch else max(
-            0, Charts.roll_punt_return() + self._returner_modifier(returner, "PR")
-        )
+        base_return = 0 if (fair_catch or inside_20) else Charts.roll_punt_return()
+        modifier = 0 if (fair_catch or inside_20) else self._returner_modifier(returner, "PR")
+        return_yards = 0 if (fair_catch or inside_20) else max(0, base_return + modifier)
 
+        log.append(f"[PR] Punt by {punter.player_name}: {distance} yards (legacy)")
+        log.append(f"[PR] Returner: {returner_name} (grade {returner_grade})")
         desc = f"{punter.player_name} punts {distance} yards"
         if inside_20:
             desc += ", downed inside the 20"
             return_yards = 0
+            log.append(f"[PR] Downed inside 20 (no return)")
         elif fair_catch:
             desc += f", fair catch by {returner.player_name}" if returner else ", fair catch"
+            log.append(f"[PR] Fair catch by {returner_name}")
         elif return_yards > 0 and returner:
             desc += f", {returner.player_name} returns it {return_yards} yards"
+            log.append(f"[PR] Base return yards={base_return}, returner modifier={modifier:+d}, return yards={return_yards}")
+        else:
+            log.append(f"[PR] Base return yards={base_return}, returner modifier={modifier:+d}, return yards={return_yards}")
 
-        return PlayResult(
+        log.append(f"[PR] Net punt: {distance - return_yards} yards")
+        r = PlayResult(
             play_type="PUNT",
             yards_gained=distance - return_yards,
             result="PUNT",
             description=desc,
         )
+        r.debug_log = log
+        return r
 
     # ── XP / 2PT / Kickoff ──────────────────────────────────────────
 
@@ -1131,16 +1160,25 @@ class PlayResolver:
         )
 
     def resolve_kickoff(self, returner: Optional[PlayerCard] = None) -> PlayResult:
+        log: List[str] = []
         if Charts.is_kickoff_touchback():
-            return PlayResult(
+            log.append("[KR] Kickoff result: touchback, ball at 25-yard line")
+            r = PlayResult(
                 play_type="KICKOFF",
                 yards_gained=0,
                 result="TOUCHBACK",
                 description="Kickoff - touchback, ball at 25-yard line",
             )
-        final_position = Charts.roll_kick_return() + self._returner_modifier(returner, "KR")
-        final_position = max(1, min(99, final_position))
-        return PlayResult(
+            r.debug_log = log
+            return r
+        base_return = Charts.roll_kick_return()
+        modifier = self._returner_modifier(returner, "KR")
+        final_position = max(1, min(99, base_return + modifier))
+        returner_name = returner.player_name if returner else "unknown"
+        returner_grade = getattr(returner, 'overall_grade', '?') if returner else '?'
+        log.append(f"[KR] Returner: {returner_name} (grade {returner_grade})")
+        log.append(f"[KR] Base return yards={base_return}, returner modifier={modifier:+d}, final yard line={final_position}")
+        r = PlayResult(
             play_type="KICKOFF",
             yards_gained=final_position,
             result="RETURN",
@@ -1149,6 +1187,8 @@ class PlayResolver:
                 if returner else f"Kickoff returned to the {final_position}-yard line"
             ),
         )
+        r.debug_log = log
+        return r
 
     # ══════════════════════════════════════════════════════════════════
     #  5th-EDITION  FAC-CARD  RESOLUTION METHODS
@@ -1447,6 +1487,7 @@ class PlayResolver:
                 receivers=receivers,
                 defense_formation=defense_formation,
                 defensive_play_5e=defensive_play_5e,
+                yard_line=yard_line,
             )
             r.debug_log = log
             return r
@@ -1627,19 +1668,27 @@ class PlayResolver:
         # ── INT result ───────────────────────────────────────────────
         if qb_result == "INT":
             rn_for_poi = fac_card.run_num_int or random.randint(1, 12)
+            poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_poi, yard_line)
             int_yards, int_td = Charts.roll_int_return()
-            log.append(f"[INT] Interception! Return yards={int_yards}, TD={int_td}")
+            # Check if return goes into opposing end zone
+            if not int_td and poi - int_yards <= 0:
+                int_td = True
+                int_yards = poi
+            log.append(f"[INT] Interception! RN={rn_for_poi}, pass_type={pass_type}")
+            log.append(f"[INT] Point of interception: {poi}-yard line (from yard_line={yard_line})")
+            log.append(f"[INT] Return yards={int_yards}, TD={int_td}")
             r = PlayResult(
                 play_type="PASS", yards_gained=0,
                 result="INT", turnover=True, turnover_type="INT",
                 description=(
-                    f"{qb.player_name} pass intercepted!"
-                    f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
+                    f"{qb.player_name} pass intercepted at the {poi}!"
+                    f"{' Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
                 ),
                 passer=qb.player_name, receiver=actual_receiver.player_name,
                 z_card_event=z_event,
                 pass_number_used=pn,
                 run_number_used=rn_for_poi,
+                interception_point=poi,
             )
             r.debug_log = log
             return r
@@ -1677,36 +1726,53 @@ class PlayResolver:
                     if int_range <= pn <= 48:
                         rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
                         defender_pos = getattr(int_check_defender, 'position', 'DB')
+                        poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_ret, yard_line)
                         int_yards, int_td = Charts.roll_int_return_5e(rn_for_ret, defender_pos)
-                        log.append(f"[INC→INT] PN {pn} in intercept range [{int_range}-48]! INT by {int_check_defender.player_name}!")
+                        # Check if return goes into opposing end zone
+                        if not int_td and poi - int_yards <= 0:
+                            int_td = True
+                            int_yards = poi
+                        log.append(f"[INC→INT] PN {pn} in intercept range [{int_range}-48]! INT by {int_check_defender.player_name} ({defender_pos})!")
+                        log.append(f"[INC→INT] Point of interception: {poi}-yard line (RN={rn_for_ret}, pass_type={pass_type})")
+                        log.append(f"[INC→INT] Return: {int_yards} yards (5E table, position={defender_pos}), TD={int_td}")
                         r = PlayResult(
                             play_type="PASS", yards_gained=0,
                             result="INT", turnover=True, turnover_type="INT",
                             description=(
-                                f"{qb.player_name} pass intercepted by {int_check_defender.player_name} in coverage!"
-                                f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
+                                f"{qb.player_name} pass intercepted by {int_check_defender.player_name} at the {poi}!"
+                                f"{' Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
                             ),
                             passer=qb.player_name, receiver=actual_receiver.player_name,
                             z_card_event=z_event,
                             pass_number_used=pn,
                             run_number_used=rn_for_ret,
+                            interception_point=poi,
                         )
                         r.debug_log = log
                         return r
                 elif isinstance(int_range, (list, tuple)) and len(int_range) == 2:
                     if int_range[0] <= pn <= int_range[1]:
+                        rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
+                        poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_ret, yard_line)
                         int_yards, int_td = Charts.roll_int_return()
-                        log.append(f"[INC→INT] PN {pn} in legacy range [{int_range[0]}-{int_range[1]}]! INT!")
+                        if not int_td and poi - int_yards <= 0:
+                            int_td = True
+                            int_yards = poi
+                        log.append(f"[INC→INT] PN {pn} in legacy range [{int_range[0]}-{int_range[1]}]! INT by {int_check_defender.player_name}!")
+                        log.append(f"[INC→INT] Point of interception: {poi}-yard line (RN={rn_for_ret}, pass_type={pass_type})")
+                        log.append(f"[INC→INT] Return: {int_yards} yards, TD={int_td}")
                         r = PlayResult(
                             play_type="PASS", yards_gained=0,
                             result="INT", turnover=True, turnover_type="INT",
                             description=(
-                                f"{qb.player_name} pass intercepted by {int_check_defender.player_name} in coverage!"
-                                f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
+                                f"{qb.player_name} pass intercepted by {int_check_defender.player_name} at the {poi}!"
+                                f"{' Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
                             ),
                             passer=qb.player_name, receiver=actual_receiver.player_name,
                             z_card_event=z_event,
                             pass_number_used=pn,
+                            run_number_used=rn_for_ret,
+                            interception_point=poi,
                         )
                         r.debug_log = log
                         return r
@@ -1714,17 +1780,26 @@ class PlayResolver:
                 new_pn = random.randint(1, 48)
                 log.append(f"[INC] PN=48 special check: new PN={new_pn}")
                 if new_pn <= 24:
+                    rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
+                    poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_ret, yard_line)
                     int_yards, int_td = Charts.roll_int_return()
+                    if not int_td and poi - int_yards <= 0:
+                        int_td = True
+                        int_yards = poi
+                    log.append(f"[INC→INT] PN 48 special: intercepted at {poi}-yard line")
+                    log.append(f"[INC→INT] Return: {int_yards} yards, TD={int_td}")
                     r = PlayResult(
                         play_type="PASS", yards_gained=0,
                         result="INT", turnover=True, turnover_type="INT",
                         description=(
-                            f"{qb.player_name} pass intercepted on PN 48 check! (new PN {new_pn})"
-                            f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
+                            f"{qb.player_name} pass intercepted on PN 48 check at the {poi}! (new PN {new_pn})"
+                            f"{' Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
                         ),
                         passer=qb.player_name, receiver=actual_receiver.player_name,
                         z_card_event=z_event,
                         pass_number_used=pn,
+                        run_number_used=rn_for_ret,
+                        interception_point=poi,
                     )
                     r.debug_log = log
                     return r
@@ -1848,7 +1923,8 @@ class PlayResolver:
                            z_event: Optional[Dict[str, Any]],
                            receivers: Optional[List[PlayerCard]] = None,
                            defense_formation: str = "4_3",
-                           defensive_play_5e=None) -> PlayResult:
+                           defensive_play_5e=None,
+                           yard_line: int = 25) -> PlayResult:
         """Resolve a screen pass using the FAC card's SC field.
 
         Rule 4: Screen passes must go to a back (RB). If the receiver is a
@@ -1877,13 +1953,22 @@ class PlayResolver:
             )
 
         if sc_result == "Int":
+            rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
+            poi = PlayResolver.calculate_point_of_interception("SCREEN", rn_for_ret, yard_line)
             int_yards, int_td = Charts.roll_int_return()
+            if not int_td and poi - int_yards <= 0:
+                int_td = True
+                int_yards = poi
             return PlayResult(
                 play_type="PASS", yards_gained=0,
                 result="INT", turnover=True, turnover_type="INT",
-                description=f"{qb.player_name} screen pass intercepted!",
+                description=(
+                    f"{qb.player_name} screen pass intercepted at the {poi}!"
+                    f"{' Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
+                ),
                 passer=qb.player_name, receiver=actual_receiver.player_name,
                 z_card_event=z_event,
+                interception_point=poi,
             )
 
         # Screen complete — Rule 4: use RB's rushing N column for yards
@@ -1959,7 +2044,10 @@ class PlayResolver:
                        box_is_empty: bool = False,
                        both_boxes_empty: bool = False,
                        blocking_back_bv: int = 0,
-                       defenders_by_box: Optional[Dict[str, PlayerCard]] = None) -> PlayResult:
+                       defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
+                       fumbles_lost_max: int = 21,
+                       def_fumble_adj: int = 0,
+                       is_home: bool = False) -> PlayResult:
         """Resolve a run play using 5th-edition FAC card mechanics.
 
         Authentic resolution:
@@ -2000,6 +2088,13 @@ class PlayResolver:
         blocking_back_bv : int
             Blocking value of the BK for "BK vs Box" matchups.  Only used
             when box_is_empty is True.
+        fumbles_lost_max : int
+            Team's Fumbles Lost upper range (e.g. 21 means PN 1-21 = lost).
+            From offensive team's card.
+        def_fumble_adj : int
+            Defensive team's Fumble Adjustment (positive = more fumbles lost).
+        is_home : bool
+            Whether the ball carrier's team is the home team (home gets bonus).
         """
         z_event = None
         log: List[str] = []
@@ -2323,10 +2418,30 @@ class PlayResolver:
 
         # ── Fumble ───────────────────────────────────────────────────
         if result_type == "FUMBLE":
-            recovery = Charts.roll_fumble_recovery()
+            # 5E: Draw a new FAC for Pass Number to determine fumble recovery
+            fumble_fac = deck.draw()
+            if fumble_fac.is_z_card:
+                fumble_fac = deck.draw_non_z()
+            fumble_pn = fumble_fac.pass_num_int or random.randint(1, 48)
+            fumble_lost = PlayResolver.resolve_fumble_with_team_rating(
+                fumble_pn, fumbles_lost_max, def_fumble_adj, is_home,
+            )
+            is_turnover = fumble_lost
+            recovery = "DEFENSE" if fumble_lost else "OFFENSE"
             fumble_yards, fumble_td = Charts.roll_fumble_return()
-            is_turnover = recovery == "DEFENSE"
-            log.append(f"[FUMBLE] Recovery={recovery}")
+
+            adjusted_max = max(0, min(48, fumbles_lost_max + def_fumble_adj - (1 if is_home else 0)))
+            log.append(f"[FUMBLE] {rusher.player_name} fumbles!")
+            log.append(f"[FUMBLE] FAC drawn for recovery: Card #{fumble_fac.card_number}, PN={fumble_pn}")
+            log.append(f"[FUMBLE] Team fumbles_lost_max={fumbles_lost_max}, def_fumble_adj={def_fumble_adj}, "
+                        f"home={is_home} → adjusted range 1-{adjusted_max}")
+            log.append(f"[FUMBLE] PN {fumble_pn} {'in' if fumble_lost else 'outside'} range 1-{adjusted_max} "
+                        f"→ Recovery={recovery}")
+            if is_turnover:
+                log.append(f"[FUMBLE] Defense recovers! Return yards={fumble_yards}, TD={fumble_td}")
+            else:
+                log.append(f"[FUMBLE] Offense recovers.")
+
             if is_turnover and fumble_td:
                 r = PlayResult(
                     play_type="RUN", yards_gained=-fumble_yards,
@@ -2374,9 +2489,25 @@ class PlayResolver:
         # Check Z RES on the card for additional effects
         z_res_info = fac_card.parse_z_result()
         if z_res_info["type"] == "FUMBLE" and random.random() < 0.5:
-            recovery = Charts.roll_fumble_recovery()
-            is_turnover = recovery == "DEFENSE"
-            log.append(f"[FUMBLE] Z-result fumble, recovery={recovery}")
+            # 5E: Draw FAC for Pass Number to determine fumble recovery
+            fumble_fac = deck.draw()
+            if fumble_fac.is_z_card:
+                fumble_fac = deck.draw_non_z()
+            fumble_pn = fumble_fac.pass_num_int or random.randint(1, 48)
+            fumble_lost = PlayResolver.resolve_fumble_with_team_rating(
+                fumble_pn, fumbles_lost_max, def_fumble_adj, is_home,
+            )
+            is_turnover = fumble_lost
+            recovery = "DEFENSE" if fumble_lost else "OFFENSE"
+
+            adjusted_max = max(0, min(48, fumbles_lost_max + def_fumble_adj - (1 if is_home else 0)))
+            log.append(f"[FUMBLE] Z-result fumble triggered for {rusher.player_name}")
+            log.append(f"[FUMBLE] FAC drawn for recovery: Card #{fumble_fac.card_number}, PN={fumble_pn}")
+            log.append(f"[FUMBLE] Team fumbles_lost_max={fumbles_lost_max}, def_fumble_adj={def_fumble_adj}, "
+                        f"home={is_home} → adjusted range 1-{adjusted_max}")
+            log.append(f"[FUMBLE] PN {fumble_pn} {'in' if fumble_lost else 'outside'} range 1-{adjusted_max} "
+                        f"→ Recovery={recovery}")
+
             r = PlayResult(
                 play_type="RUN", yards_gained=yards,
                 result="FUMBLE", turnover=is_turnover,

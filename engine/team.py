@@ -49,6 +49,10 @@ class Team:
     offense_rating: int = 0
     defense_rating: int = 0
 
+    # 5E team card fumble fields
+    fumbles_lost_max: int = 21       # Fumbles Lost upper range (1-N means lost on PN 1..N)
+    def_fumble_adj: int = 0          # Defensive Fumble Adjustment (opponent's adj)
+
     _RETURN_POSITION_BONUS = {
         "KR": {"RB": 14, "WR": 12, "CB": 9, "DB": 8, "TE": 4, "QB": 2},
         "PR": {"WR": 15, "CB": 12, "DB": 11, "RB": 10, "TE": 3, "QB": 1},
@@ -68,6 +72,8 @@ class Team:
             "record": {"wins": self.wins, "losses": self.losses, "ties": self.ties},
             "offense_rating": self.offense_rating,
             "defense_rating": self.defense_rating,
+            "fumbles_lost_max": self.fumbles_lost_max,
+            "def_fumble_adj": self.def_fumble_adj,
             "players": [p.to_dict() for p in self.roster.all_players()],
         }
 
@@ -146,6 +152,8 @@ class Team:
         )
         team.offense_rating = data.get("offense_rating", 0)
         team.defense_rating = data.get("defense_rating", 0)
+        team.fumbles_lost_max = data.get("fumbles_lost_max", 21)
+        team.def_fumble_adj = data.get("def_fumble_adj", 0)
         record = data.get("record", {})
         team.wins = record.get("wins", 0)
         team.losses = record.get("losses", 0)

@@ -612,7 +612,10 @@ class Game:
 
     def _handle_turnover(self, result: PlayResult) -> None:
         if result.turnover_type == "INT":
-            new_yl = random.randint(20, 45)
+            if result.interception_point is not None:
+                new_yl = result.interception_point
+            else:
+                new_yl = random.randint(20, 45)
             self._change_possession(new_yl)
         elif result.turnover_type == "FUMBLE":
             new_yl = max(1, 100 - self.state.yard_line)
@@ -1103,12 +1106,21 @@ class Game:
         defenders_by_box = self._build_defenders_by_box(defense)
 
         if rusher:
+            # Determine fumble team ratings
+            offense = self.get_offense_team()
+            off_fumbles_lost_max = getattr(offense, 'fumbles_lost_max', 21) if offense else 21
+            off_is_home = (self.state.possession == "home")
+            def_fumble_adj_val = getattr(defense, 'def_fumble_adj', 0) if defense else 0
+
             result = self.resolver.resolve_run_5e(
                 fac_card, self.deck, rusher, direction,
                 defense_run_stop=def_run_stop,
                 defense_formation=def_formation,
                 defensive_play_5e=defensive_play_5e,
                 defenders_by_box=defenders_by_box,
+                fumbles_lost_max=off_fumbles_lost_max,
+                def_fumble_adj=def_fumble_adj_val,
+                is_home=off_is_home,
             )
             result.defense_formation = def_formation
             # Store box assignments on result for tracking
