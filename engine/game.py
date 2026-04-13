@@ -171,7 +171,8 @@ class Game:
         self.state.play_log.append(f"  🔄 {note}")
 
     def _apply_current_personnel_note(self, result: PlayResult) -> PlayResult:
-        self._apply_current_personnel_note(result)
+        if self._current_play_personnel_note:
+            result.personnel_note = self._current_play_personnel_note
         return result
 
     def _resolve_position_player(
