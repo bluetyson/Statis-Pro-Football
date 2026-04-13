@@ -11,6 +11,7 @@ import { SubstitutionPanel } from './SubstitutionPanel';
 import { DiceRoller } from './DiceRoller';
 import { FACCardDisplay } from './FACCardDisplay';
 import { GameStats } from './GameStats';
+import { DisplayBoxes } from './DisplayBoxes';
 import type { DiceRollResult } from '../types/game';
 
 function formatDefenseFormation(formation?: string | null): string {
@@ -491,6 +492,9 @@ export function GameBoard({
             possession={state.possession}
             defenseFormation={lastPlay?.defense_formation ?? undefined}
           />
+
+          {/* 5E Defensive Display Boxes (A-O) */}
+          <DisplayBoxes gameId={gameId} />
 
           <GameLog plays={state.last_plays} />
         </div>
