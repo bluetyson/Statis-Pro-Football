@@ -1235,7 +1235,10 @@ class PlayResolver:
                         two_minute_offense: bool = False,
                         completion_modifier: int = 0,
                         defensive_play_5e=None,
-                        yard_line: int = 25) -> PlayResult:
+                        yard_line: int = 25,
+                        defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
+                        backs_blocking: Optional[List[int]] = None,
+                        double_coverage_defender_box: Optional[str] = None) -> PlayResult:
         """Resolve a pass play using 5th-edition FAC card mechanics.
 
         Parameters
@@ -1267,6 +1270,18 @@ class PlayResolver:
         yard_line : int
             Offensive team's field position (0 = own goal, 100 = opponent's
             goal).  Used for within-20 completion modifiers.
+        defenders_by_box : Optional[Dict[str, PlayerCard]]
+            Box letter → PlayerCard mapping for the defense.  When provided,
+            enables per-receiver pass-defense-rating modifiers and proper
+            INC→INT checks using the covering defender.
+        backs_blocking : Optional[List[int]]
+            Indices into the ``receivers`` list for backs staying in to
+            block instead of running routes.  Each blocking back adds +2
+            to the QB's completion range but cannot be targeted.
+        double_coverage_defender_box : Optional[str]
+            The original box letter of the defender who moved to double
+            cover a receiver.  If an INC→INT check fires in this box,
+            the interception is suppressed because the defender is away.
         """
         # ── Handle Z card ────────────────────────────────────────────
         if fac_card.is_z_card:
@@ -1278,7 +1293,8 @@ class PlayResolver:
                 defense_coverage, defense_pass_rush, defense_formation,
                 is_blitz_tendency, z_event, defensive_strategy, defenders,
                 two_minute_offense, completion_modifier, defensive_play_5e,
-                yard_line,
+                yard_line, defenders_by_box, backs_blocking,
+                double_coverage_defender_box,
             )
 
         return self._resolve_pass_inner_5e(
@@ -1286,7 +1302,8 @@ class PlayResolver:
             defense_coverage, defense_pass_rush, defense_formation,
             is_blitz_tendency, None, defensive_strategy, defenders,
             two_minute_offense, completion_modifier, defensive_play_5e,
-            yard_line,
+            yard_line, defenders_by_box, backs_blocking,
+            double_coverage_defender_box,
         )
 
     def _resolve_pass_inner_5e(self, fac_card: FACCard, deck: FACDeck,
@@ -1303,7 +1320,10 @@ class PlayResolver:
                                two_minute_offense: bool = False,
                                completion_modifier: int = 0,
                                defensive_play_5e=None,
-                               yard_line: int = 25) -> PlayResult:
+                               yard_line: int = 25,
+                               defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
+                               backs_blocking: Optional[List[int]] = None,
+                               double_coverage_defender_box: Optional[str] = None) -> PlayResult:
         """Inner pass resolution after Z-card handling.
 
         Authentic 5E resolution:
@@ -1461,6 +1481,39 @@ class PlayResolver:
             r.debug_log = log
             return r
 
+        # ── Step 3a: Look up covering defender for this receiver ──────
+        receiver_slot = self.get_receiver_slot(actual_receiver, receivers)
+        covering_defender: Optional[PlayerCard] = None
+        covering_defender_box: Optional[str] = None
+        if receiver_slot and defenders_by_box:
+            covering_defender_box = self.PASS_DEFENSE_ASSIGNMENTS.get(receiver_slot)
+            covering_defender = self.get_covering_defender(receiver_slot, defenders_by_box)
+            if covering_defender:
+                log.append(f"[COVERAGE] {actual_receiver.player_name} ({receiver_slot}) covered by "
+                           f"{covering_defender.player_name} (box {covering_defender_box}, "
+                           f"PDR={covering_defender.pass_defense_rating})")
+            else:
+                log.append(f"[COVERAGE] {actual_receiver.player_name} ({receiver_slot}) → "
+                           f"box {covering_defender_box} is EMPTY (+5 completion bonus)")
+
+        # ── Step 3b: Backs in to block → check target not blocking ────
+        blocking_set = set(backs_blocking or [])
+        if blocking_set and actual_receiver is not None:
+            rec_idx = None
+            for idx, rec in enumerate(receivers):
+                if rec is actual_receiver or rec.player_name == actual_receiver.player_name:
+                    rec_idx = idx
+                    break
+            if rec_idx is not None and rec_idx in blocking_set:
+                log.append(f"[BLOCK] Target {actual_receiver.player_name} is blocking — ball thrown away")
+                r = PlayResult(
+                    play_type="PASS", yards_gained=0, result="INCOMPLETE",
+                    description=f"{qb.player_name} throws the ball away - {actual_receiver.player_name} stayed in to block",
+                    passer=qb.player_name, z_card_event=z_event,
+                )
+                r.debug_log = log
+                return r
+
         # ── Step 4: PN → QB card passing ranges → COM/INC/INT ────────
         pn = fac_card.pass_num_int
         if pn is None:
@@ -1493,10 +1546,35 @@ class PlayResolver:
                 w20_tag = " [within-20]" if is_within_20 else ""
                 log.append(f"[QB CARD] 5E Defense/Pass modifier: {defense_play_comp_mod:+d} (play={defensive_play_5e}, type={pass_type}){w20_tag}")
 
+        # ── Backs in to block: +2 completion range per blocking back ──
+        backs_blocking_mod = 0
+        if blocking_set:
+            num_blocking = len(blocking_set)
+            backs_blocking_mod = num_blocking * 2
+            log.append(f"[BLOCK] {num_blocking} back(s) blocking → +{backs_blocking_mod} completion range")
+
+        # ── Pass defense rating of covering defender ──────────────────
+        pass_defense_mod = 0
+        empty_box_mod = 0
+        if defenders_by_box is not None and receiver_slot:
+            if covering_defender:
+                # Positive pass_defense_rating = good defender = harder to complete
+                # Apply as negative completion modifier (raises PN)
+                pass_defense_mod = -covering_defender.pass_defense_rating
+                if pass_defense_mod != 0:
+                    log.append(f"[COVERAGE] Defender PDR {covering_defender.pass_defense_rating} → "
+                               f"completion modifier {pass_defense_mod:+d}")
+            else:
+                # Empty box → +5 to completion range per 5E rules
+                empty_box_mod = self.get_empty_box_completion_modifier(False)
+                log.append(f"[COVERAGE] Empty box → +{empty_box_mod} completion range")
+
         # Apply completion_modifier (e.g. from play-action strategy).
         # Positive = wider COM range = subtract from PN (more likely to complete).
         # Negative = narrower COM range = add to PN (less likely to complete).
-        total_completion_mod = completion_modifier + defense_play_comp_mod
+        total_completion_mod = (completion_modifier + defense_play_comp_mod
+                                + backs_blocking_mod + empty_box_mod
+                                + pass_defense_mod)
         completion_adjustment = -total_completion_mod  # +5 completion → -5 to PN
 
         # Coverage penalties (double/triple/two-minute) are always <= 0.
@@ -1583,20 +1661,43 @@ class PlayResolver:
         # ── INC result — check for INC-range interception ────────────
         if qb_result == "INC":
             log.append(f"[INC] Incomplete pass, checking defender intercept ranges")
-            if hasattr(actual_receiver, 'intercept_range') and actual_receiver.intercept_range:
-                int_range = actual_receiver.intercept_range
-                log.append(f"[INC] Defender intercept range = {int_range}")
+
+            # Use the covering defender's intercept_range (not the offensive receiver's).
+            # If defenders_by_box is provided, use the covering defender looked up
+            # in Step 3a.  Otherwise fall back to legacy check.
+            int_check_defender = covering_defender
+            int_check_defender_box = covering_defender_box
+
+            # Double coverage INT suppression: if the covering defender's
+            # original box matches the double_coverage_defender_box, that
+            # defender has moved away to double-cover another receiver and
+            # is not in position to intercept.
+            if (int_check_defender and double_coverage_defender_box
+                    and int_check_defender_box == double_coverage_defender_box):
+                log.append(f"[INC] Defender {int_check_defender.player_name} (box {int_check_defender_box}) "
+                           f"away on double coverage — INT suppressed")
+                int_check_defender = None
+
+            # Fall back to legacy: use actual_receiver (this may be an
+            # offensive player with intercept_range 0, which is harmless).
+            if int_check_defender is None and covering_defender is None:
+                if hasattr(actual_receiver, 'intercept_range') and actual_receiver.intercept_range:
+                    int_check_defender = actual_receiver
+
+            if int_check_defender and getattr(int_check_defender, 'intercept_range', 0):
+                int_range = int_check_defender.intercept_range
+                log.append(f"[INC] Defender {int_check_defender.player_name} intercept range = {int_range}")
                 if isinstance(int_range, int) and int_range <= 48:
                     if int_range <= pn <= 48:
                         rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
-                        defender_pos = getattr(actual_receiver, 'position', 'DB')
+                        defender_pos = getattr(int_check_defender, 'position', 'DB')
                         int_yards, int_td = Charts.roll_int_return_5e(rn_for_ret, defender_pos)
-                        log.append(f"[INC→INT] PN {pn} in intercept range [{int_range}-48]! INT!")
+                        log.append(f"[INC→INT] PN {pn} in intercept range [{int_range}-48]! INT by {int_check_defender.player_name}!")
                         r = PlayResult(
                             play_type="PASS", yards_gained=0,
                             result="INT", turnover=True, turnover_type="INT",
                             description=(
-                                f"{qb.player_name} pass intercepted by defender in coverage!"
+                                f"{qb.player_name} pass intercepted by {int_check_defender.player_name} in coverage!"
                                 f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
                             ),
                             passer=qb.player_name, receiver=actual_receiver.player_name,
@@ -1614,7 +1715,7 @@ class PlayResolver:
                             play_type="PASS", yards_gained=0,
                             result="INT", turnover=True, turnover_type="INT",
                             description=(
-                                f"{qb.player_name} pass intercepted by defender in coverage!"
+                                f"{qb.player_name} pass intercepted by {int_check_defender.player_name} in coverage!"
                                 f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
                             ),
                             passer=qb.player_name, receiver=actual_receiver.player_name,
@@ -3085,13 +3186,24 @@ class PlayResolver:
     #   BK#3 → Box H
 
     PASS_DEFENSE_ASSIGNMENTS = {
-        'RE': 'N',    # Right End → Box N
-        'LE': 'K',    # Left End → Box K
-        'FL1': 'O',   # Flanker #1 → Box O
-        'FL2': 'M',   # Flanker #2 → Box M
-        'BK1': 'F',   # Back #1 → Box F
-        'BK2': 'J',   # Back #2 → Box J
-        'BK3': 'H',   # Back #3 → Box H
+        'RE': 'N',    # Right End → Box N (typically SS)
+        'LE': 'K',    # Left End → Box K (typically LCB)
+        'FL1': 'O',   # Flanker #1 → Box O (typically RCB)
+        'FL2': 'M',   # Flanker #2 → Box M (typically FS)
+        'FL': 'O',    # Alias: FL → same as FL1 (RCB)
+        'BK1': 'F',   # Back #1 → Box F (typically LOLB)
+        'BK2': 'J',   # Back #2 → Box J (typically ROLB)
+        'BK3': 'H',   # Back #3 → Box H (typically MLB)
+    }
+
+    # Map from FAC target / receiver list index to receiver slot name.
+    # receivers list: [0]=FL, [1]=LE, [2]=RE, [3]=BK1, [4]=BK2
+    RECEIVER_INDEX_TO_SLOT = {
+        0: 'FL',
+        1: 'LE',
+        2: 'RE',
+        3: 'BK1',
+        4: 'BK2',
     }
 
     @staticmethod
@@ -3110,6 +3222,48 @@ class PlayResolver:
             if box == target_box:
                 return name
         return None  # Empty box → +5 to completion range per 5E rules
+
+    @staticmethod
+    def get_covering_defender(receiver_slot: str,
+                              defenders_by_box: Dict[str, 'PlayerCard']) -> Optional['PlayerCard']:
+        """Return the PlayerCard of the defender covering the given receiver slot.
+
+        receiver_slot: 'RE', 'LE', 'FL', 'FL1', 'FL2', 'BK1', 'BK2', 'BK3'
+        defenders_by_box: dict mapping box_letter → PlayerCard
+        """
+        target_box = PlayResolver.PASS_DEFENSE_ASSIGNMENTS.get(receiver_slot)
+        if not target_box:
+            return None
+        return defenders_by_box.get(target_box)
+
+    @staticmethod
+    def build_offensive_personnel(receivers: List[PlayerCard],
+                                  backs_blocking: Optional[List[int]] = None) -> Dict[str, Optional[PlayerCard]]:
+        """Build a position slot → PlayerCard mapping for the current play.
+
+        receivers list order: [0]=FL, [1]=LE, [2]=RE/TE, [3]=BK1, [4]=BK2
+        backs_blocking: list of receiver indices (e.g. [3, 4]) for backs
+                        staying in to block instead of running routes.
+
+        Returns dict with keys: 'FL', 'LE', 'RE', 'BK1', 'BK2' → PlayerCard or None.
+        """
+        blocking = set(backs_blocking or [])
+        personnel: Dict[str, Optional[PlayerCard]] = {}
+        for idx, slot in PlayResolver.RECEIVER_INDEX_TO_SLOT.items():
+            if idx < len(receivers) and idx not in blocking:
+                personnel[slot] = receivers[idx]
+            else:
+                personnel[slot] = None
+        return personnel
+
+    @staticmethod
+    def get_receiver_slot(receiver: PlayerCard,
+                          receivers: List[PlayerCard]) -> Optional[str]:
+        """Return the slot name ('FL', 'LE', 'RE', 'BK1', 'BK2') for a receiver."""
+        for idx, rec in enumerate(receivers):
+            if rec is receiver or rec.player_name == receiver.player_name:
+                return PlayResolver.RECEIVER_INDEX_TO_SLOT.get(idx)
+        return None
 
     # ── FL#1/FL#2 Flanker Designation System (5E) ────────────────────
 
