@@ -18,6 +18,14 @@ from .play_types import (
     PLAYER_INVOLVED_NAMES, LEGACY_FORMATION_TO_PLAY,
 )
 
+# Mapping from 5E OffensivePlay to FAC run direction for blocking matchup
+_OFFENSIVE_PLAY_TO_DIRECTION = {
+    OffensivePlay.RUNNING_SWEEP_LEFT: "SL",
+    OffensivePlay.RUNNING_SWEEP_RIGHT: "SR",
+    OffensivePlay.RUNNING_INSIDE_LEFT: "IL",
+    OffensivePlay.RUNNING_INSIDE_RIGHT: "IR",
+}
+
 
 class Quarter(int, Enum):
     Q1 = 1
@@ -147,9 +155,21 @@ class Game:
             kicking_team=self.get_defense_team(),
             receiving_team=self.get_offense_team(),
         )
-        start_yard = self._kickoff_yard_line(kickoff_result)
-        self.state.yard_line = start_yard
         self.state.play_log.append(kickoff_result.description)
+
+        if kickoff_result.is_touchdown or kickoff_result.result == "TD":
+            # Kickoff return TD: score, attempt XP, then kick off again
+            self._score_touchdown()
+            followup_kickoff = self._do_kickoff(
+                kicking_team=self.get_offense_team(),
+                receiving_team=self.get_defense_team(),
+            )
+            self.state.play_log.append(followup_kickoff.description)
+            new_yl = self._kickoff_yard_line(followup_kickoff)
+            self._change_possession(new_yl)
+        else:
+            start_yard = self._kickoff_yard_line(kickoff_result)
+            self.state.yard_line = start_yard
 
     def get_offense_team(self) -> Team:
         return self.home_team if self.state.possession == "home" else self.away_team
@@ -754,6 +774,20 @@ class Game:
 
         # ── 5E Play calling with proper types ────────────────────────
         off_play, off_strategy, player_inv = self.ai.call_offense_play_5e(situation, fac_card)
+
+        # Synchronize play_call direction with 5E offensive play so the
+        # display string ("Running Sweep Left") matches the actual FAC
+        # direction used for blocking matchup resolution (SL/IL/SR/IR).
+        if off_play in _OFFENSIVE_PLAY_TO_DIRECTION and play_call.play_type == "RUN":
+            play_call = PlayCall(
+                play_type=play_call.play_type,
+                formation=play_call.formation,
+                direction=_OFFENSIVE_PLAY_TO_DIRECTION[off_play],
+                reasoning=play_call.reasoning,
+                strategy=play_call.strategy,
+                offensive_play=off_play.value,
+                player_involved=player_inv.value,
+            )
 
         # If the human provided a defensive play, use it; otherwise use AI
         if defensive_play is not None:

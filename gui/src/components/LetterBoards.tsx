@@ -539,9 +539,34 @@ export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps)
               {personnel.offense_starters.RB && (
                 <MiniCard player={personnel.offense_starters.RB} />
               )}
-              {personnel.offense_receivers.map((r, i) => (
-                <MiniCard key={`rec-${i}`} player={r} />
-              ))}
+              {/* Show on-field receivers matching the formation grid (LE, RE, FL) */}
+              {(() => {
+                const wrs = personnel.offense_receivers.filter(r => r.position !== 'TE');
+                const tes = personnel.offense_receivers.filter(r => r.position === 'TE');
+                const onField: PlayerBrief[] = [];
+                const le = wrs[0] ?? null;
+                const re = tes[0] ?? wrs[1] ?? null;
+                const fl = tes.length > 0 ? (wrs[1] ?? null) : (wrs[2] ?? null);
+                const seen = new Set<string>();
+                for (const p of [le, re, fl]) {
+                  if (p && !seen.has(p.name)) {
+                    seen.add(p.name);
+                    onField.push(p);
+                  }
+                }
+                return onField.map((r, i) => (
+                  <MiniCard key={`rec-${i}`} player={r} />
+                ));
+              })()}
+              {/* Show BK2 (blocking back) to match formation grid */}
+              {(() => {
+                const bk1 = personnel.offense_starters['RB'] ?? null;
+                const bk2 = personnel.offense_all.find(p =>
+                  (p.position === 'RB' || p.position === 'FB' || p.position === 'HB') &&
+                  p.name !== bk1?.name
+                ) ?? null;
+                return bk2 ? <MiniCard player={bk2} /> : null;
+              })()}
             </div>
 
             {/* Special Teams row */}
