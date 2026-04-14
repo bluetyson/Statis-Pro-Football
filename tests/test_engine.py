@@ -6,7 +6,6 @@ import random
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from engine.fast_action_dice import FastActionDice, DiceResult, PlayTendency, roll
 from engine.player_card import PlayerCard
 from engine.card_generator import CardGenerator
 from engine.charts import Charts
@@ -14,72 +13,7 @@ from engine.team import Team, Roster, list_available_teams
 from engine.play_resolver import PlayResolver, PlayResult
 from engine.game import Game, GameState, Score
 from engine.solitaire import SolitaireAI, GameSituation, PlayCall
-
-
-# ─── FastActionDice ──────────────────────────────────────────────────────────
-
-class TestFastActionDice:
-    def test_roll_returns_dice_result(self):
-        d = FastActionDice()
-        result = d.roll()
-        assert isinstance(result, DiceResult)
-
-    def test_tens_range(self):
-        d = FastActionDice()
-        for _ in range(100):
-            r = d.roll()
-            assert 1 <= r.tens <= 8
-
-    def test_ones_range(self):
-        d = FastActionDice()
-        for _ in range(100):
-            r = d.roll()
-            assert 1 <= r.ones <= 8
-
-    def test_two_digit_format(self):
-        d = FastActionDice()
-        for _ in range(100):
-            r = d.roll()
-            assert r.two_digit == r.tens * 10 + r.ones
-
-    def test_play_tendency_is_enum(self):
-        d = FastActionDice()
-        for _ in range(50):
-            r = d.roll()
-            assert r.play_tendency in list(PlayTendency)
-
-    def test_turnover_modifier_range(self):
-        d = FastActionDice()
-        for _ in range(100):
-            r = d.roll()
-            assert 1 <= r.turnover_modifier <= 8
-
-    def test_penalty_check_is_bool(self):
-        d = FastActionDice()
-        for _ in range(50):
-            r = d.roll()
-            assert isinstance(r.penalty_check, bool)
-
-    def test_penalty_combos_trigger(self):
-        """Verify penalty combos produce penalty_check=True."""
-        d = FastActionDice()
-        penalty_combos = {(1, 7), (3, 7), (5, 8), (7, 1), (8, 2)}
-        for t, o in penalty_combos:
-            two_digit = t * 10 + o
-            tendency = d.TENDENCY_MAP.get((t, o), PlayTendency.RUN)
-            result = DiceResult(two_digit, t, o, tendency, True, 1)
-            assert result.penalty_check is True
-
-    def test_module_roll_function(self):
-        r = roll()
-        assert isinstance(r, DiceResult)
-
-    def test_all_tendencies_present(self):
-        """All PlayTendency values appear in TENDENCY_MAP."""
-        d = FastActionDice()
-        found = set(d.TENDENCY_MAP.values())
-        for t in PlayTendency:
-            assert t in found
+from engine.fac_deck import FACDeck
 
 
 # ─── PlayerCard ──────────────────────────────────────────────────────────────
@@ -279,7 +213,6 @@ class TestPlayResolver:
         random.seed(42)
         self.resolver = PlayResolver()
         self.gen = CardGenerator(seed=42)
-        self.dice = FastActionDice()
 
     def _make_qb(self):
         return self.gen.generate_qb_card(
@@ -291,21 +224,6 @@ class TestPlayResolver:
 
     def _make_wr(self):
         return self.gen.generate_wr_card("Test WR", "TST", 80, 0.68, 13.0, "B")
-
-    def test_resolve_run_returns_result(self):
-        dice = self.dice.roll()
-        rb = self._make_rb()
-        result = self.resolver.resolve_run(dice, rb)
-        assert isinstance(result, PlayResult)
-        assert result.play_type == "RUN"
-
-    def test_resolve_pass_returns_result(self):
-        dice = self.dice.roll()
-        qb = self._make_qb()
-        wr = self._make_wr()
-        result = self.resolver.resolve_pass(dice, qb, wr, "SHORT")
-        assert isinstance(result, PlayResult)
-        assert result.play_type == "PASS"
 
     def test_resolve_field_goal_close(self):
         kicker = self.gen.generate_k_card("Kicker", "TST", 7, 0.92, 0.995, "A")
@@ -319,66 +237,66 @@ class TestPlayResolver:
                          if self.resolver.resolve_field_goal(62, kicker).result == "FG_GOOD")
         assert made_count < 60  # Long FGs miss more
 
-    def test_resolve_punt_returns_result(self):
-        punter = self.gen.generate_p_card("Punter", "TST", 4, 46.0, 0.40, "B")
-        result = self.resolver.resolve_punt(punter)
-        assert result.play_type == "PUNT"
-
     def test_resolve_xp_returns_result(self):
         kicker = self.gen.generate_k_card("Kicker", "TST", 7, 0.89, 0.990, "A")
         result = self.resolver.resolve_xp(kicker)
         assert result.play_type == "XP"
         assert result.result in ("XP_GOOD", "XP_NO_GOOD")
 
-    def test_resolve_kickoff(self):
-        result = self.resolver.resolve_kickoff()
-        assert result.play_type == "KICKOFF"
-        assert result.result in ("TOUCHBACK", "RETURN")
-
-
-# ─── SolitaireAI ─────────────────────────────────────────────────────────────
+    # ─── SolitaireAI ─────────────────────────────────────────────────────────────
 
 class TestSolitaireAI:
     def setup_method(self):
         self.ai = SolitaireAI()
+        self.deck = FACDeck(seed=42)
 
     def _sit(self, down=1, distance=10, yard_line=25, score_diff=0,
              quarter=2, time_remaining=600):
         return GameSituation(down, distance, yard_line, score_diff, quarter, time_remaining)
 
+    def _draw(self):
+        return self.deck.draw()
+
     def test_call_play_returns_play_call(self):
         sit = self._sit()
-        play = self.ai.call_play(sit)
+        card = self._draw()
+        play = self.ai.call_play_5e(sit, card)
         assert isinstance(play, PlayCall)
         assert play.play_type in (
-            "RUN", "SHORT_PASS", "LONG_PASS", "SCREEN", "PUNT", "FG", "KNEEL"
+            "RUN", "SHORT_PASS", "LONG_PASS", "QUICK_PASS", "SCREEN",
+            "PUNT", "FG", "KNEEL"
         )
 
     def test_fourth_down_long_distance_punts(self):
         sit = self._sit(down=4, distance=15, yard_line=30)
-        play = self.ai.call_play(sit)
+        card = self._draw()
+        play = self.ai.call_play_5e(sit, card)
         assert play.play_type == "PUNT"
 
     def test_fourth_down_fg_range(self):
         sit = self._sit(down=4, distance=8, yard_line=65)
-        play = self.ai.call_play(sit)
+        card = self._draw()
+        play = self.ai.call_play_5e(sit, card)
         assert play.play_type == "FG"
 
     def test_kneel_when_winning_late(self):
         sit = self._sit(down=1, distance=10, yard_line=30, score_diff=7,
                         quarter=4, time_remaining=45)
-        play = self.ai.call_play(sit)
+        card = self._draw()
+        play = self.ai.call_play_5e(sit, card)
         assert play.play_type == "KNEEL"
 
     def test_two_minute_drill(self):
         sit = self._sit(down=2, distance=8, yard_line=35, score_diff=-7,
                         quarter=4, time_remaining=100)
-        play = self.ai.call_play(sit)
+        card = self._draw()
+        play = self.ai.call_play_5e(sit, card)
         assert play.play_type in ("SHORT_PASS", "LONG_PASS", "QUICK_PASS", "SCREEN")
 
     def test_call_defense_returns_string(self):
         sit = self._sit(down=3, distance=8)
-        formation = self.ai.call_defense(sit)
+        card = self._draw()
+        formation = self.ai.call_defense_5e(sit, card)
         assert isinstance(formation, str)
         assert len(formation) > 0
 

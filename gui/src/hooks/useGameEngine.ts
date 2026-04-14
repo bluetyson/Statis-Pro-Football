@@ -4,7 +4,6 @@ import type {
   GameState,
   PlayResult,
   DriveResult,
-  DiceRollResult,
   PersonnelData,
   HumanPlayCall,
   DefensivePlayCall,
@@ -19,17 +18,16 @@ interface UseGameEngineReturn {
   gameMode: GameMode;
   lastPlay: PlayResult | null;
   lastDrive: DriveResult | null;
-  lastDice: DiceRollResult | null;
+  lastDice: null;
   personnel: PersonnelData | null;
   loading: boolean;
   error: string | null;
-  startGame: (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number, use5e?: boolean) => Promise<void>;
+  startGame: (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number) => Promise<void>;
   executePlay: () => Promise<void>;
   executeHumanPlay: (call: HumanPlayCall) => Promise<void>;
   executeHumanDefense: (call: DefensivePlayCall) => Promise<void>;
   simulateDrive: () => Promise<void>;
   simulateGame: () => Promise<void>;
-  rollDice: () => Promise<void>;
   fetchPersonnel: () => Promise<void>;
   substitutePlayer: (position: string, playerOut: string, playerIn: string) => Promise<void>;
   callTimeout: (team?: string) => Promise<void>;
@@ -53,7 +51,6 @@ export function useGameEngine(): UseGameEngineReturn {
   const [gameMode, setGameMode] = useState<GameMode>('solitaire');
   const [lastPlay, setLastPlay] = useState<PlayResult | null>(null);
   const [lastDrive, setLastDrive] = useState<DriveResult | null>(null);
-  const [lastDice, setLastDice] = useState<DiceRollResult | null>(null);
   const [personnel, setPersonnel] = useState<PersonnelData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +65,7 @@ export function useGameEngine(): UseGameEngineReturn {
     }
   };
 
-  const startGame = useCallback(async (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number, use5e?: boolean) => {
+  const startGame = useCallback(async (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number) => {
     setLoading(true);
     setError(null);
     try {
@@ -81,7 +78,6 @@ export function useGameEngine(): UseGameEngineReturn {
         solitaire_away: solAway,
       };
       if (seed !== undefined) payload.seed = seed;
-      if (use5e !== undefined) payload.use_5e = use5e;
       const res = await axios.post(`${API_BASE}/games/new`, payload);
       setGameId(res.data.game_id);
       setGameState(res.data.state);
@@ -194,19 +190,6 @@ export function useGameEngine(): UseGameEngineReturn {
       setLoading(false);
     }
   }, [gameId]);
-
-  const rollDice = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.post(`${API_BASE}/dice/roll`);
-      setLastDice(res.data);
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const fetchPersonnel = useCallback(async () => {
     if (!gameId) return;
@@ -426,7 +409,7 @@ export function useGameEngine(): UseGameEngineReturn {
     gameMode,
     lastPlay,
     lastDrive,
-    lastDice,
+    lastDice: null,
     personnel,
     loading,
     error,
@@ -436,7 +419,6 @@ export function useGameEngine(): UseGameEngineReturn {
     executeHumanDefense,
     simulateDrive,
     simulateGame,
-    rollDice,
     fetchPersonnel,
     substitutePlayer,
     callTimeout,

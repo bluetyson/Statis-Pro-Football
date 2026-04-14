@@ -18,7 +18,7 @@ const GAME_MODES: { value: GameMode; label: string; desc: string }[] = [
 ];
 
 interface TeamSelectorProps {
-  onStartGame: (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number, use5e?: boolean) => void;
+  onStartGame: (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number) => void;
   loading: boolean;
 }
 
@@ -27,7 +27,6 @@ export function TeamSelector({ onStartGame, loading }: TeamSelectorProps) {
   const [awayTeam, setAwayTeam] = useState('BUF');
   const [gameMode, setGameMode] = useState<GameMode>('human_home');
   const [availableTeams, setAvailableTeams] = useState<string[]>(ALL_TEAMS);
-  const [use5e, setUse5e] = useState(true);
   const [seedStr, setSeedStr] = useState('');
 
   useEffect(() => {
@@ -46,7 +45,7 @@ export function TeamSelector({ onStartGame, loading }: TeamSelectorProps) {
   const handleStart = () => {
     if (homeTeam && awayTeam && homeTeam !== awayTeam) {
       const seed = seedStr.trim() ? parseInt(seedStr.trim(), 10) : undefined;
-      onStartGame(homeTeam, awayTeam, gameMode, isNaN(seed as number) ? undefined : seed, use5e);
+      onStartGame(homeTeam, awayTeam, gameMode, isNaN(seed as number) ? undefined : seed);
     }
   };
 
@@ -101,21 +100,6 @@ export function TeamSelector({ onStartGame, loading }: TeamSelectorProps) {
             <span className="mode-desc">{m.desc}</span>
           </button>
         ))}
-      </div>
-
-      {/* 5E Mode Toggle */}
-      <div className="mode-toggle" style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={use5e}
-            onChange={(e) => setUse5e(e.target.checked)}
-          />
-          <span>🎴 5th Edition (FAC Deck)</span>
-        </label>
-        <span style={{ fontSize: '0.8em', color: '#888' }}>
-          {use5e ? 'Using FAC card deck' : 'Using legacy dice rolls'}
-        </span>
       </div>
 
       {/* Seed Configuration */}

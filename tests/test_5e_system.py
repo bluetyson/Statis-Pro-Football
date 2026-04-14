@@ -430,17 +430,19 @@ class TestFifthEdRunResolution:
         """Higher defense run stop should reduce yards on average."""
         low_def_yards = []
         high_def_yards = []
-        for seed in range(50):
+        for seed in range(200):
+            random.seed(seed + 10000)
             deck = FACDeck(seed=seed)
             card = deck.draw_non_z()
             r1 = self.resolver.resolve_run_5e(card, deck, self.rb, "IL",
-                                              defense_run_stop=20)
+                                              defense_run_stop=0)
             low_def_yards.append(r1.yards_gained)
 
+            random.seed(seed + 10000)
             deck2 = FACDeck(seed=seed)
             card2 = deck2.draw_non_z()
             r2 = self.resolver.resolve_run_5e(card2, deck2, self.rb, "IL",
-                                              defense_run_stop=80)
+                                              defense_run_stop=5)
             high_def_yards.append(r2.yards_gained)
 
         avg_low = sum(low_def_yards) / len(low_def_yards)

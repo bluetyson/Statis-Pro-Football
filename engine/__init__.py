@@ -1,5 +1,4 @@
-"""Statis Pro Football Game Engine."""
-from .fast_action_dice import FastActionDice, DiceResult, PlayTendency, roll
+"""Statis Pro Football Game Engine (5th Edition)."""
 from .fac_deck import FACDeck, FACCard, DECK_SIZE, Z_CARD_COUNT
 from .player_card import PlayerCard, Position, Grade, PASS_SLOTS, RUN_SLOTS, RECEIVER_LETTERS
 from .card_generator import CardGenerator
@@ -32,7 +31,6 @@ from .fac_distributions import (
 )
 
 __all__ = [
-    "FastActionDice", "DiceResult", "PlayTendency", "roll",
     "FACDeck", "FACCard", "DECK_SIZE", "Z_CARD_COUNT",
     "PlayerCard", "Position", "Grade",
     "PASS_SLOTS", "RUN_SLOTS", "RECEIVER_LETTERS",

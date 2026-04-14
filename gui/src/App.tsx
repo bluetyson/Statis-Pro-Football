@@ -13,7 +13,6 @@ export default function App() {
     gameMode,
     lastPlay,
     lastDrive,
-    lastDice,
     personnel,
     loading,
     error,
@@ -23,7 +22,6 @@ export default function App() {
     executeHumanDefense,
     simulateDrive,
     simulateGame,
-    rollDice,
     substitutePlayer,
     callTimeout,
     executeFakePunt,
@@ -44,8 +42,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'game' | 'cards'>('game');
   const [cardTeam, setCardTeam] = useState('KC');
 
-  const handleStartGame = async (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number, use5e?: boolean) => {
-    await startGame(homeTeam, awayTeam, mode, seed, use5e);
+  const handleStartGame = async (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number) => {
+    await startGame(homeTeam, awayTeam, mode, seed);
     setPhase('playing');
     setCardTeam(homeTeam);
   };
@@ -95,7 +93,7 @@ export default function App() {
                 gameMode={gameMode}
                 lastPlay={lastPlay}
                 lastDrive={lastDrive}
-                lastDice={lastDice}
+                lastDice={null}
                 personnel={personnel}
                 loading={loading}
                 isHumanTurn={isHumanTurn()}
@@ -105,7 +103,7 @@ export default function App() {
                 onExecuteHumanDefense={executeHumanDefense}
                 onSimulateDrive={simulateDrive}
                 onSimulateGame={simulateGame}
-                onRollDice={rollDice}
+                onRollDice={() => Promise.resolve()}
                 onSubstitute={substitutePlayer}
                 onCallTimeout={callTimeout}
                 onFakePunt={executeFakePunt}

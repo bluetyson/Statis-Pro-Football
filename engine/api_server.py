@@ -10,7 +10,6 @@ from pydantic import BaseModel
 
 from .game import Game, GameState
 from .team import Team, list_available_teams
-from .fast_action_dice import FastActionDice, roll as dice_roll
 from .solitaire import SolitaireAI, GameSituation, PlayCall
 from .card_generator import CardGenerator
 
@@ -29,7 +28,6 @@ app.add_middleware(
 )
 
 _active_games: Dict[str, Game] = {}
-_dice = FastActionDice()
 _ai = SolitaireAI()
 _gen = CardGenerator()
 
@@ -146,7 +144,6 @@ class NewGameRequest(BaseModel):
     solitaire_home: bool = True
     solitaire_away: bool = True
     seed: Optional[int] = None  # Random seed for reproducible games
-    use_5e: Optional[bool] = None  # Explicit 5E mode toggle (auto-detected from season if None)
 
 
 class HumanPlayCallRequest(BaseModel):
@@ -235,9 +232,8 @@ def new_game(request: NewGameRequest):
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    use_5e = request.use_5e if request.use_5e is not None else ("5e" in str(request.season))
     game = Game(home, away, request.solitaire_home, request.solitaire_away,
-                use_5e=use_5e, seed=request.seed)
+                seed=request.seed)
     game_id = f"{request.away_team}@{request.home_team}_{random.randint(1000, 9999)}"
     _active_games[game_id] = game
 
@@ -424,20 +420,6 @@ def simulate_game(game_id: str):
             "away": state.score.away,
         },
         "state": _serialize_state(state),
-    }
-
-
-@app.post("/dice/roll")
-def roll_dice():
-    """Roll the fast action dice."""
-    result = dice_roll()
-    return {
-        "two_digit": result.two_digit,
-        "tens": result.tens,
-        "ones": result.ones,
-        "play_tendency": result.play_tendency.value,
-        "penalty_check": result.penalty_check,
-        "turnover_modifier": result.turnover_modifier,
     }
 
 

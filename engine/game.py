@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from enum import Enum
 
-from .fast_action_dice import FastActionDice, DiceResult, PlayTendency
 from .fac_deck import FACDeck, FACCard
 from .player_card import PlayerCard
 from .team import Team
@@ -104,23 +103,20 @@ class GameState:
 
 
 class Game:
-    """Core game logic for Statis Pro Football.
+    """Core game logic for Statis Pro Football (5th Edition).
 
-    Supports two modes:
-      * Legacy mode (use_5e=False): Uses FastActionDice (d8×d8) — original system
-      * 5th-edition mode (use_5e=True): Uses FACDeck (109-card deck)
+    Uses FACDeck (109-card deck) for all play resolution.
     """
 
     def __init__(self, home_team: Team, away_team: Team,
                  solitaire_home: bool = True, solitaire_away: bool = True,
-                 use_5e: bool = False, seed: Optional[int] = None):
+                 seed: Optional[int] = None, **kwargs):
+        # **kwargs absorbs deprecated params (e.g. use_5e) for backward compat
         self.home_team = home_team
         self.away_team = away_team
-        self.dice = FastActionDice()
         # 5E Solitaire: remove 1 Z card when both teams are AI-controlled
         is_solitaire = solitaire_home and solitaire_away
         self.deck = FACDeck(seed=seed, solitaire=is_solitaire)
-        self.use_5e = use_5e
         self.resolver = PlayResolver()
         self.ai = SolitaireAI()
         self.solitaire_home = solitaire_home
@@ -418,172 +414,11 @@ class Game:
             blitz_players: Optional list of player names to blitz (2-5 LBs/DBs).
         """
         self._current_play_personnel_note = None
-        if self.use_5e:
-            return self._execute_play_5e(play_call, defense_formation,
-                                         player_name=player_name,
-                                         defensive_strategy=defensive_strategy,
-                                         defensive_play=defensive_play,
-                                         blitz_players=blitz_players)
-        return self._execute_play_legacy(play_call, defense_formation, player_name=player_name)
-
-    def _execute_play_legacy(self, play_call: Optional[PlayCall] = None,
-                             defense_formation: Optional[str] = None,
-                             player_name: Optional[str] = None) -> PlayResult:
-        """Execute a single play using legacy dice system."""
-        dice = self.dice.roll()
-        situation = self.state.to_situation()
-
-        if play_call is None:
-            play_call = self.ai.call_play(situation, dice)
-
-        self.state.play_log.append(
-            f"Q{self.state.quarter} {self._time_str()} | "
-            f"{'Home' if self.state.possession == 'home' else 'Away'} ball | "
-            f"{self.state.down}{self._ordinal_suffix(self.state.down)} & {self.state.distance} | "
-            f"Own {self.state.yard_line}"
-        )
-
-        if play_call.play_type == "PUNT":
-            result = self._execute_punt()
-        elif play_call.play_type == "FG":
-            result = self._execute_field_goal()
-        elif play_call.play_type == "KNEEL":
-            result = PlayResult("KNEEL", -1, "KNEEL", description="QB kneels")
-            self._advance_down(-1)
-        elif play_call.play_type == "RUN":
-            result = self._execute_run(dice, play_call, defense_formation)
-        elif play_call.play_type == "SCREEN":
-            result = self._execute_screen(dice, defense_formation)
-        else:
-            result = self._execute_pass(dice, play_call, defense_formation)
-
-        self._apply_current_personnel_note(result)
-        self.state.play_log.append(f"  \u2192 {result.description}")
-
-        # Track stats
-        self._track_play_stats(result)
-
-        if result.penalty:
-            self._apply_penalty(result.penalty)
-            return result
-
-        if result.turnover:
-            self._handle_turnover(result)
-            return result
-
-        if result.is_touchdown or result.result == "TD":
-            self._score_touchdown()
-            kickoff = self._do_kickoff(
-                kicking_team=self.get_offense_team(),
-                receiving_team=self.get_defense_team(),
-            )
-            self.state.play_log.append(kickoff.description)
-            new_yl = self._kickoff_yard_line(kickoff)
-            self._change_possession(new_yl)
-            return result
-
-        if play_call.play_type == "PUNT":
-            return result
-
-        if play_call.play_type == "FG":
-            if result.result == "FG_GOOD":
-                if self.state.possession == "home":
-                    self.state.score.home += 3
-                else:
-                    self.state.score.away += 3
-                self.state.play_log.append(
-                    f"Score: Away {self.state.score.away} - Home {self.state.score.home}"
-                )
-            opp_yl = max(20, 100 - self.state.yard_line - 7)
-            self._change_possession(opp_yl)
-            return result
-
-        if play_call.play_type == "KNEEL":
-            self._advance_time(self.TIME_KNEEL)
-            return result
-
-        self._advance_down(result.yards_gained)
-
-        if self.state.down > 4:
-            self._turnover_on_downs()
-
-        time_used = self._calculate_time(result)
-        self._advance_time(time_used)
-
-        return result
-
-    def _execute_run(self, dice: DiceResult, play_call: PlayCall,
-                     defense_formation: Optional[str] = None) -> PlayResult:
-        rb = self.get_rb()
-        defense = self.get_defense_team()
-        def_run_stop = defense.defense_rating
-        # Get defensive formation (human override or AI)
-        situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense(situation, dice)
-
-        if rb:
-            return self.resolver.resolve_run(
-                dice, rb, play_call.direction, def_run_stop,
-                defense_formation=def_formation,
-                down=self.state.down, distance=self.state.distance,
-                yard_line=self.state.yard_line, quarter=self.state.quarter,
-                time_remaining=self.state.time_remaining,
-            )
-        yards = random.choices([-1, 0, 1, 2, 3, 4, 5],
-                                weights=[5, 8, 10, 15, 20, 15, 10])[0]
-        return PlayResult("RUN", yards, "GAIN", description=f"Run for {yards} yards")
-
-    def _execute_screen(self, dice: DiceResult,
-                        defense_formation: Optional[str] = None) -> PlayResult:
-        qb = self.get_qb()
-        rb = self.get_rb()
-        defense = self.get_defense_team()
-        situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense(situation, dice)
-        is_blitz = dice.play_tendency == PlayTendency.BLITZ
-
-        if qb and rb:
-            return self.resolver.resolve_pass(
-                dice, qb, rb, "SCREEN", defense.defense_rating,
-                defense_pass_rush=defense.defense_rating,
-                defense_formation=def_formation,
-                is_blitz_tendency=is_blitz,
-                down=self.state.down, distance=self.state.distance,
-                yard_line=self.state.yard_line, quarter=self.state.quarter,
-                time_remaining=self.state.time_remaining,
-            )
-        yards = random.randint(2, 8)
-        return PlayResult("PASS", yards, "COMPLETE", description=f"Screen pass for {yards} yards")
-
-    def _execute_pass(self, dice: DiceResult, play_call: PlayCall,
-                      defense_formation: Optional[str] = None) -> PlayResult:
-        qb = self.get_qb()
-        receiver = self._pick_receiver(play_call)
-        defense = self.get_defense_team()
-        situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense(situation, dice)
-        is_blitz = dice.play_tendency == PlayTendency.BLITZ
-
-        length = "LONG" if play_call.play_type == "LONG_PASS" else "SHORT"
-
-        if qb and receiver:
-            return self.resolver.resolve_pass(
-                dice, qb, receiver, length, defense.defense_rating,
-                defense_pass_rush=defense.defense_rating,
-                defense_formation=def_formation,
-                is_blitz_tendency=is_blitz,
-                down=self.state.down, distance=self.state.distance,
-                yard_line=self.state.yard_line, quarter=self.state.quarter,
-                time_remaining=self.state.time_remaining,
-            )
-
-        yards = random.choices([0, 0, 5, 8, 12, 18, 25],
-                                weights=[20, 15, 15, 15, 12, 10, 5])[0]
-        return PlayResult(
-            "PASS", yards,
-            "COMPLETE" if yards > 0 else "INCOMPLETE",
-            description=f"Pass {'complete' if yards > 0 else 'incomplete'} for {yards} yards",
-        )
+        return self._execute_play_5e(play_call, defense_formation,
+                                     player_name=player_name,
+                                     defensive_strategy=defensive_strategy,
+                                     defensive_play=defensive_play,
+                                     blitz_players=blitz_players)
 
     def _pick_receiver(self, play_call: PlayCall, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         team = self.get_offense_team()
@@ -617,19 +452,92 @@ class Game:
                           description=f"{'Makes' if made else 'Misses'} {distance}-yard FG")
 
     def _execute_punt(self) -> PlayResult:
+        """Execute a punt using 5E FAC deck mechanics."""
         punter = self.get_punter()
-        punt_dice = self.dice.roll()
-        returner = self.get_returner(self.get_defense_team(), "PR")
-
-        if punter:
-            result = self.resolver.resolve_punt(punter, dice=punt_dice, returner=returner)
-        else:
+        if not punter:
             dist = random.randint(38, 52)
             result = PlayResult("PUNT", dist - 8, "PUNT",
                                 description=f"Punt {dist} yards, returned 8 yards")
+            punt_distance = dist
+            new_yl = max(1, 100 - self.state.yard_line - punt_distance + random.randint(0, 10))
+            self._change_possession(new_yl)
+            return result
 
-        punt_distance = random.randint(38, 52)
-        new_yl = max(1, 100 - self.state.yard_line - punt_distance + random.randint(0, 10))
+        # Draw FAC for RN to determine punt distance
+        fac_card = self.deck.draw()
+        if fac_card.is_z_card:
+            fac_card = self.deck.draw_non_z()
+        rn = fac_card.run_num_int or random.randint(1, 12)
+        rn = max(1, min(12, rn))
+
+        # RN 12 special handling
+        if rn == 12:
+            result = self.resolver.resolve_punt_rn12(punter, self.deck)
+            if result.result == "BLOCKED_PUNT":
+                new_yl = max(1, self.state.yard_line - 5)
+                self._change_possession(new_yl)
+                return result
+            elif result.result == "PENALTY":
+                self._apply_penalty(result.penalty)
+                return result
+            # Longest kick — treat as OOB punt
+            punt_distance = result.yards_gained
+            new_yl = max(1, 100 - self.state.yard_line - punt_distance)
+            self._change_possession(new_yl)
+            return result
+
+        # Look up punt distance from 5E table
+        punt_distance = Charts.get_punt_distance_5e(punter.avg_distance, rn)
+
+        # Check blocked punt
+        blocked_num = getattr(punter, 'blocked_punt_number', 0) or 0
+        if Charts.check_blocked_punt(blocked_num, rn):
+            result = PlayResult("PUNT", -5, "BLOCKED_PUNT",
+                                description=f"{punter.player_name}'s punt is BLOCKED!")
+            new_yl = max(1, self.state.yard_line - 5)
+            self._change_possession(new_yl)
+            return result
+
+        # Punt return using 5E team card tables
+        receiving_team = self.get_defense_team()
+        punt_returners = receiving_team.get_punt_returners()
+        punt_return_table = receiving_team.get_punt_return_table()
+        fumbles_lost_max = getattr(receiving_team, 'fumbles_lost_max', 21)
+        def_fumble_adj = getattr(self.get_offense_team(), 'def_fumble_adj', 0)
+        is_home = (self.state.possession != "home")  # receiving team is home?
+
+        return_info = self.resolver.resolve_punt_return_5e(
+            self.deck, punt_returners, punt_return_table,
+            punt_distance, self.state.yard_line,
+            fumbles_lost_max=fumbles_lost_max,
+            def_fumble_adj=def_fumble_adj,
+            is_home=is_home,
+        )
+
+        return_yards = return_info.get("return_yards", 0)
+        is_fair_catch = return_info.get("is_fair_catch", False)
+        is_td = return_info.get("is_td", False)
+        is_fumble = return_info.get("is_fumble", False)
+        fumble_lost = return_info.get("fumble_lost", False)
+        returner_name = return_info.get("returner_name", "unknown")
+
+        net_punt = punt_distance - return_yards
+        desc = f"{punter.player_name} punts {punt_distance} yards"
+        if is_fair_catch:
+            desc += f", fair catch by {returner_name}"
+        elif return_yards > 0:
+            desc += f", {returner_name} returns it {return_yards} yards"
+        if is_td:
+            desc += " TOUCHDOWN!"
+
+        result = PlayResult("PUNT", net_punt, "PUNT", description=desc)
+        result.debug_log = return_info.get("log_entries", [])
+
+        if is_fumble and fumble_lost:
+            result.turnover = True
+            result.turnover_type = "FUMBLE"
+
+        new_yl = max(1, 100 - self.state.yard_line - punt_distance + return_yards)
         self._change_possession(new_yl)
         return result
 
@@ -1262,7 +1170,7 @@ class Game:
         )
 
     def simulate_drive(self) -> DriveResult:
-        """Simulate an entire drive."""
+        """Simulate an entire drive using 5E FAC deck."""
         plays = 0
         yards = 0
         drive_log = []
@@ -1270,8 +1178,8 @@ class Game:
 
         while plays < max_plays and not self.state.is_over:
             situation = self.state.to_situation()
-            dice = self.dice.roll()
-            play_call = self.ai.call_play(situation, dice)
+            fac_card = self.deck.draw()
+            play_call = self.ai.call_play_5e(situation, fac_card)
 
             prev_yl = self.state.yard_line
             prev_possession = self.state.possession
