@@ -2165,11 +2165,13 @@ class PlayResolver:
                 f"TV={defender_tv}, formation_mod={form_mod:+d}, effective={eff_run_stop}"
             )
         else:
-            # No individual defender found (empty box or no defenders_by_box)
-            eff_run_stop = effective_run_stop(defense_run_stop, defense_formation)
+            # No individual defender found — no box targeted or box empty
+            # In 5E, only individual defender TV is subtracted. No legacy team
+            # run-stop applies when no specific box is in the matchup.
+            eff_run_stop = 0
             log.append(
-                f"[DEF] Run-stop (team): base={defense_run_stop}, "
-                f"formation={defense_formation}, effective={eff_run_stop}"
+                f"[DEF] No specific defender box in matchup — "
+                f"no TV subtraction (eff_run_stop=0)"
             )
 
         # ── Try authentic 12-row rushing first ───────────────────────
@@ -2184,6 +2186,9 @@ class PlayResolver:
             # ── Check blocking matchup FIRST to detect BREAKAWAY ─────
             matchup_type = self.classify_blocking_matchup(blocking_matchup)
             log.append(f"[BLOCK] Matchup type: {matchup_type} ({blocking_matchup!r}), box_empty={box_is_empty}, both_empty={both_boxes_empty}")
+            if matchup_type in ("BK_VS_BOX", "OL_ONLY") and "BK" in blocking_matchup:
+                log.append(f"[BLOCK] Blocking back BV={blocking_back_bv}"
+                           f"{' (no second RB available — BV=0)' if blocking_back_bv == 0 else ''}")
 
             if matchup_type == "BREAK":
                 # BREAKAWAY: use the LG (Long Gain) column, no run-stop
