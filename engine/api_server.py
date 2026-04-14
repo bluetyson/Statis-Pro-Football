@@ -158,7 +158,7 @@ class HumanPlayCallRequest(BaseModel):
 
 
 class DefensivePlayCallRequest(BaseModel):
-    formation: str = "4_3"  # 4_3, 3_4, 4_3_BLITZ, 3_4_ZONE, NICKEL_BLITZ, NICKEL_ZONE, NICKEL_COVER2, GOAL_LINE, 4_3_COVER2
+    formation: str = "4_3"  # 4_3, 3_4, NICKEL_ZONE, GOAL_LINE (plus legacy: 4_3_BLITZ, 3_4_ZONE, etc.)
     defensive_play: str = "PASS_DEFENSE"  # PASS_DEFENSE, PREVENT_DEFENSE, RUN_DEFENSE_NO_KEY, etc.
     defensive_strategy: str = "NONE"  # NONE, DOUBLE_COVERAGE, TRIPLE_COVERAGE
     blitz_players: Optional[List[str]] = None  # Names of LBs/DBs to blitz (2-5 players)
