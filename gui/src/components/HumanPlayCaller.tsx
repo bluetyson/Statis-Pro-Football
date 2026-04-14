@@ -17,6 +17,8 @@ interface HumanPlayCallerProps {
   onCoffinDeductionChange: (d: number) => void;
   onOnsideKick: (onsideDefense?: boolean) => void;
   onSquibKick: () => void;
+  /** Notify parent when the selected ball-carrier changes (name or '' for auto). */
+  onBallCarrierChange?: (playerName: string) => void;
 }
 
 const PLAY_TYPES = [
@@ -80,6 +82,7 @@ export function HumanPlayCaller({
   onCoffinDeductionChange,
   onOnsideKick,
   onSquibKick,
+  onBallCarrierChange,
 }: HumanPlayCallerProps) {
   const [selectedPlay, setSelectedPlay] = useState<string>('RUN');
   const [selectedDirection, setSelectedDirection] = useState<string>('MIDDLE');
@@ -130,6 +133,11 @@ export function HumanPlayCaller({
       setSelectedPlayer('');
     }
   }, [availableBallCarriers, availableReceiverTargets, isRunPlay, selectedPlayer]);
+
+  // Notify parent whenever the selected ball carrier changes
+  useEffect(() => {
+    onBallCarrierChange?.(selectedPlayer);
+  }, [selectedPlayer, onBallCarrierChange]);
 
   const handleCallPlay = () => {
     onCallPlay({

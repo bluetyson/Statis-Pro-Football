@@ -170,6 +170,8 @@ export function GameBoard({
   const [showTwoPoint, setShowTwoPoint] = useState(false);
   const [coffinDeduction, setCoffinDeduction] = useState(15);
   const [showCardViewer, setShowCardViewer] = useState<string | null>(null);
+  /** Name of the ball carrier selected in the HumanPlayCaller dropdown ('' = auto). */
+  const [selectedBallCarrier, setSelectedBallCarrier] = useState<string>('');
 
   // Detect touchdown for two-point conversion option
   const isTouchdown = lastPlay?.is_touchdown === true;
@@ -356,6 +358,7 @@ export function GameBoard({
               onCoffinDeductionChange={setCoffinDeduction}
               onOnsideKick={onOnsideKick}
               onSquibKick={onSquibKick}
+              onBallCarrierChange={setSelectedBallCarrier}
             />
           ) : isInteractive && isHumanOnDefense ? (
             <DefensivePlayCaller
@@ -540,6 +543,8 @@ export function GameBoard({
             personnel={personnel}
             possession={state.possession}
             defenseFormation={lastPlay?.defense_formation ?? undefined}
+            selectedBallCarrier={selectedBallCarrier}
+            onSubstitute={onSubstitute}
           />
 
           {/* 5E Defensive Display Boxes (A-O) */}

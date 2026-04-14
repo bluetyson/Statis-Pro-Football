@@ -171,6 +171,69 @@ class TestOpeningKickoffReturnTD:
         assert game.state.score.away == 0
 
 
+class TestKickoffPlayLogDebugEntries:
+    """Verify that _log_kickoff appends debug_log entries to the play log."""
+
+    def setup_method(self):
+        random.seed(42)
+        self.home = Team.load("KC", 2025)
+        self.away = Team.load("BUF", 2025)
+
+    def test_opening_kickoff_includes_debug_log_in_play_log(self):
+        """Opening kickoff play_log should contain the step-by-step debug
+        entries (FAC card draws, RN/PN, returner selection, etc.)."""
+        td_result = _make_td_kickoff_result()
+        td_result.debug_log = [
+            "[KO] FAC Card #7: RN=4",
+            "[KO] Kickoff table RN 4 → 5",
+            "[KO] Return starts at 5-yard line",
+            "[KR] FAC Card #12: PN=10 → KR1 Test Player (range 1-33)",
+            "[KR] FAC Card #3: return RN=1",
+            "[KR] RN=1 → BREAKAWAY! Using breakaway column: TD",
+            "[KR] Test Player returns the kickoff for a TOUCHDOWN!",
+        ]
+        normal_result = _make_normal_kickoff_result(25)
+
+        call_count = [0]
+
+        def mock_do_kickoff(self_game, kicking_team, receiving_team):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return td_result
+            return normal_result
+
+        with patch.object(Game, '_do_kickoff', mock_do_kickoff):
+            game = Game(self.home, self.away)
+
+        log = "\n".join(game.state.play_log)
+        # The description should be in the log
+        assert "TOUCHDOWN" in log
+        # The debug entries should also be in the play log
+        assert "[KO] FAC Card #7: RN=4" in log
+        assert "[KR] FAC Card #12: PN=10" in log
+        assert "BREAKAWAY" in log
+        assert "KR1 Test Player" in log
+
+    def test_normal_kickoff_includes_debug_log_in_play_log(self):
+        """A normal (non-TD) opening kickoff should also have debug detail."""
+        normal_result = _make_normal_kickoff_result(25)
+        normal_result.debug_log = [
+            "[KO] FAC Card #3: RN=6",
+            "[KO] Kickoff table RN 6 → TB",
+            "[KO] Touchback, ball at 20-yard line",
+        ]
+
+        def mock_do_kickoff(self_game, kicking_team, receiving_team):
+            return normal_result
+
+        with patch.object(Game, '_do_kickoff', mock_do_kickoff):
+            game = Game(self.home, self.away)
+
+        log = "\n".join(game.state.play_log)
+        assert "[KO] FAC Card #3: RN=6" in log
+        assert "Touchback" in log
+
+
 # ── Issue 3: Play direction synchronization ──────────────────────────────
 
 

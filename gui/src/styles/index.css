@@ -1024,6 +1024,23 @@ body {
   min-width: 0;
 }
 
+/* Highlighted slot (selected ball carrier is in this position) */
+.fmn-cell-highlighted .fmn-player {
+  border-color: #facc15;
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.5);
+}
+
+/* Clickable slot (user can click to place selected player here) */
+.fmn-cell-clickable {
+  cursor: pointer;
+}
+
+.fmn-cell-clickable:hover .fmn-player,
+.fmn-cell-clickable:hover .fmn-player-empty {
+  border-color: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
 /* Empty/spacer slot — keeps grid alignment */
 .fmn-ghost {
   visibility: hidden;

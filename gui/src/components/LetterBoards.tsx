@@ -5,6 +5,10 @@ interface LetterBoardsProps {
   personnel: PersonnelData | null;
   possession: string;
   defenseFormation?: string;
+  /** Name of the player selected in the ball-carrier dropdown ('' = auto / none). */
+  selectedBallCarrier?: string;
+  /** Callback to trigger a roster substitution (position, playerOut, playerIn). */
+  onSubstitute?: (position: string, playerOut: string, playerIn: string) => void;
 }
 
 /** Scale intercept_range (0-14) to a 0-100% bar width. */
@@ -262,13 +266,19 @@ interface FormationSlotProps {
   showBlocks?: boolean;
   showEndurance?: boolean;
   ghost?: boolean;
+  /** Highlight this slot (e.g. when the player is the selected ball-carrier). */
+  highlighted?: boolean;
+  /** Called when the user clicks this slot to place a player here. */
+  onClick?: () => void;
 }
 
-function FormationSlot({ label, player, showBlocks = false, showEndurance = false, ghost = false }: FormationSlotProps) {
+function FormationSlot({ label, player, showBlocks = false, showEndurance = false, ghost = false, highlighted = false, onClick }: FormationSlotProps) {
   if (ghost) return <div className="fmn-cell fmn-ghost" />;
 
+  const cellClass = `fmn-cell${highlighted ? ' fmn-cell-highlighted' : ''}${onClick ? ' fmn-cell-clickable' : ''}`;
+
   return (
-    <div className="fmn-cell">
+    <div className={cellClass} onClick={onClick} title={onClick ? 'Click to place selected player here' : undefined}>
       <div className="fmn-pos">{label}</div>
       {player ? (
         <div className={`fmn-player${player.injured ? ' fmn-player-inj' : ''}`}>
@@ -297,7 +307,19 @@ function FormationSlot({ label, player, showBlocks = false, showEndurance = fals
   );
 }
 
-function OffenseFormation({ personnel }: { personnel: PersonnelData }) {
+/** Map formation slot labels to roster positions for substitution. */
+const SLOT_TO_ROSTER_POS: Record<string, string> = { BK1: 'RB', BK2: 'RB', LE: 'WR', RE: 'TE', FL: 'WR' };
+const CLICKABLE_SLOTS = new Set(Object.keys(SLOT_TO_ROSTER_POS));
+
+interface OffenseFormationProps {
+  personnel: PersonnelData;
+  /** Name of the player selected in the ball-carrier dropdown. */
+  selectedBallCarrier?: string;
+  /** Trigger a substitution: (position, playerOut, playerIn). */
+  onSubstitute?: (position: string, playerOut: string, playerIn: string) => void;
+}
+
+function OffenseFormation({ personnel, selectedBallCarrier, onSubstitute }: OffenseFormationProps) {
   const line = personnel.offense_line; // [LT, LG, C, RG, RT]
 
   // Split receivers into WRs and TEs
@@ -310,26 +332,65 @@ function OffenseFormation({ personnel }: { personnel: PersonnelData }) {
   const fl: PlayerBrief | null = tes.length > 0 ? (wrs[1] ?? null) : (wrs[2] ?? null);
 
   const qb: PlayerBrief | null = personnel.offense_starters['QB'] ?? null;
-  const bk1: PlayerBrief | null = personnel.offense_starters['RB'] ?? null;
+  const defaultBk1: PlayerBrief | null = personnel.offense_starters['RB'] ?? null;
 
   // Find BK2: second RB/FB/HB in offense_all by position, skipping BK1's slot
-  // Note: PlayerBrief has no unique ID, so we skip by name (sufficient for roster uniqueness)
-  const bk2: PlayerBrief | null = personnel.offense_all.find(p =>
+  const defaultBk2: PlayerBrief | null = personnel.offense_all.find(p =>
     (p.position === 'RB' || p.position === 'FB' || p.position === 'HB') &&
-    p.name !== bk1?.name
+    p.name !== defaultBk1?.name
   ) ?? null;
+
+  // If a ball carrier is explicitly selected from the dropdown, look them up
+  // and show them in the BK1 slot (the primary backfield position).
+  const selectedPlayer: PlayerBrief | null = selectedBallCarrier
+    ? personnel.offense_all.find(p => p.name === selectedBallCarrier) ?? null
+    : null;
+
+  // Collect all on-field player names for quick membership check
+  const onFieldNames = new Set(
+    [defaultBk1, defaultBk2, le, re, fl, qb]
+      .filter((p): p is PlayerBrief => p !== null)
+      .map(p => p.name),
+  );
+  const isSelectedAlreadyOnField = !!selectedPlayer && onFieldNames.has(selectedPlayer.name);
+
+  let bk1: PlayerBrief | null;
+  let bk2: PlayerBrief | null;
+
+  if (selectedPlayer && !isSelectedAlreadyOnField) {
+    // Place the selected player in BK1, move original BK1 to BK2
+    bk1 = selectedPlayer;
+    bk2 = defaultBk1;
+  } else {
+    bk1 = defaultBk1;
+    bk2 = defaultBk2;
+  }
+
+  // Helper: is this player the selected ball carrier? (for highlighting)
+  const isHighlighted = (p: PlayerBrief | null) =>
+    !!selectedBallCarrier && !!p && p.name === selectedBallCarrier;
+
+  // Helper: build click handler for a formation slot that triggers substitution
+  // when a ball carrier is selected and the user clicks this slot
+  const makeSlotClick = (slotPlayer: PlayerBrief | null, slotPos: string) => {
+    if (!selectedPlayer || !slotPlayer || !onSubstitute) return undefined;
+    if (isSelectedAlreadyOnField) return undefined;
+    if (!CLICKABLE_SLOTS.has(slotPos)) return undefined;
+    const rosterPos = SLOT_TO_ROSTER_POS[slotPos] ?? slotPlayer.position;
+    return () => onSubstitute(rosterPos, slotPlayer.name, selectedPlayer.name);
+  };
 
   return (
     <div className="offense-formation">
       {/* Row 1: Line of scrimmage — LE LT LG C RG RT RE */}
       <div className="fmn-row">
-        <FormationSlot label="LE" player={le} showEndurance />
+        <FormationSlot label="LE" player={le} showEndurance highlighted={isHighlighted(le)} onClick={makeSlotClick(le, 'LE')} />
         <FormationSlot label="LT" player={line[0] ?? null} />
         <FormationSlot label="LG" player={line[1] ?? null} />
         <FormationSlot label="C"  player={line[2] ?? null} />
         <FormationSlot label="RG" player={line[3] ?? null} />
         <FormationSlot label="RT" player={line[4] ?? null} />
-        <FormationSlot label="RE" player={re} showEndurance />
+        <FormationSlot label="RE" player={re} showEndurance highlighted={isHighlighted(re)} onClick={makeSlotClick(re, 'RE')} />
       </div>
 
       {/* Scrimmage line indicator */}
@@ -340,7 +401,7 @@ function OffenseFormation({ personnel }: { personnel: PersonnelData }) {
         <FormationSlot label="" player={null} ghost />
         <FormationSlot label="" player={null} ghost />
         <FormationSlot label="" player={null} ghost />
-        <FormationSlot label="QB" player={qb} />
+        <FormationSlot label="QB" player={qb} highlighted={isHighlighted(qb)} />
         <FormationSlot label="" player={null} ghost />
         <FormationSlot label="" player={null} ghost />
         <FormationSlot label="" player={null} ghost />
@@ -349,12 +410,12 @@ function OffenseFormation({ personnel }: { personnel: PersonnelData }) {
       {/* Row 3: Backs + Flanker */}
       <div className="fmn-row">
         <FormationSlot label="" player={null} ghost />
-        <FormationSlot label="BK1" player={bk1} showBlocks showEndurance />
-        <FormationSlot label="BK2" player={bk2} showBlocks showEndurance />
+        <FormationSlot label="BK1" player={bk1} showBlocks showEndurance highlighted={isHighlighted(bk1)} onClick={makeSlotClick(bk1, 'BK1')} />
+        <FormationSlot label="BK2" player={bk2} showBlocks showEndurance highlighted={isHighlighted(bk2)} onClick={makeSlotClick(bk2, 'BK2')} />
         <FormationSlot label="" player={null} ghost />
         <FormationSlot label="" player={null} ghost />
         <FormationSlot label="" player={null} ghost />
-        <FormationSlot label="FL" player={fl} showEndurance />
+        <FormationSlot label="FL" player={fl} showEndurance highlighted={isHighlighted(fl)} onClick={makeSlotClick(fl, 'FL')} />
       </div>
     </div>
   );
@@ -482,7 +543,7 @@ function DefensiveSlotCard({ slot }: { slot: DefensiveSlot }) {
 
 /* ─── LetterBoards main component ─────────────────────────────── */
 
-export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps) {
+export function LetterBoards({ personnel, defenseFormation, selectedBallCarrier, onSubstitute }: LetterBoardsProps) {
   const [collapsed, setCollapsed] = useState<{ off: boolean; def: boolean }>({ off: false, def: false });
 
   if (!personnel) {
@@ -511,7 +572,7 @@ export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps)
         {!collapsed.off && (
           <>
             {/* Formation view: LE LT LG C RG RT RE / QB / BK1 BK2 FL */}
-            <OffenseFormation personnel={personnel} />
+            <OffenseFormation personnel={personnel} selectedBallCarrier={selectedBallCarrier} onSubstitute={onSubstitute} />
 
             {/* Detailed cards: OL block ratings */}
             <div className="board-row board-row-label">
@@ -543,6 +604,16 @@ export function LetterBoards({ personnel, defenseFormation }: LetterBoardsProps)
               {personnel.offense_starters.RB && (
                 <MiniCard player={personnel.offense_starters.RB} />
               )}
+              {/* Show the selected backup player's full card if they're not already a starter */}
+              {(() => {
+                if (!selectedBallCarrier) return null;
+                const sel = personnel.offense_all.find(p => p.name === selectedBallCarrier);
+                if (!sel) return null;
+                // Already shown as QB or RB starter?
+                if (sel.name === personnel.offense_starters.QB?.name) return null;
+                if (sel.name === personnel.offense_starters.RB?.name) return null;
+                return <MiniCard key="selected-bc" player={sel} />;
+              })()}
               {/* Show on-field receivers matching the formation grid (LE, RE, FL) */}
               {(() => {
                 const wrs = personnel.offense_receivers.filter(r => r.position !== 'TE');

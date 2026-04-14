@@ -158,7 +158,7 @@ class Game:
             kicking_team=self.get_defense_team(),
             receiving_team=self.get_offense_team(),
         )
-        self.state.play_log.append(kickoff_result.description)
+        self._log_kickoff(kickoff_result)
 
         if kickoff_result.is_touchdown or kickoff_result.result == "TD":
             # Kickoff return TD: score, attempt XP, then kick off again
@@ -167,7 +167,7 @@ class Game:
                 kicking_team=self.get_offense_team(),
                 receiving_team=self.get_defense_team(),
             )
-            self.state.play_log.append(followup_kickoff.description)
+            self._log_kickoff(followup_kickoff)
             new_yl = self._kickoff_yard_line(followup_kickoff)
             self._change_possession(new_yl)
         else:
@@ -366,6 +366,18 @@ class Game:
             is_home=rec_is_home,
         )
 
+    def _log_kickoff(self, kickoff: PlayResult, prefix: str = "") -> None:
+        """Append kickoff description *and* debug-log detail to the play log.
+
+        ``prefix`` is an optional label prepended to the first line
+        (e.g. "Second half kickoff: ").
+        """
+        desc = f"{prefix}{kickoff.description}" if prefix else kickoff.description
+        self.state.play_log.append(desc)
+        if kickoff.debug_log:
+            for entry in kickoff.debug_log:
+                self.state.play_log.append(f"    {entry}")
+
     def _kickoff_yard_line(self, kickoff: PlayResult) -> int:
         """Extract the starting yard line from a kickoff result."""
         if kickoff.result == "TOUCHBACK":
@@ -544,9 +556,7 @@ class Game:
         kicking_team = self.get_offense_team()
         receiving_team = self.get_defense_team()
         kickoff = self._do_kickoff(kicking_team, receiving_team)
-        self.state.play_log.append(
-            f"Safety free kick from the 20: {kickoff.description}"
-        )
+        self._log_kickoff(kickoff, prefix="Safety free kick from the 20: ")
         new_yl = self._safety_kickoff_yard_line(kickoff)
         # Possession transfers to the receiving team
         self._change_possession(new_yl)
@@ -881,7 +891,7 @@ class Game:
                         kicking_team=self.get_defense_team(),
                         receiving_team=self.get_offense_team(),
                     )
-                    self.state.play_log.append(f"Second half kickoff: {kickoff.description}")
+                    self._log_kickoff(kickoff, prefix="Second half kickoff: ")
                     new_yl = self._kickoff_yard_line(kickoff)
                     self.state.yard_line = new_yl
                     self.state.down = 1
@@ -1122,7 +1132,7 @@ class Game:
                         kicking_team=self.get_offense_team(),
                         receiving_team=self.get_defense_team(),
                     )
-                    self.state.play_log.append(kickoff.description)
+                    self._log_kickoff(kickoff)
                     new_yl = self._kickoff_yard_line(kickoff)
                     self._change_possession(new_yl)
                     return result
@@ -1229,7 +1239,7 @@ class Game:
                 kicking_team=self.get_offense_team(),
                 receiving_team=self.get_defense_team(),
             )
-            self.state.play_log.append(kickoff.description)
+            self._log_kickoff(kickoff)
             new_yl = self._kickoff_yard_line(kickoff)
             self._change_possession(new_yl)
             return result
@@ -1251,7 +1261,7 @@ class Game:
                     kicking_team=self.get_offense_team(),
                     receiving_team=self.get_defense_team(),
                 )
-                self.state.play_log.append(kickoff.description)
+                self._log_kickoff(kickoff)
                 new_yl = self._kickoff_yard_line(kickoff)
                 self._change_possession(new_yl)
             else:
@@ -1744,7 +1754,7 @@ class Game:
                 kicking_team=self.get_offense_team(),
                 receiving_team=self.get_defense_team(),
             )
-            self.state.play_log.append(kickoff.description)
+            self._log_kickoff(kickoff)
             new_yl = self._kickoff_yard_line(kickoff)
             self._change_possession(new_yl)
         else:
@@ -1777,7 +1787,7 @@ class Game:
                 kicking_team=self.get_offense_team(),
                 receiving_team=self.get_defense_team(),
             )
-            self.state.play_log.append(kickoff.description)
+            self._log_kickoff(kickoff)
             new_yl = self._kickoff_yard_line(kickoff)
             self._change_possession(new_yl)
         else:
