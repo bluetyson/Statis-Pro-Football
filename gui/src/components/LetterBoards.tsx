@@ -307,6 +307,10 @@ function FormationSlot({ label, player, showBlocks = false, showEndurance = fals
   );
 }
 
+/** Map formation slot labels to roster positions for substitution. */
+const SLOT_TO_ROSTER_POS: Record<string, string> = { BK1: 'RB', BK2: 'RB', LE: 'WR', RE: 'TE', FL: 'WR' };
+const CLICKABLE_SLOTS = new Set(Object.keys(SLOT_TO_ROSTER_POS));
+
 interface OffenseFormationProps {
   personnel: PersonnelData;
   /** Name of the player selected in the ball-carrier dropdown. */
@@ -342,16 +346,13 @@ function OffenseFormation({ personnel, selectedBallCarrier, onSubstitute }: Offe
     ? personnel.offense_all.find(p => p.name === selectedBallCarrier) ?? null
     : null;
 
-  // Determine the actual BK1: if a selected player is a backup (not already on
-  // the field), place them at BK1 and shift the original BK1 to BK2.
-  const isSelectedAlreadyOnField = selectedPlayer && (
-    selectedPlayer.name === defaultBk1?.name ||
-    selectedPlayer.name === defaultBk2?.name ||
-    selectedPlayer.name === le?.name ||
-    selectedPlayer.name === re?.name ||
-    selectedPlayer.name === fl?.name ||
-    selectedPlayer.name === qb?.name
+  // Collect all on-field player names for quick membership check
+  const onFieldNames = new Set(
+    [defaultBk1, defaultBk2, le, re, fl, qb]
+      .filter((p): p is PlayerBrief => p !== null)
+      .map(p => p.name),
   );
+  const isSelectedAlreadyOnField = !!selectedPlayer && onFieldNames.has(selectedPlayer.name);
 
   let bk1: PlayerBrief | null;
   let bk2: PlayerBrief | null;
@@ -374,11 +375,8 @@ function OffenseFormation({ personnel, selectedBallCarrier, onSubstitute }: Offe
   const makeSlotClick = (slotPlayer: PlayerBrief | null, slotPos: string) => {
     if (!selectedPlayer || !slotPlayer || !onSubstitute) return undefined;
     if (isSelectedAlreadyOnField) return undefined;
-    // Only offer click-to-replace on backfield/receiver slots
-    if (!['BK1', 'BK2', 'LE', 'RE', 'FL'].includes(slotPos)) return undefined;
-    // Map formation slot to roster position for substitution
-    const posMap: Record<string, string> = { BK1: 'RB', BK2: 'RB', LE: 'WR', RE: 'TE', FL: 'WR' };
-    const rosterPos = posMap[slotPos] ?? slotPlayer.position;
+    if (!CLICKABLE_SLOTS.has(slotPos)) return undefined;
+    const rosterPos = SLOT_TO_ROSTER_POS[slotPos] ?? slotPlayer.position;
     return () => onSubstitute(rosterPos, slotPlayer.name, selectedPlayer.name);
   };
 

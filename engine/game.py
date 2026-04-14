@@ -374,7 +374,7 @@ class Game:
         """
         desc = f"{prefix}{kickoff.description}" if prefix else kickoff.description
         self.state.play_log.append(desc)
-        if hasattr(kickoff, "debug_log") and kickoff.debug_log:
+        if kickoff.debug_log:
             for entry in kickoff.debug_log:
                 self.state.play_log.append(f"    {entry}")
 
