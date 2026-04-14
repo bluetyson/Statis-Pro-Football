@@ -2003,9 +2003,21 @@ class PlayResolver:
             if covering_defender:
                 # Positive pass_defense_rating = good defender = harder to complete
                 # Apply as negative completion modifier (raises PN)
-                pass_defense_mod = -covering_defender.pass_defense_rating
+                pdr = covering_defender.pass_defense_rating
+                # Out-of-position penalty: DB in wrong box → −1 PDR
+                if covering_defender_box:
+                    oop = self.check_out_of_position_penalty(
+                        covering_defender, covering_defender_box
+                    )
+                    if oop != 0:
+                        pdr = max(0, pdr + oop)
+                        log.append(
+                            f"[OOP] {covering_defender.player_name} out of position "
+                            f"in box {covering_defender_box}: PDR adjusted by {oop}"
+                        )
+                pass_defense_mod = -pdr
                 if pass_defense_mod != 0:
-                    log.append(f"[COVERAGE] Defender PDR {covering_defender.pass_defense_rating} → "
+                    log.append(f"[COVERAGE] Defender PDR {pdr} → "
                                f"completion modifier {pass_defense_mod:+d}")
             else:
                 # Empty box → +5 to completion range per 5E rules
@@ -2581,6 +2593,14 @@ class PlayResolver:
                 if defender is not None:
                     defender_tv = getattr(defender, 'tackle_rating', 0)
                     defender_name = getattr(defender, 'player_name', '?')
+                    # Out-of-position penalty: DB in wrong box → −1 TV
+                    oop_penalty = self.check_out_of_position_penalty(defender, bl)
+                    if oop_penalty != 0:
+                        defender_tv = max(0, defender_tv + oop_penalty)
+                        log.append(
+                            f"[OOP] {defender_name} playing out of position "
+                            f"in box {bl}: TV adjusted by {oop_penalty}"
+                        )
                     break
 
             if defender_tv is None:
@@ -3579,36 +3599,102 @@ class PlayResolver:
             return -3
         return 0
 
-    # ── OL/CB/S Out of Position (Optional Rule) ─────────────────────
+    # ── OL/CB/S Out of Position (5E Rule) ──────────────────────────
+
+    # Natural box assignments for defensive positions (from 5E Display Layout):
+    #   Row 1 (DL): A=LE, B=LDT, C=NT, D=RDT, E=RE — any DL/LB can play here
+    #   Row 2 (LB): F=LOLB, G=LILB, H=MLB, I=RILB, J=ROLB
+    #   Row 3 (DB): K=LCB, L=extra DB, M=FS, N=SS, O=RCB
+    DB_NATURAL_BOXES = {
+        'CB':  {'K', 'O'},        # CBs play corner boxes
+        'FS':  {'M'},             # Free Safety in box M
+        'SS':  {'N'},             # Strong Safety in box N
+        'S':   {'M', 'N'},       # Generic safety in either safety box
+        'DB':  {'K', 'L', 'M', 'N', 'O'},  # Generic DB in any Row 3 box
+    }
+    ROW1_BOXES = {'A', 'B', 'C', 'D', 'E'}
+    ROW2_BOXES = {'F', 'G', 'H', 'I', 'J'}
+    ROW3_BOXES = {'K', 'L', 'M', 'N', 'O'}
+
+    # Natural slot positions for offensive linemen
+    OL_NATURAL_SLOTS = {
+        'LT': {'LT'},
+        'LG': {'LG'},
+        'C':  {'C', 'CN'},
+        'RG': {'RG'},
+        'RT': {'RT'},
+    }
 
     @staticmethod
     def check_out_of_position_penalty(player: PlayerCard,
                                        assigned_position: str) -> int:
-        """Return penalty for playing out of position (Optional Rule).
+        """Return penalty for playing out of position (5E Rule).
 
-        OL playing wrong slot: -1 to blocking value
-        CB/S playing wrong position: -1 to pass defense
-        DL/LB may play any Row 1 position without modification.
+        OL playing wrong slot: −1 to blocking value (BV).
+        DB playing wrong box: −1 to pass defense rating (PDR).
+        DL/LB may play any Row 1 box without modification.
         Any DB may play in Box L without modification.
+
+        ``assigned_position`` can be a box letter (A-O) or a position name
+        (DE, DT, CB, SS, FS, LT, RG, etc.).
         """
         natural_pos = getattr(player, 'position', '')
+
+        # Exact match — always in position
         if natural_pos == assigned_position:
             return 0
 
-        # DL/LB can play any Row 1 position without penalty
-        if natural_pos in ('DE', 'DT', 'DL', 'NT', 'LB', 'OLB', 'ILB', 'MLB'):
-            if assigned_position in ('A', 'B', 'C', 'D', 'E',
-                                     'DE', 'DT', 'DL', 'NT', 'LB', 'OLB', 'ILB', 'MLB'):
+        # ── DL/LB: can play any Row 1 position without penalty ──
+        DL_LB = ('DE', 'DT', 'DL', 'NT', 'LB', 'OLB', 'ILB', 'MLB', 'EDGE')
+        if natural_pos in DL_LB:
+            if assigned_position in PlayResolver.ROW1_BOXES:
                 return 0
+            if assigned_position in DL_LB:
+                return 0
+            if natural_pos in ('LB', 'OLB', 'ILB', 'MLB'):
+                if assigned_position in PlayResolver.ROW2_BOXES:
+                    return 0
+            return 0  # DL/LB are never penalized
 
-        # Any DB may play in Box L without modification
-        if natural_pos in ('CB', 'S', 'SS', 'FS', 'DB') and assigned_position == 'L':
+        # ── DBs ──────────────────────────────────────────────────────
+        DB_POSITIONS = ('CB', 'S', 'SS', 'FS', 'DB')
+        if natural_pos in DB_POSITIONS:
+            # Any DB may play in Box L without modification
+            if assigned_position == 'L':
+                return 0
+            # Check if position name assigned matches natural position type
+            # (e.g. CB assigned to 'CB' → OK, CB assigned to 'SS' → penalty)
+            if assigned_position in DB_POSITIONS:
+                # Same position type → OK
+                if assigned_position == natural_pos:
+                    return 0
+                # Generic safety/DB can play either S/SS/FS
+                if natural_pos == 'S' and assigned_position in ('SS', 'FS', 'S', 'DB'):
+                    return 0
+                if natural_pos == 'DB':
+                    return 0  # Generic DB can play anywhere
+                return -1  # DB in wrong DB position
+            # Check box letter assignments
+            natural_boxes = PlayResolver.DB_NATURAL_BOXES.get(natural_pos, set())
+            if assigned_position in natural_boxes:
+                return 0
+            if assigned_position in PlayResolver.ROW3_BOXES:
+                return -1  # DB in wrong Row 3 box
+            if assigned_position in PlayResolver.ROW1_BOXES | PlayResolver.ROW2_BOXES:
+                return -1  # DB moved to front rows
             return 0
 
-        if natural_pos in ('LT', 'LG', 'C', 'RG', 'RT'):
+        # ── OL ────────────────────────────────────────────────────────
+        OL_POSITIONS = ('LT', 'LG', 'C', 'RG', 'RT')
+        if natural_pos in OL_POSITIONS:
+            natural_slots = PlayResolver.OL_NATURAL_SLOTS.get(natural_pos, set())
+            if assigned_position in natural_slots:
+                return 0
+            # Any OL position or slot that doesn't match
+            if assigned_position in OL_POSITIONS or assigned_position in ('CN', 'LT', 'LG', 'RG', 'RT'):
+                return -1
             return -1  # OL out of position
-        if natural_pos in ('CB', 'S', 'SS', 'FS'):
-            return -1  # DB out of position
+
         return 0
 
     # ── Display Box Tracking (5E Defensive Spatial Arrangement) ──────
