@@ -523,8 +523,11 @@ class Game:
     def _score_safety(self) -> None:
         """Score a safety — 2 points for the defense.
 
-        The defensive team (opponent) gets 2 points and the offense
-        must free-kick from their own 20-yard line.
+        The defensive team (opponent) gets 2 points, then the team that
+        conceded the safety kicks off from their own 20-yard line (a free
+        kick).  Because the kick comes from the 20 rather than the normal
+        35, any touchback on that kick is taken at the 15-yard line (5 yards
+        closer to the goal than a standard kickoff touchback).
         """
         # Award 2 points to the defensive team
         if self.state.possession == "home":
@@ -535,10 +538,33 @@ class Game:
             f"SAFETY! 2 points for defense. "
             f"Score: Away {self.state.score.away} - Home {self.state.score.home}"
         )
-        # After a safety the scoring team receives a free kick from the 20
-        self.state.yard_line = 20
-        self.state.down = 1
-        self.state.distance = 10
+        # The team that conceded the safety kicks off from their own 20.
+        # At this point self.state.possession is still the *offense* that
+        # got tackled — that team is the kicker.
+        kicking_team = self.get_offense_team()
+        receiving_team = self.get_defense_team()
+        kickoff = self._do_kickoff(kicking_team, receiving_team)
+        self.state.play_log.append(
+            f"Safety free kick from the 20: {kickoff.description}"
+        )
+        new_yl = self._safety_kickoff_yard_line(kickoff)
+        # Possession transfers to the receiving team
+        self._change_possession(new_yl)
+
+    def _safety_kickoff_yard_line(self, kickoff: PlayResult) -> int:
+        """Starting yard line after a safety free kick.
+
+        The free kick is from the 20 instead of the normal 35, so all
+        results are shifted 15 yards back.  A plain touchback lands at
+        the 15 (rather than the normal 20).
+        """
+        if kickoff.result == "TOUCHBACK":
+            # Shift the normal touchback line back by 15 yards
+            normal_yl = max(1, kickoff.yards_gained) if kickoff.yards_gained else 20
+            return max(1, normal_yl - 5)
+        if kickoff.result == "OOB":
+            return max(1, 40 - 15)  # OOB spot shifts back 15 yards too
+        return max(1, kickoff.yards_gained)
 
     def execute_play(self, play_call: Optional[PlayCall] = None,
                      defense_formation: Optional[str] = None,

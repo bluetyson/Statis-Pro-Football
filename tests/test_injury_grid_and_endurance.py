@@ -400,15 +400,16 @@ class TestSafety:
         assert game.state.score.away == 2
         assert game.state.score.home == 0
 
-    def test_safety_resets_to_20(self):
+    def test_safety_changes_possession(self):
+        """After safety, possession must switch: the scoring team receives."""
         game = _build_game()
-        game.state.possession = "home"
+        game.state.possession = "home"  # home gets tackled in own endzone
         game.state.yard_line = 2
 
         game._advance_down(-5)
 
-        # After safety, ball at own 20
-        assert game.state.yard_line == 20
+        # Scoring team (away) now has the ball
+        assert game.state.possession == "away"
 
     def test_safety_logged(self):
         game = _build_game()
@@ -433,6 +434,39 @@ class TestSafety:
         # No safety, normal play
         assert game.state.score.away == 0
         assert game.state.yard_line == 1
+
+
+class TestSafetyKickoffYardLine:
+    """Verify the yard-line helper for safety free kicks."""
+
+    def test_plain_touchback_at_15(self):
+        """Safety kickoff plain touchback (no modifier) → 15."""
+        from engine.play_resolver import PlayResult
+        game = _build_game()
+        tb = PlayResult("KICKOFF", 0, "TOUCHBACK", description="Touchback")
+        assert game._safety_kickoff_yard_line(tb) == 15
+
+    def test_touchback_with_modifier(self):
+        """Safety kickoff TB already at 17 (20-3 modifier) → 17-5=12."""
+        from engine.play_resolver import PlayResult
+        game = _build_game()
+        tb = PlayResult("KICKOFF", 17, "TOUCHBACK",
+                        description="Kickoff — touchback, ball at the 17-yard line")
+        assert game._safety_kickoff_yard_line(tb) == 12
+
+    def test_oob_safety_kickoff(self):
+        """OOB safety kickoff → 40-15 = 25."""
+        from engine.play_resolver import PlayResult
+        game = _build_game()
+        oob = PlayResult("KICKOFF", 0, "OOB", description="Kickoff OOB")
+        assert game._safety_kickoff_yard_line(oob) == 25
+
+    def test_return_uses_yards_gained(self):
+        """Returned kick uses yards_gained as-is (field position from return)."""
+        from engine.play_resolver import PlayResult
+        game = _build_game()
+        ret = PlayResult("KICKOFF", 33, "RETURN", description="Return to 33")
+        assert game._safety_kickoff_yard_line(ret) == 33
 
 
 # ═════════════════════════════════════════════════════════════════════════════
