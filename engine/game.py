@@ -147,10 +147,11 @@ class Game:
         self.state.possession = random.choice(["home", "away"])
         self.state.play_log.append(f"Coin flip: {self.state.possession} team receives")
 
-        kickoff_result = self.resolver.resolve_kickoff(
-            returner=self.get_returner(self.get_offense_team(), "KR")
+        kickoff_result = self._do_kickoff(
+            kicking_team=self.get_defense_team(),
+            receiving_team=self.get_offense_team(),
         )
-        start_yard = 25 if kickoff_result.result == "TOUCHBACK" else kickoff_result.yards_gained
+        start_yard = self._kickoff_yard_line(kickoff_result)
         self.state.yard_line = start_yard
         self.state.play_log.append(kickoff_result.description)
 
@@ -242,6 +243,27 @@ class Game:
 
     def get_returner(self, team: Team, kind: str) -> Optional[PlayerCard]:
         return team.get_return_specialist(kind, unavailable_names=set(self.state.injuries))
+
+    def _do_kickoff(self, kicking_team: Team, receiving_team: Team) -> PlayResult:
+        """Resolve a kickoff using 5E team card tables when available."""
+        ko_table = kicking_team.get_kickoff_table()
+        kr_returners = receiving_team.get_kickoff_returners()
+        kr_table = receiving_team.get_kickoff_return_table()
+        rec_is_home = (receiving_team == self.home_team)
+        return self.resolver.resolve_kickoff_5e(
+            self.deck, ko_table, kr_returners, kr_table,
+            fumbles_lost_max=getattr(receiving_team, 'fumbles_lost_max', 21),
+            def_fumble_adj=getattr(kicking_team, 'def_fumble_adj', 0),
+            is_home=rec_is_home,
+        )
+
+    def _kickoff_yard_line(self, kickoff: PlayResult) -> int:
+        """Extract the starting yard line from a kickoff result."""
+        if kickoff.result == "TOUCHBACK":
+            return max(1, kickoff.yards_gained) if kickoff.yards_gained else 25
+        if kickoff.result == "OOB":
+            return 40
+        return max(1, kickoff.yards_gained)
 
     def get_qb(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         return self._resolve_position_player(self.get_offense_team().roster.qbs, "QB", player_name)
@@ -451,11 +473,12 @@ class Game:
 
         if result.is_touchdown or result.result == "TD":
             self._score_touchdown()
-            kickoff = self.resolver.resolve_kickoff(
-                returner=self.get_returner(self.get_defense_team(), "KR")
+            kickoff = self._do_kickoff(
+                kicking_team=self.get_offense_team(),
+                receiving_team=self.get_defense_team(),
             )
             self.state.play_log.append(kickoff.description)
-            new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+            new_yl = self._kickoff_yard_line(kickoff)
             self._change_possession(new_yl)
             return result
 
@@ -774,11 +797,12 @@ class Game:
                     self.state.possession = (
                         "home" if self.state.possession == "away" else "away"
                     )
-                    kickoff = self.resolver.resolve_kickoff(
-                        returner=self.get_returner(self.get_offense_team(), "KR")
+                    kickoff = self._do_kickoff(
+                        kicking_team=self.get_defense_team(),
+                        receiving_team=self.get_offense_team(),
                     )
                     self.state.play_log.append(f"Second half kickoff: {kickoff.description}")
-                    new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+                    new_yl = self._kickoff_yard_line(kickoff)
                     self.state.yard_line = new_yl
                     self.state.down = 1
                     self.state.distance = 10
@@ -944,11 +968,12 @@ class Game:
                     return result
                 if result.is_touchdown or result.result == "TD":
                     self._score_touchdown()
-                    kickoff = self.resolver.resolve_kickoff(
-                        returner=self.get_returner(self.get_defense_team(), "KR")
+                    kickoff = self._do_kickoff(
+                        kicking_team=self.get_offense_team(),
+                        receiving_team=self.get_defense_team(),
                     )
                     self.state.play_log.append(kickoff.description)
-                    new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+                    new_yl = self._kickoff_yard_line(kickoff)
                     self._change_possession(new_yl)
                     return result
                 self._advance_down(result.yards_gained)
@@ -1037,11 +1062,12 @@ class Game:
 
         if result.is_touchdown or result.result == "TD":
             self._score_touchdown()
-            kickoff = self.resolver.resolve_kickoff(
-                returner=self.get_returner(self.get_defense_team(), "KR")
+            kickoff = self._do_kickoff(
+                kicking_team=self.get_offense_team(),
+                receiving_team=self.get_defense_team(),
             )
             self.state.play_log.append(kickoff.description)
-            new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+            new_yl = self._kickoff_yard_line(kickoff)
             self._change_possession(new_yl)
             return result
 
@@ -1327,7 +1353,18 @@ class Game:
 
         Normal kickoff + 15 yards to return start + 1 to return Run Number.
         """
-        result = self.resolver.resolve_squib_kick(self.deck)
+        # Current offense is kicking, defense receives
+        kicking = self.get_offense_team()
+        receiving = self.get_defense_team()
+        result = self.resolver.resolve_squib_kick(
+            self.deck,
+            kickoff_table=kicking.get_kickoff_table(),
+            kickoff_returners=receiving.get_kickoff_returners(),
+            kickoff_return_table=receiving.get_kickoff_return_table(),
+            fumbles_lost_max=getattr(receiving, 'fumbles_lost_max', 21),
+            def_fumble_adj=getattr(kicking, 'def_fumble_adj', 0),
+            is_home=(receiving == self.home_team),
+        )
         self.state.play_log.append(result.description)
         new_yl = max(1, result.yards_gained)
         self._change_possession(new_yl)
@@ -1347,11 +1384,12 @@ class Game:
             self._handle_turnover(result)
         elif result.is_touchdown or result.result == "TD":
             self._score_touchdown()
-            kickoff = self.resolver.resolve_kickoff(
-                returner=self.get_returner(self.get_defense_team(), "KR")
+            kickoff = self._do_kickoff(
+                kicking_team=self.get_offense_team(),
+                receiving_team=self.get_defense_team(),
             )
             self.state.play_log.append(kickoff.description)
-            new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+            new_yl = self._kickoff_yard_line(kickoff)
             self._change_possession(new_yl)
         else:
             self._advance_down(result.yards_gained)
@@ -1378,11 +1416,12 @@ class Game:
             self._handle_turnover(result)
         elif result.is_touchdown or result.result == "TD":
             self._score_touchdown()
-            kickoff = self.resolver.resolve_kickoff(
-                returner=self.get_returner(self.get_defense_team(), "KR")
+            kickoff = self._do_kickoff(
+                kicking_team=self.get_offense_team(),
+                receiving_team=self.get_defense_team(),
             )
             self.state.play_log.append(kickoff.description)
-            new_yl = 25 if kickoff.result == "TOUCHBACK" else max(1, kickoff.yards_gained)
+            new_yl = self._kickoff_yard_line(kickoff)
             self._change_possession(new_yl)
         else:
             self._advance_down(result.yards_gained)

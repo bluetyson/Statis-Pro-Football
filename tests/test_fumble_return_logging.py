@@ -282,8 +282,7 @@ class TestKickoffReturnLogging:
         assert "[KR]" in log_text
         assert "Devin Hester" in log_text
         assert "grade A" in log_text
-        assert "Base return yards=22" in log_text
-        assert "returner modifier=" in log_text
+        assert "yard line=22" in log_text
 
     def test_return_without_returner_still_logs(self):
         resolver = PlayResolver()

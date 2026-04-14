@@ -53,6 +53,29 @@ class Team:
     fumbles_lost_max: int = 21       # Fumbles Lost upper range (1-N means lost on PN 1..N)
     def_fumble_adj: int = 0          # Defensive Fumble Adjustment (opponent's adj)
 
+    # ── 5E Kickoff Table (team card, 12 entries for RN 1-12) ──────────
+    # Each entry is a string: "TB", "TB(-3)", "TB(-5)", "1", "3", "GL",
+    # "OB", or "special" (RN 12's draw-again sub-table).
+    kickoff_table: List[str] = field(default_factory=list)
+
+    # ── 5E Kickoff Return Card ────────────────────────────────────────
+    # kickoff_returners: list of {"name": str, "pn_min": int, "pn_max": int}
+    # The FAC Pass Number selects which KR handles the return.
+    kickoff_returners: List[Dict[str, Any]] = field(default_factory=list)
+
+    # kickoff_return_table: list (one per KR) of 12-entry lists.
+    # Each entry is [normal_yard_line, breakaway_yard_line].
+    # Special values: "TD" for touchdown, "Xf" for fumble at X.
+    kickoff_return_table: List[List[Any]] = field(default_factory=list)
+
+    # ── 5E Punt Return Card ───────────────────────────────────────────
+    # punt_returners: list of {"name": str, "pn_min": int, "pn_max": int}
+    punt_returners: List[Dict[str, Any]] = field(default_factory=list)
+
+    # punt_return_table: list (one per PR) of 12-entry lists.
+    # Each entry is [normal_yard_line, breakaway_yard_line].
+    punt_return_table: List[List[Any]] = field(default_factory=list)
+
     _RETURN_POSITION_BONUS = {
         "KR": {"RB": 14, "WR": 12, "CB": 9, "DB": 8, "TE": 4, "QB": 2},
         "PR": {"WR": 15, "CB": 12, "DB": 11, "RB": 10, "TE": 3, "QB": 1},
@@ -63,7 +86,7 @@ class Team:
     }
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "abbreviation": self.abbreviation,
             "city": self.city,
             "name": self.name,
@@ -76,6 +99,17 @@ class Team:
             "def_fumble_adj": self.def_fumble_adj,
             "players": [p.to_dict() for p in self.roster.all_players()],
         }
+        if self.kickoff_table:
+            d["kickoff_table"] = self.kickoff_table
+        if self.kickoff_returners:
+            d["kickoff_returners"] = self.kickoff_returners
+        if self.kickoff_return_table:
+            d["kickoff_return_table"] = self.kickoff_return_table
+        if self.punt_returners:
+            d["punt_returners"] = self.punt_returners
+        if self.punt_return_table:
+            d["punt_return_table"] = self.punt_return_table
+        return d
 
     @staticmethod
     def _grade_score(grade: str) -> int:
@@ -141,6 +175,102 @@ class Team:
             },
         }
 
+    # ── 5E Kickoff/Return table accessors ─────────────────────────────
+
+    # Default kickoff table for modern NFL kickers (~75% touchback rate):
+    # RN 1-5: TB, RN 6: TB(-5), RN 7-8: TB(-3), RN 9-10: start at 1,
+    # RN 11: start at 3, RN 12: special (draw again sub-table)
+    DEFAULT_KICKOFF_TABLE = [
+        "TB", "TB", "TB", "TB", "TB",  # RN 1-5
+        "TB(-5)",                        # RN 6
+        "TB(-3)", "TB(-3)",              # RN 7-8
+        "1", "1",                        # RN 9-10
+        "3",                             # RN 11
+        "special",                       # RN 12
+    ]
+
+    # Default kickoff return table for an average returner:
+    # [normal_yard_line, breakaway_yard_line] for RN 1-12
+    DEFAULT_KR_RETURN_TABLE = [
+        ["*30", "TD"],  # RN 1: breakaway
+        [27, 55],
+        [25, 35],
+        [24, 35],
+        [23, 35],
+        [22, 35],
+        [21, 35],
+        [20, 35],
+        [19, 30],
+        [17, 28],
+        [15, 25],
+        ["13f", 25],  # RN 12: fumble
+    ]
+
+    # Default punt return table for an average returner:
+    DEFAULT_PR_RETURN_TABLE = [
+        ["*15", 50],  # RN 1: breakaway
+        [12, 40],
+        [10, 30],
+        [9, 25],
+        [8, 22],
+        [7, 20],
+        [6, 18],
+        [5, 18],
+        [4, 18],
+        [3, 18],
+        [2, 18],
+        ["1f", 18],  # RN 12: fumble
+    ]
+
+    def get_kickoff_table(self) -> List[str]:
+        """Return the team's 12-entry kickoff table, or default."""
+        if self.kickoff_table and len(self.kickoff_table) == 12:
+            return self.kickoff_table
+        return list(self.DEFAULT_KICKOFF_TABLE)
+
+    def get_kickoff_returners(self) -> List[Dict[str, Any]]:
+        """Return KR assignments [{name, pn_min, pn_max}, ...].
+
+        Falls back to auto-selecting the top 2 return candidates.
+        """
+        if self.kickoff_returners:
+            return self.kickoff_returners
+        candidates = self.get_return_candidates("KR")[:2]
+        if not candidates:
+            return [{"name": "unknown", "pn_min": 1, "pn_max": 48}]
+        if len(candidates) == 1:
+            return [{"name": candidates[0].player_name, "pn_min": 1, "pn_max": 48}]
+        return [
+            {"name": candidates[0].player_name, "pn_min": 1, "pn_max": 33},
+            {"name": candidates[1].player_name, "pn_min": 34, "pn_max": 48},
+        ]
+
+    def get_kickoff_return_table(self) -> List[List[Any]]:
+        """Return the kickoff return tables (one 12-row table per KR), or defaults."""
+        if self.kickoff_return_table:
+            return self.kickoff_return_table
+        kr_count = max(1, len(self.get_kickoff_returners()))
+        return [list(self.DEFAULT_KR_RETURN_TABLE) for _ in range(kr_count)]
+
+    def get_punt_returners(self) -> List[Dict[str, Any]]:
+        """Return PR assignments [{name, pn_min, pn_max}, ...].
+
+        Falls back to auto-selecting the top return candidate.
+        """
+        if self.punt_returners:
+            return self.punt_returners
+        candidates = self.get_return_candidates("PR")[:1]
+        if not candidates:
+            return [{"name": "unknown", "pn_min": 1, "pn_max": 48}]
+        return [{"name": candidates[0].player_name, "pn_min": 1, "pn_max": 48}]
+
+    def get_punt_return_table(self) -> List[List[Any]]:
+        """Return the punt return tables (one 12-row table per PR), or defaults."""
+        if self.punt_return_table:
+            return self.punt_return_table
+        pr_count = max(1, len(self.get_punt_returners()))
+        return [list(self.DEFAULT_PR_RETURN_TABLE) for _ in range(pr_count)]
+
     @classmethod
     def from_dict(cls, data: dict) -> "Team":
         team = cls(
@@ -154,6 +284,11 @@ class Team:
         team.defense_rating = data.get("defense_rating", 0)
         team.fumbles_lost_max = data.get("fumbles_lost_max", 21)
         team.def_fumble_adj = data.get("def_fumble_adj", 0)
+        team.kickoff_table = data.get("kickoff_table", [])
+        team.kickoff_returners = data.get("kickoff_returners", [])
+        team.kickoff_return_table = data.get("kickoff_return_table", [])
+        team.punt_returners = data.get("punt_returners", [])
+        team.punt_return_table = data.get("punt_return_table", [])
         record = data.get("record", {})
         team.wins = record.get("wins", 0)
         team.losses = record.get("losses", 0)
