@@ -1269,6 +1269,7 @@ class Game:
             if box_letter in row1_boxes:
                 dl_pass_rush_sum += getattr(defender, 'pass_rush_rating', 0)
         # When blitz is active, blitzing LBs/DBs each add PR=2
+        blitzing_names: List[str] = []
         if blitz_active:
             blitz_boxes = set()
             # Per 5E Blitz Summation Chart: PN determines which boxes blitz
@@ -1285,6 +1286,7 @@ class Game:
             for box_letter in blitz_boxes:
                 if box_letter in defenders_by_box:
                     dl_pass_rush_sum += 2  # Blitzing player PR = 2
+                    blitzing_names.append(defenders_by_box[box_letter].player_name)
 
         # Determine which defender (if any) moved for double coverage.
         # If double coverage is active, the FS (box M) typically leaves
@@ -1317,6 +1319,7 @@ class Game:
                 defenders_by_box=defenders_by_box,
                 backs_blocking=backs_blocking,
                 double_coverage_defender_box=double_coverage_defender_box,
+                blitzer_names=blitzing_names or None,
             )
             result.defense_formation = def_formation
             return result

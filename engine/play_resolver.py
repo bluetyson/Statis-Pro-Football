@@ -1288,7 +1288,8 @@ class PlayResolver:
                         yard_line: int = 25,
                         defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
                         backs_blocking: Optional[List[int]] = None,
-                        double_coverage_defender_box: Optional[str] = None) -> PlayResult:
+                        double_coverage_defender_box: Optional[str] = None,
+                        blitzer_names: Optional[List[str]] = None) -> PlayResult:
         """Resolve a pass play using 5th-edition FAC card mechanics.
 
         Parameters
@@ -1332,6 +1333,8 @@ class PlayResolver:
             The original box letter of the defender who moved to double
             cover a receiver.  If an INC→INT check fires in this box,
             the interception is suppressed because the defender is away.
+        blitzer_names : Optional[List[str]]
+            Names of blitzing players for debug logging.
         """
         # ── Handle Z card ────────────────────────────────────────────
         if fac_card.is_z_card:
@@ -1345,7 +1348,7 @@ class PlayResolver:
                 is_blitz_tendency, z_event, defensive_strategy, defenders,
                 two_minute_offense, completion_modifier, defensive_play_5e,
                 yard_line, defenders_by_box, backs_blocking,
-                double_coverage_defender_box,
+                double_coverage_defender_box, blitzer_names,
             )
 
         return self._resolve_pass_inner_5e(
@@ -1355,7 +1358,7 @@ class PlayResolver:
             is_blitz_tendency, None, defensive_strategy, defenders,
             two_minute_offense, completion_modifier, defensive_play_5e,
             yard_line, defenders_by_box, backs_blocking,
-            double_coverage_defender_box,
+            double_coverage_defender_box, blitzer_names,
         )
 
     def _resolve_pass_inner_5e(self, fac_card: FACCard, deck: FACDeck,
@@ -1376,7 +1379,8 @@ class PlayResolver:
                                yard_line: int = 25,
                                defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
                                backs_blocking: Optional[List[int]] = None,
-                               double_coverage_defender_box: Optional[str] = None) -> PlayResult:
+                               double_coverage_defender_box: Optional[str] = None,
+                               blitzer_names: Optional[List[str]] = None) -> PlayResult:
         """Inner pass resolution after Z-card handling.
 
         Authentic 5E resolution:
@@ -1425,12 +1429,32 @@ class PlayResolver:
                     defense_pass_rush, offense_pass_block
                 )
                 log.append(f"[P.RUSH] DL pass rush sum={defense_pass_rush}, OL pass block sum={offense_pass_block}")
-                adjusted_pn = pn
-                if pr_modifier != 0:
-                    adjusted_pn = max(1, min(48, pn - pr_modifier))
-                    log.append(f"[P.RUSH] PR modifier={pr_modifier}, adjusted PN={adjusted_pn}")
 
-                pr_result = qb.pass_rush.resolve(adjusted_pn)
+                # Per 5E rules: modifier adjusts the QB's Sack Range on
+                # his Pass Rush line — NOT the Pass Number.  The
+                # Completion Range is never altered (Step 4 note).
+                # When sack range shrinks, former sack numbers become
+                # RUNS (Step 4 note).
+                adjusted_sack_max = qb.pass_rush.sack_max + pr_modifier
+                # Sack range can't go below 0 or above runs_max
+                adjusted_sack_max = max(0, min(qb.pass_rush.runs_max, adjusted_sack_max))
+                if pr_modifier != 0:
+                    log.append(f"[P.RUSH] PR modifier={pr_modifier}, adjusted sack range: {qb.pass_rush.sack_max}→{adjusted_sack_max}")
+
+                # Log blitzer info when blitz forced the pass rush
+                if blitzer_names:
+                    log.append(f"[P.RUSH] Blitzing ({len(blitzer_names)}): {', '.join(blitzer_names)}")
+
+                # Resolve using adjusted sack range; runs_max and com_max
+                # are unchanged per the rules.
+                if pn <= adjusted_sack_max:
+                    pr_result = "SACK"
+                elif pn <= qb.pass_rush.runs_max:
+                    pr_result = "RUNS"
+                elif pn <= qb.pass_rush.com_max:
+                    pr_result = "COM"
+                else:
+                    pr_result = "INC"
                 log.append(f"[P.RUSH] Result = {pr_result}")
                 if pr_result == "SACK":
                     loss = -(pn // 3 + 1)

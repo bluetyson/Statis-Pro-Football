@@ -314,3 +314,236 @@ class TestBlitzPassRushIntegration:
         )
         assert isinstance(result, PlayResult)
         assert result.play_type == "PASS"
+
+
+class TestPassRushSackRangeAdjustment:
+    """Verify pass rush modifier adjusts sack range, NOT pass number."""
+
+    def test_defense_wins_increases_sack_range(self):
+        """When DL > OL, sack_max should increase (more sacks)."""
+        resolver = PlayResolver()
+        gen = CardGenerator(seed=42)
+        deck = FACDeck(seed=42)
+
+        qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B"
+        )
+        # Override pass rush ranges for predictable testing
+        qb.pass_rush = PassRushRanges(sack_max=8, runs_max=30, com_max=37)
+        wr = gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B", receiver_letter="A"
+        )
+
+        # DL=11, OL=10 → modifier = +2 → sack_max goes from 8 → 10
+        # Use blitz to force pass rush regardless of FAC card
+        fac_card = deck.draw_non_z()
+        result = resolver.resolve_pass_5e(
+            fac_card, deck, qb, wr, [wr],
+            pass_type="SHORT",
+            defense_pass_rush=11,
+            offense_pass_block=10,
+            defensive_play_5e=DefensivePlay.BLITZ,
+        )
+        log_text = " ".join(result.debug_log)
+        # Should show adjusted sack range, NOT adjusted PN
+        assert "adjusted sack range: 8→10" in log_text
+        assert "adjusted PN" not in log_text
+
+    def test_offense_wins_decreases_sack_range(self):
+        """When OL > DL, sack_max should decrease (fewer sacks)."""
+        resolver = PlayResolver()
+        gen = CardGenerator(seed=42)
+        deck = FACDeck(seed=42)
+
+        qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B"
+        )
+        qb.pass_rush = PassRushRanges(sack_max=12, runs_max=30, com_max=37)
+        wr = gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B", receiver_letter="A"
+        )
+
+        # DL=8, OL=10 → modifier = -4 → sack_max goes from 12 → 8
+        fac_card = deck.draw_non_z()
+        result = resolver.resolve_pass_5e(
+            fac_card, deck, qb, wr, [wr],
+            pass_type="SHORT",
+            defense_pass_rush=8,
+            offense_pass_block=10,
+            defensive_play_5e=DefensivePlay.BLITZ,
+        )
+        log_text = " ".join(result.debug_log)
+        assert "adjusted sack range: 12→8" in log_text
+
+    def test_sack_range_cannot_go_below_zero(self):
+        """Sack range should be clamped to 0 minimum."""
+        resolver = PlayResolver()
+        gen = CardGenerator(seed=42)
+        deck = FACDeck(seed=42)
+
+        qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B"
+        )
+        qb.pass_rush = PassRushRanges(sack_max=4, runs_max=30, com_max=37)
+        wr = gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B", receiver_letter="A"
+        )
+
+        # DL=5, OL=10 → modifier = -10 → sack_max would be 4-10=-6, clamped to 0
+        fac_card = deck.draw_non_z()
+        result = resolver.resolve_pass_5e(
+            fac_card, deck, qb, wr, [wr],
+            pass_type="SHORT",
+            defense_pass_rush=5,
+            offense_pass_block=10,
+            defensive_play_5e=DefensivePlay.BLITZ,
+        )
+        log_text = " ".join(result.debug_log)
+        assert "adjusted sack range: 4→0" in log_text
+
+    def test_sack_range_cannot_exceed_runs_max(self):
+        """Sack range should be clamped to runs_max maximum."""
+        resolver = PlayResolver()
+        gen = CardGenerator(seed=42)
+        deck = FACDeck(seed=42)
+
+        qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B"
+        )
+        qb.pass_rush = PassRushRanges(sack_max=28, runs_max=30, com_max=37)
+        wr = gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B", receiver_letter="A"
+        )
+
+        # DL=15, OL=10 → modifier = +10 → sack_max would be 28+10=38, clamped to runs_max=30
+        fac_card = deck.draw_non_z()
+        result = resolver.resolve_pass_5e(
+            fac_card, deck, qb, wr, [wr],
+            pass_type="SHORT",
+            defense_pass_rush=15,
+            offense_pass_block=10,
+            defensive_play_5e=DefensivePlay.BLITZ,
+        )
+        log_text = " ".join(result.debug_log)
+        assert "adjusted sack range: 28→30" in log_text
+
+    def test_equal_sums_no_adjustment(self):
+        """When DL == OL, no modifier log line should appear."""
+        resolver = PlayResolver()
+        gen = CardGenerator(seed=42)
+        deck = FACDeck(seed=42)
+
+        qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B"
+        )
+        qb.pass_rush = PassRushRanges(sack_max=8, runs_max=30, com_max=37)
+        wr = gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B", receiver_letter="A"
+        )
+
+        # DL=10, OL=10 → modifier = 0 → no adjustment
+        fac_card = deck.draw_non_z()
+        result = resolver.resolve_pass_5e(
+            fac_card, deck, qb, wr, [wr],
+            pass_type="SHORT",
+            defense_pass_rush=10,
+            offense_pass_block=10,
+            defensive_play_5e=DefensivePlay.BLITZ,
+        )
+        log_text = " ".join(result.debug_log)
+        assert "PR modifier" not in log_text
+        assert "adjusted sack range" not in log_text
+
+    def test_completion_range_never_altered(self):
+        """Per rules: QB Completion Range on Pass Rush line is never altered."""
+        resolver = PlayResolver()
+        gen = CardGenerator(seed=42)
+        deck = FACDeck(seed=42)
+
+        qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B"
+        )
+        original_com_max = qb.pass_rush.com_max
+        wr = gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B", receiver_letter="A"
+        )
+
+        # Large modifier — should still not touch com_max
+        fac_card = deck.draw_non_z()
+        result = resolver.resolve_pass_5e(
+            fac_card, deck, qb, wr, [wr],
+            pass_type="SHORT",
+            defense_pass_rush=15,
+            offense_pass_block=5,
+            defensive_play_5e=DefensivePlay.BLITZ,
+        )
+        # com_max on the QB card should be unchanged
+        assert qb.pass_rush.com_max == original_com_max
+
+
+class TestBlitzerNamesInLog:
+    """Verify blitzer names appear in pass rush debug log."""
+
+    def test_blitzer_names_logged_when_pass_rush_forced(self):
+        """When blitz forces pass rush, blitzer names should appear in debug log."""
+        resolver = PlayResolver()
+        gen = CardGenerator(seed=42)
+        deck = FACDeck(seed=42)
+
+        qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B"
+        )
+        qb.pass_rush = PassRushRanges(sack_max=8, runs_max=30, com_max=37)
+        wr = gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B", receiver_letter="A"
+        )
+
+        fac_card = deck.draw_non_z()
+        result = resolver.resolve_pass_5e(
+            fac_card, deck, qb, wr, [wr],
+            pass_type="SHORT",
+            defense_pass_rush=11,
+            offense_pass_block=10,
+            defensive_play_5e=DefensivePlay.BLITZ,
+            blitzer_names=["Von Miller", "Matt Milano"],
+        )
+        log_text = " ".join(result.debug_log)
+        assert "Blitzing (2): Von Miller, Matt Milano" in log_text
+
+    def test_no_blitzer_names_when_not_blitz(self):
+        """Non-blitz pass rush should not log blitzer names."""
+        resolver = PlayResolver()
+        gen = CardGenerator(seed=42)
+        deck = FACDeck(seed=42)
+
+        qb = gen.generate_qb_card_authentic(
+            "Test QB", "TST", 1, 0.65, 7.5, 0.03, 0.06, "B"
+        )
+        wr = gen.generate_wr_card_authentic(
+            "Test WR", "TST", 80, 0.70, 12.0, "B", receiver_letter="A"
+        )
+
+        # Find a P.Rush FAC card (non-blitz triggered pass rush)
+        found_pr_card = None
+        test_deck = FACDeck(seed=99)
+        for _ in range(200):
+            card = test_deck.draw()
+            if not card.is_z_card:
+                target = card.get_receiver_target("SHORT")
+                if target == "P.Rush":
+                    found_pr_card = card
+                    break
+        if found_pr_card is None:
+            pytest.skip("No P.Rush FAC card found in deck")
+
+        result = resolver._resolve_pass_inner_5e(
+            found_pr_card, deck, qb, wr, [wr],
+            pass_type="SHORT", defense_coverage=0,
+            defense_pass_rush=10,
+            offense_pass_block=10,
+            defense_formation="4_3",
+            is_blitz_tendency=False, z_event=None,
+            yard_line=30,
+        )
+        log_text = " ".join(result.debug_log)
+        assert "Blitzing" not in log_text
