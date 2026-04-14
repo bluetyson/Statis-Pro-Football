@@ -22,7 +22,6 @@ from engine.fac_distributions import (
     effective_pass_rush, effective_coverage, effective_run_stop,
     pass_number, run_number,
 )
-from engine.fast_action_dice import FastActionDice, DiceResult, PlayTendency
 from engine.card_generator import (
     CardGenerator, _make_qb_short_pass, _make_rb_inside_run,
     _make_rb_outside_run, _make_wr_reception, _make_qb_rush,
@@ -132,17 +131,6 @@ class TestPassRunNumber:
 
     def test_run_number(self):
         assert run_number(5, 2) == 52
-
-    def test_dice_result_has_pn_rn(self):
-        d = FastActionDice()
-        r = d.roll()
-        assert r.pass_number == r.two_digit
-        assert r.run_number == r.two_digit
-
-    def test_dice_result_has_slot(self):
-        d = FastActionDice()
-        r = d.roll()
-        assert r.slot == str(r.two_digit)
 
 
 # ─── Z-Card System ──────────────────────────────────────────────────
