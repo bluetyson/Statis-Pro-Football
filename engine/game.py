@@ -763,11 +763,12 @@ class Game:
             fl = wrs[1]  # WR2 as flanker
             le = wrs[0]  # WR1 at left end
         elif len(wrs) == 1:
-            fl = wrs[0]
-            le = tes[0] if tes else None
+            fl = wrs[0]  # Only WR → flanker
+            le = tes[0] if tes else None  # TE fills left end
         else:
-            fl = tes[0] if len(tes) > 0 else None
-            le = tes[1] if len(tes) > 1 else None
+            # No WRs: TEs fill LE first (primary), then FL
+            le = tes[0] if len(tes) > 0 else None
+            fl = tes[1] if len(tes) > 1 else None
 
         # RE = first TE not already used at LE
         re_candidates = [t for t in tes if t is not le and t is not fl]
@@ -1270,12 +1271,14 @@ class Game:
         # When blitz is active, blitzing LBs/DBs each add PR=2
         if blitz_active:
             blitz_boxes = set()
-            # Per solitaire rules: PN determines which boxes blitz
-            # F&J (PN 1-26), F&J&M (PN 27-35), F-J (PN 36-48)
-            pn = fac_card.pass_num_int or 26
-            if pn <= 26:
+            # Per 5E Blitz Summation Chart: PN determines which boxes blitz
+            # PN 1-26 → F & J, PN 27-35 → F & J & M, PN 36-48 → F-J
+            BLITZ_TWO_PLAYER_MAX = 26   # PN boundary: 2-player blitz
+            BLITZ_THREE_PLAYER_MAX = 35  # PN boundary: 3-player blitz
+            pn = fac_card.pass_num_int or BLITZ_TWO_PLAYER_MAX
+            if pn <= BLITZ_TWO_PLAYER_MAX:
                 blitz_boxes = {'F', 'J'}
-            elif pn <= 35:
+            elif pn <= BLITZ_THREE_PLAYER_MAX:
                 blitz_boxes = {'F', 'J', 'M'}
             else:
                 blitz_boxes = {'F', 'G', 'H', 'I', 'J'}
