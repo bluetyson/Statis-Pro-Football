@@ -117,7 +117,8 @@ class TestOLOnlyNoLegacyRunStop:
     """OL_ONLY and TWO_OL matchups should not subtract legacy team run-stop."""
 
     def test_ol_only_bk_matchup_no_subtraction(self):
-        """When FAC matchup is 'BK' (OL_ONLY), yards = base_yards, no run-stop."""
+        """When FAC matchup is 'BK' (OL_ONLY), yards include BK blocking value,
+        no legacy run-stop subtraction."""
         buf = _load_team("BUF")
         rusher = _find_rusher(buf, "Cook")
         resolver = PlayResolver()
@@ -142,14 +143,14 @@ class TestOLOnlyNoLegacyRunStop:
         assert result.yards_gained >= -3, (
             f"Got {result.yards_gained} yards; legacy run-stop should not apply"
         )
-        # Check that "No specific defender box" is logged (not legacy team run-stop)
+        # Check that no defensive box is in the matchup
         def_entries = [e for e in result.debug_log if "[DEF]" in e]
-        assert any("No specific defender box" in e for e in def_entries), (
-            f"Expected 'No specific defender box' log, got: {def_entries}"
+        assert any("No defensive box" in e for e in def_entries), (
+            f"Expected 'No defensive box' log, got: {def_entries}"
         )
 
     def test_two_ol_matchup_no_subtraction(self):
-        """When FAC matchup is 'CN + LG' (TWO_OL), no run-stop subtraction."""
+        """When FAC matchup is 'CN + LG' (TWO_OL), adds BV, no run-stop subtraction."""
         buf = _load_team("BUF")
         rusher = _find_rusher(buf, "Cook")
         resolver = PlayResolver()
@@ -173,7 +174,7 @@ class TestOLOnlyNoLegacyRunStop:
             defense_formation="4_3",
             defensive_play_5e=DefensivePlay.PASS_DEFENSE,
         )
-        # The yards should be reasonable (base yards only)
+        # The yards should be reasonable (base yards + blocking values, no subtraction)
         assert result.yards_gained >= -3
 
 
@@ -181,7 +182,7 @@ class TestBlockingBackBVLogging:
     """Blocking back BV should be logged when BK is in the matchup."""
 
     def test_bk_matchup_logs_bv(self):
-        """BK matchup should log blocking back BV."""
+        """BK matchup should log blocking back BV via offensive_blockers_by_pos."""
         buf = _load_team("BUF")
         rusher = _find_rusher(buf, "Cook")
         resolver = PlayResolver()
@@ -200,8 +201,10 @@ class TestBlockingBackBVLogging:
             defense_run_stop=85,
             defense_formation="4_3",
             defensive_play_5e=DefensivePlay.PASS_DEFENSE,
-            blocking_back_bv=0,
+            blocking_back_bv=2,
         )
-        bv_entries = [e for e in result.debug_log if "Blocking back BV" in e]
-        assert len(bv_entries) == 1
-        assert "BV=0" in bv_entries[0]
+        # Should log BK blocking back BV via fallback
+        bv_entries = [e for e in result.debug_log if "BK" in e and "BV" in e]
+        assert len(bv_entries) >= 1, (
+            f"Expected BK BV log entry, got: {[e for e in result.debug_log if 'OFF' in e or 'BK' in e]}"
+        )

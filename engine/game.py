@@ -1068,14 +1068,37 @@ class Game:
         # Build defenders_by_box mapping for individual tackle ratings
         defenders_by_box = self._build_defenders_by_box(defense)
 
-        # Look up blocking back BV: find a different RB to be the blocker
+        # Build offensive_blockers_by_pos mapping for blocking values
         blocking_back_bv = 0
         offense = self.get_offense_team()
-        if offense and offense.roster and offense.roster.rbs:
-            for rb_candidate in offense.roster.rbs:
-                if rb_candidate.player_name != (rusher.player_name if rusher else None):
-                    blocking_back_bv = getattr(rb_candidate, 'blocks', 0) or 0
-                    break
+        offensive_blockers_by_pos: Dict[str, PlayerCard] = {}
+        if offense and offense.roster:
+            # Map OL by position: LT, LG, C→CN, RG, RT
+            for ol in offense.roster.offensive_line:
+                pos = getattr(ol, 'position', '').upper()
+                if pos == "C":
+                    offensive_blockers_by_pos["CN"] = ol
+                elif pos in ("LG", "RG", "LT", "RT"):
+                    offensive_blockers_by_pos[pos] = ol
+                elif pos == "OL":
+                    # Generic OL: fill first unfilled standard position
+                    for slot in ("LT", "LG", "CN", "RG", "RT"):
+                        if slot not in offensive_blockers_by_pos:
+                            offensive_blockers_by_pos[slot] = ol
+                            break
+            # Map TEs as LE/RE
+            for te in offense.roster.tes:
+                if "LE" not in offensive_blockers_by_pos:
+                    offensive_blockers_by_pos["LE"] = te
+                elif "RE" not in offensive_blockers_by_pos:
+                    offensive_blockers_by_pos["RE"] = te
+            # Map BK = blocking back (different RB than the ball carrier)
+            if offense.roster.rbs:
+                for rb_candidate in offense.roster.rbs:
+                    if rb_candidate.player_name != (rusher.player_name if rusher else None):
+                        offensive_blockers_by_pos["BK"] = rb_candidate
+                        blocking_back_bv = getattr(rb_candidate, 'blocks', 0) or 0
+                        break
 
         if rusher:
             # Determine fumble team ratings
@@ -1091,6 +1114,7 @@ class Game:
                 defensive_play_5e=defensive_play_5e,
                 blocking_back_bv=blocking_back_bv,
                 defenders_by_box=defenders_by_box,
+                offensive_blockers_by_pos=offensive_blockers_by_pos,
                 fumbles_lost_max=off_fumbles_lost_max,
                 def_fumble_adj=def_fumble_adj_val,
                 is_home=off_is_home,

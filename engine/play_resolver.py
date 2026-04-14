@@ -453,13 +453,14 @@ class PlayResolver:
         """Classify a FAC blocking matchup string into a matchup type.
 
         Returns one of:
-          "BK_VS_BOX"   — "BK vs F" style: blocking back vs. defensive box
-          "OL_VS_BOX"   — "CN vs C" / "LG vs B" style: OL vs. defensive box
-          "TWO_DEF_BOX" — "A + F" / "B + G" style: two single-letter defense boxes
-          "TWO_OL"      — "LG + LT" / "CN + LG" style: two offensive players
-          "OL_ONLY"     — "LG" / "CN" / "BK" / "LT" etc.: single OL, no specific box
-          "BREAK"       — breakaway run
-          "OTHER"       — unrecognised pattern
+          "BK_VS_BOX"     — "BK vs F" style: blocking back vs. defensive box (contest)
+          "OL_VS_BOX"     — "CN vs C" / "LG vs B" style: OL vs. defensive box (contest)
+          "SINGLE_DEF_BOX" — "A" / "C" style: single defensive box letter (defense only)
+          "TWO_DEF_BOX"   — "A + F" / "B + G" style: two defensive boxes (defense only)
+          "TWO_OL"        — "LG + LT" / "CN + LG" style: two offensive players (offense only)
+          "OL_ONLY"       — "LG" / "CN" / "BK" / "LT" etc.: single OL (offense only)
+          "BREAK"         — breakaway run
+          "OTHER"         — unrecognised pattern
         """
         m = matchup.strip()
         if m.upper() == "BREAK":
@@ -477,8 +478,53 @@ class PlayResolver:
                 return "TWO_OL"
         # Single uppercase letter = defensive box (A-O)
         if len(m) == 1 and m.isupper():
-            return "OL_VS_BOX"
+            return "SINGLE_DEF_BOX"
         return "OL_ONLY"
+
+    @staticmethod
+    def extract_ol_abbreviations(matchup: str) -> list:
+        """Extract 2-letter offensive player abbreviations from a matchup string.
+
+        Returns a list of offensive position abbreviations (e.g. CN, LG, BK).
+        Examples:
+          "BK"        → ["BK"]
+          "LG"        → ["LG"]
+          "CN + LG"   → ["CN", "LG"]
+          "LG vs B"   → ["LG"]
+          "BK vs G"   → ["BK"]
+          "A"         → []      (defensive box only)
+          "A + F"     → []      (defensive boxes only)
+        """
+        m = matchup.strip()
+        if " vs " in m:
+            off_part = m.split(" vs ")[0].strip()
+            if len(off_part) >= 2:
+                return [off_part]
+            return []
+        if " + " in m:
+            parts = [p.strip() for p in m.split(" + ")]
+            if len(parts) == 2:
+                # If all parts are single letters, these are defensive boxes
+                if all(len(p) == 1 and p.isupper() for p in parts):
+                    return []
+                return [p for p in parts if len(p) >= 2]
+            return []
+        # Single 2+ letter abbreviation = offensive player
+        if len(m) >= 2:
+            return [m]
+        return []
+
+    @staticmethod
+    def get_player_blocking_value(player: 'PlayerCard') -> int:
+        """Get the blocking value for a player in blocking matchups.
+
+        For OL: uses run_block_rating (the small-integer blocking grade).
+        For others (RB, TE, WR): uses blocks field.
+        """
+        rbr = getattr(player, 'run_block_rating', 0) or 0
+        if rbr > 0:
+            return rbr
+        return getattr(player, 'blocks', 0) or 0
 
     @staticmethod
     def extract_box_letters(matchup: str) -> list:
@@ -2022,6 +2068,7 @@ class PlayResolver:
                        both_boxes_empty: bool = False,
                        blocking_back_bv: int = 0,
                        defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
+                       offensive_blockers_by_pos: Optional[Dict[str, 'PlayerCard']] = None,
                        fumbles_lost_max: int = 21,
                        def_fumble_adj: int = 0,
                        is_home: bool = False) -> PlayResult:
@@ -2032,11 +2079,14 @@ class PlayResolver:
           2. Apply Run Number modifiers (defense play + extra)
           3. Look up rusher's Rushing column row → N/SG/LG values
           4. Use N (Normal) column as base yards
-          5. Modify by blocking matchup per empty-box rules:
-             - "BK vs Box" + empty box  → add blocking_back_bv (BK rating)
-             - "OL vs Box" + empty box  → base yards + 2
-             - "Box + Box" + both empty → base yards + 2
-             - otherwise               → base yards − defender's TV (tackle_rating)
+          5. Apply blocking matchup modifier (3 categories):
+             a. OFFENSE ONLY (OL_ONLY / TWO_OL): ADD offensive blocker(s)
+                blocking value to yardage.
+             b. DEFENSE ONLY (SINGLE_DEF_BOX / TWO_DEF_BOX): SUBTRACT
+                defender(s) tackle value from yardage; +2 if box empty.
+             c. CONTEST (BK_VS_BOX / OL_VS_BOX): Compare total BV vs TV.
+                If BV > TV → add BV; tie → 0; TV > BV → subtract TV.
+                Empty box → +2.
 
         Parameters
         ----------
@@ -2053,25 +2103,22 @@ class PlayResolver:
             Additional Run Number modifier (e.g. from Draw strategy).
             Positive = worse for offense (higher RN), negative = better.
         defensive_play_5e : Optional[DefensivePlay]
-            The 5E defensive play call. When provided, uses proper
-            get_run_number_modifier_5e() for RN modifier (+4 key on BC,
-            +2 no key, 0 wrong key/pass/prevent/blitz).
-        box_is_empty : bool
-            True when the specific defensive box named in the FAC matchup
-            has no defender assigned (empty box rule).
-        both_boxes_empty : bool
-            True when the FAC matchup is "Box + Box" and BOTH boxes are
-            unoccupied (two-box empty rule: +2 yards).
+            The 5E defensive play call.
+        defenders_by_box : dict
+            Mapping of box letter (A-O) → defensive PlayerCard.
+        offensive_blockers_by_pos : dict
+            Mapping of position abbreviation (CN, LG, BK, etc.) → offensive
+            PlayerCard.  Used to look up blocking values for OL_ONLY, TWO_OL,
+            and contest matchups.
         blocking_back_bv : int
-            Blocking value of the BK for "BK vs Box" matchups.  Only used
-            when box_is_empty is True.
+            Legacy blocking back BV (kept for backward compat; prefer
+            offensive_blockers_by_pos["BK"]).
         fumbles_lost_max : int
-            Team's Fumbles Lost upper range (e.g. 21 means PN 1-21 = lost).
-            From offensive team's card.
+            Team's Fumbles Lost upper range.
         def_fumble_adj : int
-            Defensive team's Fumble Adjustment (positive = more fumbles lost).
+            Defensive team's Fumble Adjustment.
         is_home : bool
-            Whether the ball carrier's team is the home team (home gets bonus).
+            Whether the ball carrier's team is the home team.
         """
         z_event = None
         log: List[str] = []
@@ -2129,50 +2176,68 @@ class PlayResolver:
         rn_str = str(run_num) if run_num is not None else "1"
         used_run_num = run_num if run_num is not None else 1
 
-        # Effective run-stop: use individual defender's tackle_rating from box
-        # Extract box letter(s) from the FAC card blocking matchup
+        # ── Compute defensive TV and offensive BV from matchup ────────
         box_letters = self.extract_box_letters(blocking_matchup)
-        defender_tv = None
-        defender_name = None
+        ol_abbrevs = self.extract_ol_abbreviations(blocking_matchup)
+
+        # Total defensive tackle value from targeted box(es)
+        total_def_tv = 0
+        def_names = []
+        any_box_occupied = False
+        all_boxes_empty = False
 
         if defenders_by_box and box_letters:
-            # Look up the specific defender in the targeted box
+            occupied_count = 0
             for bl in box_letters:
                 defender = defenders_by_box.get(bl)
                 if defender is not None:
-                    defender_tv = getattr(defender, 'tackle_rating', 0)
-                    defender_name = getattr(defender, 'player_name', '?')
-                    break
-
-            if defender_tv is None:
-                # Box is empty — check empty-box conditions
-                if len(box_letters) == 1:
-                    box_is_empty = True
-                elif len(box_letters) == 2:
-                    both_empty = all(
-                        defenders_by_box.get(bl) is None for bl in box_letters
-                    )
-                    both_boxes_empty = both_empty
-
-        # Formation modifier applies to the defender's TV
-        from .fac_distributions import get_formation_modifier
-        form_mod = get_formation_modifier(defense_formation).get("run_stop", 0)
-
-        if defender_tv is not None:
-            eff_run_stop = defender_tv + form_mod
-            log.append(
-                f"[DEF] Tackle value: defender={defender_name} in box {box_letters[0]}, "
-                f"TV={defender_tv}, formation_mod={form_mod:+d}, effective={eff_run_stop}"
-            )
+                    tv = getattr(defender, 'tackle_rating', 0) or 0
+                    total_def_tv += tv
+                    def_names.append(f"{defender.player_name}(box={bl},TV={tv})")
+                    occupied_count += 1
+            any_box_occupied = occupied_count > 0
+            all_boxes_empty = occupied_count == 0
+            if any_box_occupied:
+                log.append(
+                    f"[DEF] Defenders targeted: {', '.join(def_names)}, "
+                    f"total TV={total_def_tv}"
+                )
+            else:
+                log.append(
+                    f"[DEF] All targeted boxes {box_letters} empty"
+                )
+        elif box_letters:
+            all_boxes_empty = True
+            log.append(f"[DEF] No defenders_by_box available, boxes {box_letters} treated as empty")
         else:
-            # No individual defender found — no box targeted or box empty
-            # In 5E, only individual defender TV is subtracted. No legacy team
-            # run-stop applies when no specific box is in the matchup.
-            eff_run_stop = 0
-            log.append(
-                f"[DEF] No specific defender box in matchup — "
-                f"no TV subtraction (eff_run_stop=0)"
-            )
+            log.append(f"[DEF] No defensive box in matchup")
+
+        # Total offensive blocking value from OL/BK abbreviations
+        total_off_bv = 0
+        off_names = []
+        if offensive_blockers_by_pos and ol_abbrevs:
+            for abbrev in ol_abbrevs:
+                blocker = offensive_blockers_by_pos.get(abbrev)
+                if blocker is not None:
+                    bv = self.get_player_blocking_value(blocker)
+                    total_off_bv += bv
+                    off_names.append(f"{blocker.player_name}({abbrev},BV={bv})")
+            if off_names:
+                log.append(
+                    f"[OFF] Blockers: {', '.join(off_names)}, total BV={total_off_bv}"
+                )
+        elif ol_abbrevs:
+            # Fallback: use blocking_back_bv for BK if no personnel dict
+            if "BK" in ol_abbrevs and blocking_back_bv:
+                total_off_bv = blocking_back_bv
+                log.append(f"[OFF] BK blocking back BV={blocking_back_bv} (fallback)")
+
+        # Update empty-box flags for backward compatibility
+        if all_boxes_empty and box_letters:
+            if len(box_letters) == 1:
+                box_is_empty = True
+            elif len(box_letters) == 2:
+                both_boxes_empty = True
 
         # ── Try authentic 12-row rushing first ───────────────────────
         if rusher.rushing and rusher.has_rushing():
@@ -2185,10 +2250,9 @@ class PlayResolver:
 
             # ── Check blocking matchup FIRST to detect BREAKAWAY ─────
             matchup_type = self.classify_blocking_matchup(blocking_matchup)
-            log.append(f"[BLOCK] Matchup type: {matchup_type} ({blocking_matchup!r}), box_empty={box_is_empty}, both_empty={both_boxes_empty}")
-            if matchup_type in ("BK_VS_BOX", "OL_ONLY") and "BK" in blocking_matchup:
-                log.append(f"[BLOCK] Blocking back BV={blocking_back_bv}"
-                           f"{' (no second RB available — BV=0)' if blocking_back_bv == 0 else ''}")
+            log.append(f"[BLOCK] Matchup type: {matchup_type} ({blocking_matchup!r}), "
+                       f"total_off_bv={total_off_bv}, total_def_tv={total_def_tv}, "
+                       f"box_empty={box_is_empty}, both_empty={both_boxes_empty}")
 
             if matchup_type == "BREAK":
                 # BREAKAWAY: use the LG (Long Gain) column, no run-stop
@@ -2245,26 +2309,70 @@ class PlayResolver:
                         yards = random.randint(1, 5)
 
             base_yards = yards
-            # ── Empty-box rules (5E rushing section) ─────────────────
 
-            if matchup_type == "BK_VS_BOX" and box_is_empty:
-                # BK vs empty box: add BK's BV only (no +2 bonus)
-                yards = base_yards + blocking_back_bv
-                log.append(f"[BLOCK] BK vs empty box → +{blocking_back_bv} (BK BV): {base_yards} + {blocking_back_bv} = {yards}")
-            elif matchup_type == "OL_VS_BOX" and box_is_empty:
-                # OL vs empty letter box: RN result + 2 yards
-                yards = base_yards + 2
-                log.append(f"[BLOCK] OL vs empty box → +2: {base_yards} + 2 = {yards}")
-            elif matchup_type == "TWO_DEF_BOX" and both_boxes_empty:
-                # Two defensive boxes, both empty: RN result + 2 yards
-                yards = base_yards + 2
-                log.append(f"[BLOCK] Two def boxes both empty → +2: {base_yards} + 2 = {yards}")
-            else:
-                # Normal occupied-box case: subtract TV (eff_run_stop)
-                yards = int(base_yards - eff_run_stop)
+            # ── Blocking matchup resolution (3 categories) ───────────
+            if matchup_type in ("OL_ONLY", "TWO_OL"):
+                # OFFENSE ONLY: add offensive blocker(s) blocking value
+                yards = base_yards + total_off_bv
                 log.append(
-                    f"[YARDS] Base yards={base_yards}, "
-                    f"minus run-stop ({eff_run_stop}) = {yards}"
+                    f"[BLOCK] Offense only ({blocking_matchup}): "
+                    f"base={base_yards} + BV={total_off_bv} = {yards}"
+                )
+
+            elif matchup_type in ("SINGLE_DEF_BOX", "TWO_DEF_BOX"):
+                # DEFENSE ONLY: subtract defender(s) tackle value
+                if (matchup_type == "SINGLE_DEF_BOX" and box_is_empty) or \
+                   (matchup_type == "TWO_DEF_BOX" and both_boxes_empty):
+                    yards = base_yards + 2
+                    log.append(
+                        f"[BLOCK] Empty box ({blocking_matchup}): "
+                        f"base={base_yards} + 2 = {yards}"
+                    )
+                else:
+                    yards = base_yards - total_def_tv
+                    log.append(
+                        f"[BLOCK] Defense box ({blocking_matchup}): "
+                        f"base={base_yards} - TV={total_def_tv} = {yards}"
+                    )
+
+            elif matchup_type in ("BK_VS_BOX", "OL_VS_BOX"):
+                # CONTEST: compare offense BV vs defense TV
+                if all_boxes_empty:
+                    # Empty box rule: +2
+                    yards = base_yards + 2
+                    log.append(
+                        f"[BLOCK] Contest empty box ({blocking_matchup}): "
+                        f"base={base_yards} + 2 = {yards}"
+                    )
+                elif total_off_bv > total_def_tv:
+                    # Offense wins: add BV
+                    yards = base_yards + total_off_bv
+                    log.append(
+                        f"[BLOCK] Contest offense wins ({blocking_matchup}): "
+                        f"BV={total_off_bv} > TV={total_def_tv}, "
+                        f"base={base_yards} + {total_off_bv} = {yards}"
+                    )
+                elif total_off_bv == total_def_tv:
+                    # Tie: no modification
+                    yards = base_yards
+                    log.append(
+                        f"[BLOCK] Contest tie ({blocking_matchup}): "
+                        f"BV={total_off_bv} == TV={total_def_tv}, "
+                        f"base={base_yards} + 0 = {yards}"
+                    )
+                else:
+                    # Defense wins: subtract TV
+                    yards = base_yards - total_def_tv
+                    log.append(
+                        f"[BLOCK] Contest defense wins ({blocking_matchup}): "
+                        f"TV={total_def_tv} > BV={total_off_bv}, "
+                        f"base={base_yards} - {total_def_tv} = {yards}"
+                    )
+            else:
+                # Unrecognised matchup: use base yards only
+                log.append(
+                    f"[BLOCK] Unrecognised matchup ({blocking_matchup}): "
+                    f"using base yards={base_yards}"
                 )
 
             # 5E Rule: Inside run max loss = 3 yards; no limit on sweep
