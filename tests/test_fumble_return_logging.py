@@ -273,7 +273,8 @@ class TestInterceptionReturnLogging:
         result = resolver._resolve_pass_inner_5e(
             fac_card, deck, qb, receiver, [receiver],
             pass_type="SHORT", defense_coverage=0,
-            defense_pass_rush=0, defense_formation="4_3",
+            defense_pass_rush=0, offense_pass_block=0,
+            defense_formation="4_3",
             is_blitz_tendency=False, z_event=None,
             yard_line=30,
         )
@@ -314,7 +315,8 @@ class TestInterceptionReturnLogging:
         result = resolver._resolve_pass_inner_5e(
             fac_card, deck, qb, receiver, [receiver],
             pass_type="SHORT", defense_coverage=0,
-            defense_pass_rush=0, defense_formation="4_3",
+            defense_pass_rush=0, offense_pass_block=0,
+            defense_formation="4_3",
             is_blitz_tendency=False, z_event=None,
             yard_line=40,
             defenders_by_box=defenders_by_box,
@@ -350,7 +352,8 @@ class TestInterceptionReturnTD:
                 result = resolver._resolve_pass_inner_5e(
                     fac_card, deck, qb, receiver, [receiver],
                     pass_type="SHORT", defense_coverage=0,
-                    defense_pass_rush=0, defense_formation="4_3",
+                    defense_pass_rush=0, offense_pass_block=0,
+                    defense_formation="4_3",
                     is_blitz_tendency=False, z_event=None,
                     yard_line=30,
                 )

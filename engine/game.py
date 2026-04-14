@@ -738,20 +738,47 @@ class Game:
     # ── 5th-Edition FAC-card-based play execution ────────────────────
 
     def _get_all_receivers(self) -> list:
-        """Get on-field WR + TE receivers ordered by receiver letter.
+        """Get on-field receivers in formation position order.
 
-        In 5E, there are at most 5 receiver-eligible on-field positions:
-        FL(0), LE(1), RE(2), BK1(3), BK2(4).  We cap the list to 5 so
-        the FAC card targeting system (which maps BK1→index 3, BK2→index 4)
-        only picks players actually on the field, not bench depth.
+        5E formation has 5 receiver-eligible positions in this order:
+          [0] FL  (Flanker)   — typically WR2
+          [1] LE  (Left End)  — typically WR1 (primary receiver)
+          [2] RE  (Right End) — typically TE1
+          [3] BK1 (Back 1)   — RB1
+          [4] BK2 (Back 2)   — RB2
+
+        The FAC card targeting system (FL→0, LE→1, RE→2, BK1→3, BK2→4)
+        relies on this exact ordering so the correct on-field player is
+        targeted for each pass.
         """
         team = self.get_offense_team()
-        receivers = [
-            rec for rec in (list(team.roster.wrs) + list(team.roster.tes))
-            if not self._is_player_unavailable(rec)
-        ]
-        # Cap to on-field positions only (5E: FL, LE, RE, BK1, BK2)
-        receivers = receivers[:5]
+        wrs = [w for w in team.roster.wrs if not self._is_player_unavailable(w)]
+        tes = [t for t in team.roster.tes if not self._is_player_unavailable(t)]
+        rbs = [r for r in team.roster.rbs if not self._is_player_unavailable(r)]
+
+        # Build formation: FL, LE, RE, BK1, BK2
+        # LE = primary WR (WR1), FL = secondary WR (WR2), RE = primary TE
+        # BK1 = RB1, BK2 = RB2
+        if len(wrs) >= 2:
+            fl = wrs[1]  # WR2 as flanker
+            le = wrs[0]  # WR1 at left end
+        elif len(wrs) == 1:
+            fl = wrs[0]  # Only WR → flanker
+            le = tes[0] if tes else None  # TE fills left end
+        else:
+            # No WRs: TEs fill LE first (primary), then FL
+            le = tes[0] if len(tes) > 0 else None
+            fl = tes[1] if len(tes) > 1 else None
+
+        # RE = first TE not already used at LE
+        re_candidates = [t for t in tes if t is not le and t is not fl]
+        re = re_candidates[0] if re_candidates else None
+
+        bk1 = rbs[0] if len(rbs) > 0 else None
+        bk2 = rbs[1] if len(rbs) > 1 else None
+
+        receivers = [r for r in [fl, le, re, bk1, bk2] if r is not None]
+
         # Assign receiver letters if not already set
         letters = ["A", "B", "C", "D", "E"]
         for i, rec in enumerate(receivers):
@@ -1223,6 +1250,42 @@ class Game:
         # Build defenders-by-box mapping for pass defense rating lookups
         defenders_by_box = self._build_defenders_by_box(defense) if defense else {}
 
+        # ── Calculate actual OL pass-blocking sum ─────────────────────
+        # Per 5E rules: sum Pass Blocking Values of all five linemen
+        offense = self.get_offense_team()
+        ol_pass_block_sum = 0
+        if offense and offense.roster:
+            for ol in offense.roster.offensive_line[:5]:
+                ol_pass_block_sum += getattr(ol, 'pass_block_rating', 0)
+
+        # ── Calculate actual DL pass-rush sum ─────────────────────────
+        # Per 5E rules: sum Pass Rush Values of all players in Row 1
+        # (Defensive Line boxes A-E).  If blitz is in effect, blitzing
+        # players have a Pass Rush Value of 2 regardless of printed value.
+        dl_pass_rush_sum = 0
+        row1_boxes = ('A', 'B', 'C', 'D', 'E')
+        blitz_active = (defensive_play_5e == DefensivePlay.BLITZ)
+        for box_letter, defender in defenders_by_box.items():
+            if box_letter in row1_boxes:
+                dl_pass_rush_sum += getattr(defender, 'pass_rush_rating', 0)
+        # When blitz is active, blitzing LBs/DBs each add PR=2
+        if blitz_active:
+            blitz_boxes = set()
+            # Per 5E Blitz Summation Chart: PN determines which boxes blitz
+            # PN 1-26 → F & J, PN 27-35 → F & J & M, PN 36-48 → F-J
+            BLITZ_TWO_PLAYER_MAX = 26   # PN boundary: 2-player blitz
+            BLITZ_THREE_PLAYER_MAX = 35  # PN boundary: 3-player blitz
+            pn = fac_card.pass_num_int or BLITZ_TWO_PLAYER_MAX
+            if pn <= BLITZ_TWO_PLAYER_MAX:
+                blitz_boxes = {'F', 'J'}
+            elif pn <= BLITZ_THREE_PLAYER_MAX:
+                blitz_boxes = {'F', 'J', 'M'}
+            else:
+                blitz_boxes = {'F', 'G', 'H', 'I', 'J'}
+            for box_letter in blitz_boxes:
+                if box_letter in defenders_by_box:
+                    dl_pass_rush_sum += 2  # Blitzing player PR = 2
+
         # Determine which defender (if any) moved for double coverage.
         # If double coverage is active, the FS (box M) typically leaves
         # their assignment to double-cover the targeted receiver.
@@ -1243,7 +1306,8 @@ class Game:
                 fac_card, self.deck, qb, receiver, receivers,
                 pass_type=pass_type,
                 defense_coverage=defense.defense_rating,
-                defense_pass_rush=defense.defense_rating,
+                defense_pass_rush=dl_pass_rush_sum,
+                offense_pass_block=ol_pass_block_sum,
                 defense_formation=def_formation,
                 defensive_strategy=defensive_strategy or "NONE",
                 defenders=defenders,

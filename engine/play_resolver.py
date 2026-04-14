@@ -1277,6 +1277,7 @@ class PlayResolver:
                         pass_type: str = "SHORT",
                         defense_coverage: int = 0,
                         defense_pass_rush: int = 0,
+                        offense_pass_block: int = 0,
                         defense_formation: str = "4_3",
                         is_blitz_tendency: bool = False,
                         defensive_strategy: str = "NONE",
@@ -1339,7 +1340,8 @@ class PlayResolver:
             fac_card = deck.draw_non_z()
             return self._resolve_pass_inner_5e(
                 fac_card, deck, qb, receiver, receivers, pass_type,
-                defense_coverage, defense_pass_rush, defense_formation,
+                defense_coverage, defense_pass_rush, offense_pass_block,
+                defense_formation,
                 is_blitz_tendency, z_event, defensive_strategy, defenders,
                 two_minute_offense, completion_modifier, defensive_play_5e,
                 yard_line, defenders_by_box, backs_blocking,
@@ -1348,7 +1350,8 @@ class PlayResolver:
 
         return self._resolve_pass_inner_5e(
             fac_card, deck, qb, receiver, receivers, pass_type,
-            defense_coverage, defense_pass_rush, defense_formation,
+            defense_coverage, defense_pass_rush, offense_pass_block,
+            defense_formation,
             is_blitz_tendency, None, defensive_strategy, defenders,
             two_minute_offense, completion_modifier, defensive_play_5e,
             yard_line, defenders_by_box, backs_blocking,
@@ -1361,6 +1364,7 @@ class PlayResolver:
                                pass_type: str,
                                defense_coverage: int,
                                defense_pass_rush: int,
+                               offense_pass_block: int,
                                defense_formation: str,
                                is_blitz_tendency: bool,
                                z_event: Optional[Dict[str, Any]],
@@ -1412,23 +1416,19 @@ class PlayResolver:
                 pn = fac_card.pass_num_int or random.randint(1, 48)
                 log.append(f"[P.RUSH] PN={pn}, QB pass_rush ranges: sack_max={qb.pass_rush.sack_max}, runs_max={qb.pass_rush.runs_max}, com_max={qb.pass_rush.com_max}")
 
-                # Rule 2: Apply pass rush modifier to sack range
+                # Per 5E rules Steps 1-3:
+                # defense_pass_rush = sum of DL Row 1 pass rush values
+                #   (+ blitzing player PR=2 each, already included by caller)
+                # offense_pass_block = sum of OL pass blocking values
+                # Modifier = (def_sum - off_sum) * 2, applied to sack range
                 pr_modifier = self.calculate_pass_rush_modifier(
-                    defense_pass_rush, getattr(qb, 'pass_block_rating', 0)
+                    defense_pass_rush, offense_pass_block
                 )
+                log.append(f"[P.RUSH] DL pass rush sum={defense_pass_rush}, OL pass block sum={offense_pass_block}")
                 adjusted_pn = pn
                 if pr_modifier != 0:
                     adjusted_pn = max(1, min(48, pn - pr_modifier))
                     log.append(f"[P.RUSH] PR modifier={pr_modifier}, adjusted PN={adjusted_pn}")
-
-                # Rule 3: Blitz pass rush override
-                if is_blitz_tendency:
-                    blitz_pr = self.get_blitz_pass_rush_value()
-                    blitz_mod = self.calculate_pass_rush_modifier(
-                        blitz_pr * 2, getattr(qb, 'pass_block_rating', 0)
-                    )
-                    adjusted_pn = max(1, min(48, pn - blitz_mod))
-                    log.append(f"[P.RUSH] Blitz override: blitz_mod={blitz_mod}, adjusted PN={adjusted_pn}")
 
                 pr_result = qb.pass_rush.resolve(adjusted_pn)
                 log.append(f"[P.RUSH] Result = {pr_result}")
