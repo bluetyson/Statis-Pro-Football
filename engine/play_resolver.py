@@ -607,7 +607,7 @@ class PlayResolver:
             result = PlayResult(
                 play_type="KICKOFF", yards_gained=0,
                 result="TOUCHBACK",
-                description="Kickoff - touchback, ball at 25-yard line",
+                description="Kickoff - touchback, ball at 20-yard line",
             )
         if result.result == "TOUCHBACK":
             # Squib kicks are less likely to reach end zone
@@ -898,7 +898,7 @@ class PlayResolver:
             r = PlayResult(
                 play_type="KICKOFF", yards_gained=0,
                 result="TOUCHBACK",
-                description="Kickoff - touchback, ball at 25-yard line",
+                description="Kickoff - touchback, ball at 20-yard line",
             )
             r.debug_log = log
             return r
@@ -931,13 +931,13 @@ class PlayResolver:
         # ── Touchback results ────────────────────────────────────────
         ko_upper = ko_entry.upper()
         if ko_upper.startswith("TB"):
-            yard_line = 25
+            yard_line = 20
             modifier_str = ""
             if "(" in ko_entry and ")" in ko_entry:
                 inner = ko_entry[ko_entry.index("(") + 1:ko_entry.index(")")]
                 try:
                     tb_adj = int(inner)
-                    yard_line = max(1, 25 + tb_adj)
+                    yard_line = max(1, 20 + tb_adj)
                     modifier_str = f" (adj {tb_adj:+d})"
                 except ValueError:
                     pass
@@ -1289,7 +1289,8 @@ class PlayResolver:
                         defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
                         backs_blocking: Optional[List[int]] = None,
                         double_coverage_defender_box: Optional[str] = None,
-                        blitzer_names: Optional[List[str]] = None) -> PlayResult:
+                        blitzer_names: Optional[List[str]] = None,
+                        endurance_modifier: int = 0) -> PlayResult:
         """Resolve a pass play using 5th-edition FAC card mechanics.
 
         Parameters
@@ -1335,6 +1336,10 @@ class PlayResolver:
             the interception is suppressed because the defender is away.
         blitzer_names : Optional[List[str]]
             Names of blitzing players for debug logging.
+        endurance_modifier : int
+            Completion range modifier from receiver endurance violation.
+            Only applied when the FAC's actual receiver matches the
+            intended target; ignored on check-offs per 5E rules.
         """
         # ── Handle Z card ────────────────────────────────────────────
         if fac_card.is_z_card:
@@ -1349,6 +1354,7 @@ class PlayResolver:
                 two_minute_offense, completion_modifier, defensive_play_5e,
                 yard_line, defenders_by_box, backs_blocking,
                 double_coverage_defender_box, blitzer_names,
+                endurance_modifier,
             )
 
         return self._resolve_pass_inner_5e(
@@ -1359,6 +1365,7 @@ class PlayResolver:
             two_minute_offense, completion_modifier, defensive_play_5e,
             yard_line, defenders_by_box, backs_blocking,
             double_coverage_defender_box, blitzer_names,
+            endurance_modifier,
         )
 
     def _resolve_pass_inner_5e(self, fac_card: FACCard, deck: FACDeck,
@@ -1380,7 +1387,8 @@ class PlayResolver:
                                defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
                                backs_blocking: Optional[List[int]] = None,
                                double_coverage_defender_box: Optional[str] = None,
-                               blitzer_names: Optional[List[str]] = None) -> PlayResult:
+                               blitzer_names: Optional[List[str]] = None,
+                               endurance_modifier: int = 0) -> PlayResult:
         """Inner pass resolution after Z-card handling.
 
         Authentic 5E resolution:
@@ -1646,9 +1654,23 @@ class PlayResolver:
         # Apply completion_modifier (e.g. from play-action strategy).
         # Positive = wider COM range = subtract from PN (more likely to complete).
         # Negative = narrower COM range = add to PN (less likely to complete).
+        #
+        # 5E Endurance rule: if the FAC redirected the pass to a different
+        # receiver (check-off), ignore the endurance penalty for this play.
+        applied_endurance_mod = 0
+        if endurance_modifier != 0:
+            is_checkoff = (actual_receiver is not None
+                           and actual_receiver.player_name != receiver.player_name)
+            if is_checkoff:
+                log.append(f"[ENDURANCE] Check-off to {actual_receiver.player_name} — "
+                           f"endurance penalty ignored per 5E rules")
+            else:
+                applied_endurance_mod = endurance_modifier
+                log.append(f"[ENDURANCE] Receiver endurance penalty: "
+                           f"{applied_endurance_mod:+d} to completion range")
         total_completion_mod = (completion_modifier + defense_play_comp_mod
                                 + backs_blocking_mod + empty_box_mod
-                                + pass_defense_mod)
+                                + pass_defense_mod + applied_endurance_mod)
         completion_adjustment = -total_completion_mod  # +5 completion → -5 to PN
 
         # Coverage penalties (double/triple/two-minute) are always <= 0.

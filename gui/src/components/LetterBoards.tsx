@@ -260,10 +260,11 @@ interface FormationSlotProps {
   label: string;
   player: PlayerBrief | null;
   showBlocks?: boolean;
+  showEndurance?: boolean;
   ghost?: boolean;
 }
 
-function FormationSlot({ label, player, showBlocks = false, ghost = false }: FormationSlotProps) {
+function FormationSlot({ label, player, showBlocks = false, showEndurance = false, ghost = false }: FormationSlotProps) {
   if (ghost) return <div className="fmn-cell fmn-ghost" />;
 
   return (
@@ -277,6 +278,9 @@ function FormationSlot({ label, player, showBlocks = false, ghost = false }: For
           </div>
           {player.receiver_letter && (
             <div className="fmn-letter">[{player.receiver_letter}]</div>
+          )}
+          {showEndurance && player.endurance_label && (
+            <div className="fmn-endurance">{player.endurance_label}</div>
           )}
           {showBlocks && player.blocks !== 0 && (
             // Only show BV when non-zero; a zero BV means no blocking modifier
@@ -319,13 +323,13 @@ function OffenseFormation({ personnel }: { personnel: PersonnelData }) {
     <div className="offense-formation">
       {/* Row 1: Line of scrimmage — LE LT LG C RG RT RE */}
       <div className="fmn-row">
-        <FormationSlot label="LE" player={le} />
+        <FormationSlot label="LE" player={le} showEndurance />
         <FormationSlot label="LT" player={line[0] ?? null} />
         <FormationSlot label="LG" player={line[1] ?? null} />
         <FormationSlot label="C"  player={line[2] ?? null} />
         <FormationSlot label="RG" player={line[3] ?? null} />
         <FormationSlot label="RT" player={line[4] ?? null} />
-        <FormationSlot label="RE" player={re} />
+        <FormationSlot label="RE" player={re} showEndurance />
       </div>
 
       {/* Scrimmage line indicator */}
@@ -345,12 +349,12 @@ function OffenseFormation({ personnel }: { personnel: PersonnelData }) {
       {/* Row 3: Backs + Flanker */}
       <div className="fmn-row">
         <FormationSlot label="" player={null} ghost />
-        <FormationSlot label="BK1" player={bk1} showBlocks />
-        <FormationSlot label="BK2" player={bk2} showBlocks />
+        <FormationSlot label="BK1" player={bk1} showBlocks showEndurance />
+        <FormationSlot label="BK2" player={bk2} showBlocks showEndurance />
         <FormationSlot label="" player={null} ghost />
         <FormationSlot label="" player={null} ghost />
         <FormationSlot label="" player={null} ghost />
-        <FormationSlot label="FL" player={fl} />
+        <FormationSlot label="FL" player={fl} showEndurance />
       </div>
     </div>
   );

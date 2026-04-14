@@ -162,6 +162,7 @@ export interface PlayerBrief {
   // Rushing (12-row N/SG/LG)
   rushing: (number[] | null)[];
   endurance_rushing: number;
+  endurance_label: string;  // e.g. "RB-0", "WR-1", "TE-2"
   // Pass gain (12-row Q/S/L)
   pass_gain: (number[] | null)[];
   endurance_pass: number;

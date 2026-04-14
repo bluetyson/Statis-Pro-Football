@@ -1095,6 +1095,14 @@ body {
   line-height: 1.2;
 }
 
+/* Endurance label (RB-0, WR-1, etc.) */
+.fmn-endurance {
+  font-size: 0.48rem;
+  color: #facc15;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
 /* Injury icon overlaid */
 .fmn-inj {
   font-size: 0.5rem;

@@ -95,6 +95,16 @@ def _player_brief(p, unavailable_names: Optional[set[str]] = None):
         # Rushing (12-row N/SG/LG)
         "rushing": [r.to_list() if r else None for r in getattr(p, "rushing", [])],
         "endurance_rushing": getattr(p, "endurance_rushing", 0),
+        # Human-readable endurance label — for WR/TE show pass endurance
+        # (the one that matters when they're targeted), for RB/FB/HB show
+        # rushing endurance.
+        "endurance_label": (
+            f"{p.position}-{getattr(p, 'endurance_pass', 0)}"
+            if p.position in ("WR", "TE")
+            else f"{p.position}-{getattr(p, 'endurance_rushing', 0)}"
+            if p.position in ("RB", "FB", "HB")
+            else ""
+        ),
         # Pass gain (12-row Q/S/L)
         "pass_gain": [r.to_list() if r else None for r in getattr(p, "pass_gain", [])],
         "endurance_pass": getattr(p, "endurance_pass", 0),
@@ -450,9 +460,21 @@ def get_personnel(game_id: str):
     defense_team = game.get_defense_team()
     unavailable = set(game.state.injuries)
 
+    def _first_healthy(players):
+        """Return first non-injured player, falling back to index 0."""
+        for p in players:
+            if p.player_name not in unavailable:
+                return p
+        return players[0] if players else None
+
     offense_starters = {}
     for pos in ["QB", "RB", "WR", "TE", "K", "P"]:
-        starter = offense_team.roster.get_starter(pos)
+        pos_map = {
+            "QB": offense_team.roster.qbs, "RB": offense_team.roster.rbs,
+            "WR": offense_team.roster.wrs, "TE": offense_team.roster.tes,
+            "K": offense_team.roster.kickers, "P": offense_team.roster.punters,
+        }
+        starter = _first_healthy(pos_map[pos])
         if starter:
             offense_starters[pos] = _player_brief(starter, unavailable)
 

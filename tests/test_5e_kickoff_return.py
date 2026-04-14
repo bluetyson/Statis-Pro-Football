@@ -152,7 +152,7 @@ class TestKickoffTableLookup:
     """Test the kickoff table portion of resolve_kickoff_5e."""
 
     def test_touchback_rn1(self):
-        """RN 1 on CHI table → TB at 25."""
+        """RN 1 on CHI table → TB at 20."""
         resolver = PlayResolver()
         # Card with RN=1, PN doesn't matter for TB
         cards = [_make_fac_card(run_number="1", pass_number="10")]
@@ -161,14 +161,14 @@ class TestKickoffTableLookup:
             deck, CHI_KICKOFF_TABLE, CHI_KR_RETURNERS, CHI_KR_TABLE,
         )
         assert result.result == "TOUCHBACK"
-        assert result.yards_gained == 25
+        assert result.yards_gained == 20
         log_text = " ".join(result.debug_log)
         assert "[KO]" in log_text
         assert "RN=1" in log_text
         assert "Touchback" in log_text
 
     def test_touchback_with_modifier_rn6(self):
-        """RN 6 → TB(-5) = touchback at 20."""
+        """RN 6 → TB(-5) = touchback at 15 (20 - 5)."""
         resolver = PlayResolver()
         cards = [_make_fac_card(run_number="6")]
         deck = FixedDeck(cards)
@@ -176,12 +176,12 @@ class TestKickoffTableLookup:
             deck, CHI_KICKOFF_TABLE, CHI_KR_RETURNERS, CHI_KR_TABLE,
         )
         assert result.result == "TOUCHBACK"
-        assert result.yards_gained == 20
+        assert result.yards_gained == 15
         log_text = " ".join(result.debug_log)
         assert "adj -5" in log_text
 
     def test_touchback_minus_3_rn7(self):
-        """RN 7 → TB(-3) = touchback at 22."""
+        """RN 7 → TB(-3) = touchback at 17 (20 - 3)."""
         resolver = PlayResolver()
         cards = [_make_fac_card(run_number="7")]
         deck = FixedDeck(cards)
@@ -189,7 +189,7 @@ class TestKickoffTableLookup:
             deck, CHI_KICKOFF_TABLE, CHI_KR_RETURNERS, CHI_KR_TABLE,
         )
         assert result.result == "TOUCHBACK"
-        assert result.yards_gained == 22
+        assert result.yards_gained == 17
 
     def test_return_starts_at_1_rn9(self):
         """RN 9 → return starts at 1-yard line."""
