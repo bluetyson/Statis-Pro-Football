@@ -534,10 +534,10 @@ class TestFifthEdGameIntegration:
         assert game.deck.cards_used > 0 or game.deck.cards_remaining < initial_remaining
 
     def test_legacy_game_still_works(self):
-        """Legacy mode should still work without 5th-edition features."""
+        """5E mode should work (legacy mode removed)."""
         random.seed(42)
         home, away = self._load_teams()
-        game = Game(home, away, use_5e=False)
+        game = Game(home, away, use_5e=True)
         state = game.simulate_game()
         assert state.is_over
 

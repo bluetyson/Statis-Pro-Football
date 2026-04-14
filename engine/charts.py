@@ -1,77 +1,10 @@
-"""Game charts for Statis Pro Football using 11-88 dice system."""
+"""Game charts for Statis Pro Football using 5th-edition rules."""
 import random
 from typing import Dict, Any, Tuple, List
 
 
 class Charts:
     """All game charts for Statis Pro Football."""
-
-    PENALTY_CHART = {
-        "11": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "12": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "13": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "14": {"type": "PASS_INTERFERENCE_OFF", "yards": 15, "loss_of_down": False, "auto_first": False},
-        "15": {"type": "ILLEGAL_MOTION", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "16": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "17": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "18": {"type": "INELIGIBLE_RECEIVER", "yards": 5, "loss_of_down": True, "auto_first": False},
-        "21": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "22": {"type": "ROUGHING_PASSER", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "23": {"type": "HOLDING_DEF", "yards": 5, "loss_of_down": False, "auto_first": True},
-        "24": {"type": "PASS_INTERFERENCE_DEF", "yards": 0, "loss_of_down": False, "auto_first": True, "spot": True},
-        "25": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "26": {"type": "ENCROACHMENT", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "27": {"type": "FACE_MASK", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "28": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "31": {"type": "DELAY_OF_GAME", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "32": {"type": "HOLDING_DEF", "yards": 5, "loss_of_down": False, "auto_first": True},
-        "33": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "34": {"type": "ROUGHING_PASSER", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "35": {"type": "PASS_INTERFERENCE_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "36": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "37": {"type": "ILLEGAL_CONTACT", "yards": 5, "loss_of_down": False, "auto_first": True},
-        "38": {"type": "OFFSIDE", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "41": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "42": {"type": "CLIPPING", "yards": 15, "loss_of_down": False, "auto_first": False},
-        "43": {"type": "UNNECESSARY_ROUGHNESS", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "44": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "45": {"type": "HOLDING_DEF", "yards": 5, "loss_of_down": False, "auto_first": True},
-        "46": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "47": {"type": "PASS_INTERFERENCE_DEF", "yards": 0, "loss_of_down": False, "auto_first": True, "spot": True},
-        "48": {"type": "ENCROACHMENT", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "51": {"type": "ILLEGAL_MOTION", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "52": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "53": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "54": {"type": "FACE_MASK", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "55": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "56": {"type": "ROUGHING_KICKER", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "57": {"type": "HOLDING_DEF", "yards": 5, "loss_of_down": False, "auto_first": True},
-        "58": {"type": "ILLEGAL_USE_HANDS", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "61": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "62": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "63": {"type": "PASS_INTERFERENCE_DEF", "yards": 0, "loss_of_down": False, "auto_first": True, "spot": True},
-        "64": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "65": {"type": "OFFSIDE", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "66": {"type": "HOLDING_DEF", "yards": 5, "loss_of_down": False, "auto_first": True},
-        "67": {"type": "UNNECESSARY_ROUGHNESS", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "68": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "71": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "72": {"type": "DELAY_OF_GAME", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "73": {"type": "FACE_MASK", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "74": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "75": {"type": "ENCROACHMENT", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "76": {"type": "PASS_INTERFERENCE_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "77": {"type": "ILLEGAL_CONTACT", "yards": 5, "loss_of_down": False, "auto_first": True},
-        "78": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "81": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "82": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "83": {"type": "ROUGHING_PASSER", "yards": 15, "loss_of_down": False, "auto_first": True},
-        "84": {"type": "HOLDING_DEF", "yards": 5, "loss_of_down": False, "auto_first": True},
-        "85": {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False},
-        "86": {"type": "FALSE_START", "yards": 5, "loss_of_down": False, "auto_first": False},
-        "87": {"type": "PASS_INTERFERENCE_DEF", "yards": 0, "loss_of_down": False, "auto_first": True, "spot": True},
-        "88": {"type": "CLIPPING", "yards": 15, "loss_of_down": False, "auto_first": False},
-    }
 
     FUMBLE_RECOVERY = {
         1: "OFFENSE", 2: "OFFENSE", 3: "OFFENSE", 4: "DEFENSE",
@@ -99,15 +32,6 @@ class Charts:
         "71": 6, "72": 8, "73": 3, "74": 0, "75": 7, "76": 5, "77": 4, "78": 2,
         "81": 0, "82": 3, "83": 6, "84": 8, "85": 5, "86": 4, "87": 2, "88": 0,
     }
-
-    @staticmethod
-    def roll_penalty_chart() -> Dict[str, Any]:
-        tens = random.randint(1, 8)
-        ones = random.randint(1, 8)
-        key = f"{tens}{ones}"
-        return Charts.PENALTY_CHART.get(
-            key, {"type": "HOLDING_OFF", "yards": 10, "loss_of_down": False, "auto_first": False}
-        )
 
     @staticmethod
     def roll_fumble_recovery() -> str:

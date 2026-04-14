@@ -54,22 +54,6 @@ class TestFastActionDice:
             r = d.roll()
             assert 1 <= r.turnover_modifier <= 8
 
-    def test_penalty_check_is_bool(self):
-        d = FastActionDice()
-        for _ in range(50):
-            r = d.roll()
-            assert isinstance(r.penalty_check, bool)
-
-    def test_penalty_combos_trigger(self):
-        """Verify penalty combos produce penalty_check=True."""
-        d = FastActionDice()
-        penalty_combos = {(1, 7), (3, 7), (5, 8), (7, 1), (8, 2)}
-        for t, o in penalty_combos:
-            two_digit = t * 10 + o
-            tendency = d.TENDENCY_MAP.get((t, o), PlayTendency.RUN)
-            result = DiceResult(two_digit, t, o, tendency, True, 1)
-            assert result.penalty_check is True
-
     def test_module_roll_function(self):
         r = roll()
         assert isinstance(r, DiceResult)
@@ -178,13 +162,6 @@ class TestCardGenerator:
 # ─── Charts ──────────────────────────────────────────────────────────────────
 
 class TestCharts:
-    def test_penalty_chart_has_all_slots(self):
-        """Check all 64 combinations are in penalty chart."""
-        for t in range(1, 9):
-            for o in range(1, 9):
-                key = f"{t}{o}"
-                assert key in Charts.PENALTY_CHART, f"Missing penalty chart key: {key}"
-
     def test_kick_return_chart_coverage(self):
         for t in range(1, 9):
             for o in range(1, 9):
@@ -196,12 +173,6 @@ class TestCharts:
             for o in range(1, 9):
                 key = f"{t}{o}"
                 assert key in Charts.PUNT_RETURN_CHART
-
-    def test_roll_penalty_chart_returns_dict(self):
-        p = Charts.roll_penalty_chart()
-        assert isinstance(p, dict)
-        assert "type" in p
-        assert "yards" in p
 
     def test_roll_fumble_recovery_returns_valid(self):
         for _ in range(20):
@@ -291,21 +262,6 @@ class TestPlayResolver:
 
     def _make_wr(self):
         return self.gen.generate_wr_card("Test WR", "TST", 80, 0.68, 13.0, "B")
-
-    def test_resolve_run_returns_result(self):
-        dice = self.dice.roll()
-        rb = self._make_rb()
-        result = self.resolver.resolve_run(dice, rb)
-        assert isinstance(result, PlayResult)
-        assert result.play_type == "RUN"
-
-    def test_resolve_pass_returns_result(self):
-        dice = self.dice.roll()
-        qb = self._make_qb()
-        wr = self._make_wr()
-        result = self.resolver.resolve_pass(dice, qb, wr, "SHORT")
-        assert isinstance(result, PlayResult)
-        assert result.play_type == "PASS"
 
     def test_resolve_field_goal_close(self):
         kicker = self.gen.generate_k_card("Kicker", "TST", 7, 0.92, 0.995, "A")

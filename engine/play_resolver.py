@@ -16,8 +16,17 @@ Implements the FAC-card-driven resolution system:
     3. FAC blocking matchup fields determine context
     4. OB suffix on RUN# means out-of-bounds
 
-  Legacy (pre-5th-ed) resolution still supported via the old resolve_*
-  methods when DiceResult objects are passed.
+  Penalties (5th edition):
+    Triggered via Z cards in the FAC deck.  When a Z card fires,
+    the Z-result field encodes penalty info as ``"Pen: 1.D2 /2.O7 /3.R11 /4.K9"``.
+    Category is selected by play type; the team letter (O/D/K/R) and
+    penalty number (1-15) index into the 5E Penalty Table.
+
+  Out-of-Position:
+    OL playing wrong position: −1 blocking/pass-blocking value.
+    DB playing wrong position: −1 pass defense value.
+    DL/LB may play any Row 1 position without modification.
+    All DBs may play Box L without modification.
 
 Defence ratings (pass_rush, coverage, run_stop) are wired into
 resolution via effective_* helpers from ``fac_distributions``.
@@ -31,7 +40,6 @@ from .fac_deck import FACCard, FACDeck
 from .charts import Charts
 from .fac_distributions import (
     effective_pass_rush, effective_run_stop,
-    ZCardTrigger, lookup_z_card_event,
 )
 
 
@@ -67,6 +75,172 @@ class PlayResult:
     personnel_note: Optional[str] = None        # Auto-substitution / availability note
     box_assignments: Optional[Dict[str, str]] = None  # Box letter → player name for this play
     debug_log: List[str] = field(default_factory=list)  # Step-by-step resolution log
+
+
+# ──────────────────────────────────────────────────────────────────────
+#  5E Penalty Table  (page 5 of the 5th-edition rules)
+# ──────────────────────────────────────────────────────────────────────
+#
+# Penalty numbers 1-15 from the Z-card "Pen:" field.
+# Each entry: type, yards, no_option, is_spot_foul, loss_of_down, auto_first,
+#             notes.
+#
+# "team" is determined by the letter on the Z card (O/D/K/R), not here.
+# "no_option" means the penalty MUST be accepted (cannot be declined).
+#
+# From the rules document (lines 339-355):
+#  1. Offside: 5y (Option)
+#  2. Movement: 5y (No Option)
+#  3. Illegal Procedure: 5y (Option)
+#  4. Motion: 5y (Option)
+#  5. Personal Foul: 15y (No Option if DEF/K/R, Option if OFF; from spot
+#     where play ended if DEF, from scrimmage if OFF)
+#  6. Non-Flagrant Facemask: 5y (same conditions as #5)
+#  7. Holding: 10y OFF (Option); 5y DEF + auto first down (Option)
+#  8. Pass Interference: 15y OFF down counts (Option);
+#     First Down at spot if DEF (Option).  Spot = same as POI.
+#     If in end zone → 1st and goal at 1.
+#  9. Personal Foul: 15y (same as #5)
+# 10. Intentional Grounding: 15y, down counts (No Option).
+#     Only on incomplete pass, otherwise ignore.
+# 11. Clipping: 15y from spot of foul (No Option).
+#     Spot via new FAC: odd RN = halfway point of return,
+#     even RN = where return ended.
+# 12. Roughing Kicker: 15y from scrimmage, auto first (No Option)
+# 13. Running into Kicker: 5y, auto first (same as 12 but 5y)
+# 14. Delay of Game: 5y (No Option)
+# 15. Kickoff Out of Bounds: 5y (No Option). Re-kick + 5y added to return spot.
+
+PENALTY_TABLE_5E: Dict[int, Dict[str, Any]] = {
+    1:  {"name": "Offside",              "yards": 5,  "no_option": False, "spot_foul": False, "loss_of_down": False, "auto_first": False},
+    2:  {"name": "Movement",             "yards": 5,  "no_option": True,  "spot_foul": False, "loss_of_down": False, "auto_first": False},
+    3:  {"name": "Illegal Procedure",    "yards": 5,  "no_option": False, "spot_foul": False, "loss_of_down": False, "auto_first": False},
+    4:  {"name": "Motion",               "yards": 5,  "no_option": False, "spot_foul": False, "loss_of_down": False, "auto_first": False},
+    5:  {"name": "Personal Foul",        "yards": 15, "no_option": "DEF", "spot_foul": "DEF", "loss_of_down": False, "auto_first": False},
+    6:  {"name": "Non-Flagrant Facemask", "yards": 5,  "no_option": "DEF", "spot_foul": "DEF", "loss_of_down": False, "auto_first": False},
+    7:  {"name": "Holding",              "yards": 10, "no_option": False, "spot_foul": False, "loss_of_down": False, "auto_first": "DEF",
+         "yards_def": 5},
+    8:  {"name": "Pass Interference",    "yards": 15, "no_option": False, "spot_foul": "DEF", "loss_of_down": True,  "auto_first": "DEF"},
+    9:  {"name": "Personal Foul",        "yards": 15, "no_option": "DEF", "spot_foul": "DEF", "loss_of_down": False, "auto_first": False},
+    10: {"name": "Intentional Grounding", "yards": 15, "no_option": True,  "spot_foul": False, "loss_of_down": True,  "auto_first": False,
+         "only_incomplete": True},
+    11: {"name": "Clipping",             "yards": 15, "no_option": True,  "spot_foul": True,  "loss_of_down": False, "auto_first": False},
+    12: {"name": "Roughing Kicker",      "yards": 15, "no_option": True,  "spot_foul": False, "loss_of_down": False, "auto_first": True},
+    13: {"name": "Running into Kicker",  "yards": 5,  "no_option": True,  "spot_foul": False, "loss_of_down": False, "auto_first": True},
+    14: {"name": "Delay of Game",        "yards": 5,  "no_option": True,  "spot_foul": False, "loss_of_down": False, "auto_first": False},
+    15: {"name": "Kickoff Out of Bounds", "yards": 5,  "no_option": True,  "spot_foul": False, "loss_of_down": False, "auto_first": False,
+         "rekick": True},
+}
+
+
+def resolve_z_penalty(pen_detail: str, play_type: str) -> Optional[Dict[str, Any]]:
+    """Resolve a 5E Z-card penalty from the FAC card's Pen: field.
+
+    Parameters
+    ----------
+    pen_detail : str
+        The raw penalty string from the Z card, e.g.
+        ``"1.D2 /2.D2 /3.R1 /4.R11"``
+    play_type : str
+        The current play type. Used to select the penalty category:
+        - Category 1: RUN, SCREEN, QUICK_PASS, FG
+        - Category 2: SHORT_PASS, LONG_PASS
+        - Category 3: PUNT (and punt returns)
+        - Category 4: KICKOFF (kickoff returns)
+
+    Returns
+    -------
+    dict or None
+        Penalty info dict with keys: type, name, yards, team (O/D/K/R),
+        no_option, spot_foul, loss_of_down, auto_first, penalty_number.
+        Returns None if the penalty string cannot be parsed.
+    """
+    # Determine category from play type
+    play_upper = play_type.upper()
+    if play_upper in ("RUN", "SCREEN", "QUICK_PASS", "FG"):
+        category = 1
+    elif play_upper in ("SHORT_PASS", "LONG_PASS", "PASS"):
+        category = 2
+    elif play_upper == "PUNT":
+        category = 3
+    elif play_upper == "KICKOFF":
+        category = 4
+    else:
+        # Default: treat as category 1
+        category = 1
+
+    # Parse "1.D2 /2.D2 /3.R1 /4.R11" into {1: "D2", 2: "D2", 3: "R1", 4: "R11"}
+    parts = pen_detail.split("/")
+    pen_entries: Dict[int, str] = {}
+    for part in parts:
+        part = part.strip()
+        if "." not in part:
+            continue
+        cat_str, code = part.split(".", 1)
+        try:
+            cat_num = int(cat_str)
+        except ValueError:
+            continue
+        pen_entries[cat_num] = code.strip()
+
+    if category not in pen_entries:
+        return None
+
+    code = pen_entries[category]
+    if len(code) < 2:
+        return None
+
+    # Parse team letter and penalty number
+    team_letter = code[0].upper()  # O, D, K, R
+    try:
+        penalty_number = int(code[1:])
+    except ValueError:
+        return None
+
+    if penalty_number not in PENALTY_TABLE_5E:
+        return None
+
+    pen_info = PENALTY_TABLE_5E[penalty_number]
+
+    # Map team letter to descriptive team
+    team_map = {"O": "offense", "D": "defense", "K": "kicking", "R": "receiving"}
+    team = team_map.get(team_letter, "offense")
+
+    # Determine if this is an "against defense" penalty for conditional fields
+    is_against_defense = team in ("defense", "receiving")
+
+    # Resolve conditional fields
+    no_option = pen_info["no_option"]
+    if no_option == "DEF":
+        no_option = is_against_defense
+
+    spot_foul = pen_info["spot_foul"]
+    if spot_foul == "DEF":
+        spot_foul = is_against_defense
+
+    auto_first = pen_info["auto_first"]
+    if auto_first == "DEF":
+        auto_first = is_against_defense
+
+    # Holding: 10y vs offense, 5y + auto first vs defense
+    yards = pen_info["yards"]
+    if pen_info.get("yards_def") and is_against_defense:
+        yards = pen_info["yards_def"]
+
+    return {
+        "type": pen_info["name"].upper().replace(" ", "_"),
+        "name": pen_info["name"],
+        "yards": yards,
+        "team": team,
+        "team_letter": team_letter,
+        "no_option": no_option,
+        "spot_foul": spot_foul,
+        "loss_of_down": pen_info["loss_of_down"],
+        "auto_first": auto_first,
+        "penalty_number": penalty_number,
+        "only_incomplete": pen_info.get("only_incomplete", False),
+        "rekick": pen_info.get("rekick", False),
+    }
 
 
 class BigPlayDefense:
@@ -744,255 +918,6 @@ class PlayResolver:
     def calculate_fg_distance(yard_line: int) -> int:
         """Calculate field goal distance: (100 - yard_line) + 17."""
         return (100 - yard_line) + 17
-
-    # ── Z-card helper ────────────────────────────────────────────────
-
-    def _check_z_card(self, dice: DiceResult,
-                      down: int = 0, distance: int = 0,
-                      yard_line: int = 0, quarter: int = 0,
-                      time_remaining: int = 900,
-                      is_offense: bool = True) -> Optional[Dict[str, Any]]:
-        """Check for a Z-card event and return it if triggered."""
-        if ZCardTrigger.is_triggered(
-            dice.tens, dice.ones,
-            down=down, distance=distance,
-            yard_line=yard_line, quarter=quarter,
-            time_remaining=time_remaining,
-        ):
-            z_dice_tens = random.randint(1, 8)
-            z_dice_ones = random.randint(1, 8)
-            event = lookup_z_card_event(z_dice_tens, z_dice_ones, is_offense)
-            if event["event"] != "NO_EFFECT":
-                return event
-        return None
-
-    # ── Run resolution ───────────────────────────────────────────────
-
-    def resolve_run(self, dice: DiceResult, rusher: PlayerCard,
-                    play_direction: str = "MIDDLE",
-                    defense_run_stop: int = 0,
-                    defense_formation: str = "4_3",
-                    down: int = 0, distance: int = 0,
-                    yard_line: int = 0, quarter: int = 0,
-                    time_remaining: int = 900) -> PlayResult:
-        slot = dice.slot
-
-        # Effective run-stop with formation modifier
-        eff_run_stop = effective_run_stop(defense_run_stop, defense_formation)
-
-        if play_direction in ("LEFT", "MIDDLE"):
-            column = rusher.inside_run
-        else:
-            column = rusher.outside_run
-
-        if not column:
-            yards = random.choices([-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8],
-                                   weights=[2, 3, 5, 8, 10, 12, 12, 10, 8, 5, 3])[0]
-            result_type = "GAIN"
-            is_td = random.random() < 0.03
-        else:
-            play_data = column.get(slot, {"result": "GAIN", "yards": 2, "td": False})
-            result_type = play_data.get("result", "GAIN")
-            yards = play_data.get("yards", 0)
-            is_td = play_data.get("td", False)
-
-        # Defense run-stop modifier: yards = base − TV (no artificial floor/clamping).
-        # Per 5E rules the tackle rating is applied directly; empty-box rules are
-        # handled in resolve_run_5e() which has full matchup context.
-        if result_type in ("GAIN", "OOB"):
-            yards = int(yards - eff_run_stop)
-
-        # Z-card check
-        z_event = self._check_z_card(
-            dice, down=down, distance=distance,
-            yard_line=yard_line, quarter=quarter,
-            time_remaining=time_remaining, is_offense=True,
-        )
-
-        # OOB result
-        if result_type == "OOB":
-            desc = f"{rusher.player_name} runs {play_direction.lower()} for {yards} yards, out of bounds"
-            return PlayResult(
-                play_type="RUN", yards_gained=yards,
-                result="OOB", out_of_bounds=True,
-                description=desc, rusher=rusher.player_name,
-                z_card_event=z_event,
-            )
-
-        if result_type == "FUMBLE":
-            recovery = Charts.roll_fumble_recovery()
-            fumble_yards, fumble_td = Charts.roll_fumble_return()
-            is_turnover = recovery == "DEFENSE"
-            if is_turnover and fumble_td:
-                return PlayResult(
-                    play_type="RUN", yards_gained=-fumble_yards,
-                    result="FUMBLE_TD", is_touchdown=False,
-                    turnover=True, turnover_type="FUMBLE",
-                    description=f"{rusher.player_name} fumbles! Returned for TD!",
-                    rusher=rusher.player_name, z_card_event=z_event,
-                )
-            return PlayResult(
-                play_type="RUN", yards_gained=yards,
-                result="FUMBLE", turnover=is_turnover,
-                turnover_type="FUMBLE" if is_turnover else None,
-                description=(
-                    f"{rusher.player_name} fumbles! "
-                    f"{'Defense recovers!' if is_turnover else 'Offense recovers.'}"
-                ),
-                rusher=rusher.player_name, z_card_event=z_event,
-            )
-
-        penalty_info = None
-        if dice.penalty_check:
-            penalty_info = Charts.roll_penalty_chart()
-
-        desc = f"{rusher.player_name} runs {play_direction.lower()}"
-        if is_td:
-            desc += " for a TOUCHDOWN!"
-        elif result_type == "GAIN":
-            desc += f" for {yards} yard{'s' if yards != 1 else ''}"
-
-        return PlayResult(
-            play_type="RUN",
-            yards_gained=yards,
-            result="TD" if is_td else result_type,
-            is_touchdown=is_td,
-            penalty=penalty_info,
-            description=desc,
-            rusher=rusher.player_name,
-            z_card_event=z_event,
-        )
-
-    # ── Two-stage pass resolution ────────────────────────────────────
-
-    def resolve_pass(self, dice: DiceResult, qb: PlayerCard,
-                     receiver: PlayerCard, pass_length: str = "SHORT",
-                     defense_coverage: int = 0,
-                     defense_pass_rush: int = 0,
-                     defense_formation: str = "4_3",
-                     is_blitz_tendency: bool = False,
-                     down: int = 0, distance: int = 0,
-                     yard_line: int = 0, quarter: int = 0,
-                     time_remaining: int = 900) -> PlayResult:
-        slot = dice.slot
-
-        # Effective ratings with formation + blitz
-        eff_pass_rush = effective_pass_rush(
-            defense_pass_rush, defense_formation, is_blitz_tendency,
-        )
-
-        # ── Stage 0: Pass-rush check (before QB card lookup) ────────
-        # Authentic 5E: pass rush value 0-3, higher = more dangerous
-        sack_chance = eff_pass_rush * 0.08  # 0→0%, 1→8%, 2→16%, 3→24%
-        if sack_chance > 0 and random.random() < sack_chance:
-            loss = random.choice([-3, -4, -5, -6, -7, -8])
-            z_event = self._check_z_card(
-                dice, down=down, distance=distance,
-                yard_line=yard_line, quarter=quarter,
-                time_remaining=time_remaining, is_offense=False,
-            )
-            return PlayResult(
-                play_type="PASS", yards_gained=loss,
-                result="SACK",
-                description=f"{qb.player_name} is sacked for {abs(loss)} yard loss! (Pass rush pressure)",
-                passer=qb.player_name, z_card_event=z_event,
-            )
-
-        # ── Stage 1: PN → QB card → pass result ─────────────────────
-        if pass_length == "SHORT":
-            qb_column = qb.short_pass
-            rec_column = receiver.short_reception
-        elif pass_length == "SCREEN":
-            qb_column = qb.screen_pass
-            rec_column = receiver.short_reception
-        else:
-            qb_column = qb.long_pass
-            rec_column = receiver.long_reception
-
-        if not qb_column:
-            comp = random.random() < 0.62
-            yards = random.randint(5, 15) if comp else 0
-            result_type = "COMPLETE" if comp else "INCOMPLETE"
-            is_td = comp and random.random() < 0.05
-        else:
-            qb_data = qb_column.get(slot, {"result": "INCOMPLETE", "yards": 0, "td": False})
-            result_type = qb_data.get("result", "INCOMPLETE")
-            yards = qb_data.get("yards", 0)
-            is_td = qb_data.get("td", False)
-
-        # ── Stage 2: If COMPLETE → RN → Receiver card → yards/catch ─
-        if result_type == "COMPLETE" and rec_column:
-            rec_data = rec_column.get(slot, {"result": "CATCH", "yards": yards, "td": is_td})
-            if rec_data.get("result") == "INCOMPLETE":
-                result_type = "INCOMPLETE"
-                yards = 0
-                is_td = False
-            else:
-                # Receiver card provides yardage (use max of QB/WR for realism)
-                rec_yards = rec_data.get("yards", yards)
-                if rec_yards > 0:
-                    yards = max(yards, rec_yards)
-                rec_td = rec_data.get("td", False)
-                is_td = is_td or rec_td
-
-        # NOTE: In authentic 5E rules, defense affects the Pass Number (PN),
-        # NOT the reception yards.  The receiver card yards are used as-is.
-        # Coverage modifiers are applied to PN via individual defender PDR
-        # in the 5E pass resolution path (_resolve_pass_inner_5e).
-
-        # Z-card check
-        z_event = self._check_z_card(
-            dice, down=down, distance=distance,
-            yard_line=yard_line, quarter=quarter,
-            time_remaining=time_remaining,
-            is_offense=(result_type != "INT"),
-        )
-
-        if result_type == "INT":
-            int_yards, int_td = Charts.roll_int_return()
-            return PlayResult(
-                play_type="PASS", yards_gained=0,
-                result="INT", turnover=True, turnover_type="INT",
-                description=(
-                    f"{qb.player_name} pass intercepted!"
-                    f"{'Returned for TD!' if int_td else f' Returned {int_yards} yards.'}"
-                ),
-                passer=qb.player_name, receiver=receiver.player_name,
-                z_card_event=z_event,
-            )
-
-        if result_type == "SACK":
-            return PlayResult(
-                play_type="PASS", yards_gained=yards,
-                result="SACK",
-                description=f"{qb.player_name} is sacked for {abs(yards)} yard loss!",
-                passer=qb.player_name, z_card_event=z_event,
-            )
-
-        penalty_info = None
-        if dice.penalty_check:
-            penalty_info = Charts.roll_penalty_chart()
-
-        if result_type == "COMPLETE":
-            desc = f"{qb.player_name} completes to {receiver.player_name}"
-            if is_td:
-                desc += " for a TOUCHDOWN!"
-            else:
-                desc += f" for {yards} yard{'s' if yards != 1 else ''}"
-        else:
-            desc = f"{qb.player_name} pass intended for {receiver.player_name} - INCOMPLETE"
-
-        return PlayResult(
-            play_type="PASS",
-            yards_gained=yards,
-            result="TD" if is_td else result_type,
-            is_touchdown=is_td,
-            penalty=penalty_info,
-            description=desc,
-            passer=qb.player_name,
-            receiver=receiver.player_name,
-            z_card_event=z_event,
-        )
 
     # ── Field goal ───────────────────────────────────────────────────
 

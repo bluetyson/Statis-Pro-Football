@@ -8,7 +8,7 @@ from .fast_action_dice import FastActionDice, DiceResult, PlayTendency
 from .fac_deck import FACDeck, FACCard
 from .player_card import PlayerCard
 from .team import Team
-from .play_resolver import PlayResolver, PlayResult, BigPlayDefense
+from .play_resolver import PlayResolver, PlayResult, BigPlayDefense, resolve_z_penalty
 from .solitaire import SolitaireAI, GameSituation, PlayCall
 from .charts import Charts
 from .play_types import (
@@ -104,23 +104,21 @@ class GameState:
 
 
 class Game:
-    """Core game logic for Statis Pro Football.
+    """Core game logic for Statis Pro Football (5th Edition).
 
-    Supports two modes:
-      * Legacy mode (use_5e=False): Uses FastActionDice (d8×d8) — original system
-      * 5th-edition mode (use_5e=True): Uses FACDeck (109-card deck)
+    Uses the FACDeck (109-card deck) for 5th-edition resolution.
     """
 
     def __init__(self, home_team: Team, away_team: Team,
                  solitaire_home: bool = True, solitaire_away: bool = True,
-                 use_5e: bool = False, seed: Optional[int] = None):
+                 use_5e: bool = True, seed: Optional[int] = None):
         self.home_team = home_team
         self.away_team = away_team
         self.dice = FastActionDice()
         # 5E Solitaire: remove 1 Z card when both teams are AI-controlled
         is_solitaire = solitaire_home and solitaire_away
         self.deck = FACDeck(seed=seed, solitaire=is_solitaire)
-        self.use_5e = use_5e
+        self.use_5e = True  # Always use 5E rules
         self.resolver = PlayResolver()
         self.ai = SolitaireAI()
         self.solitaire_home = solitaire_home
@@ -284,19 +282,9 @@ class Game:
         return self._resolve_position_player(self.get_offense_team().roster.punters, "P")
 
     def _track_play_stats(self, result) -> None:
-        """Track player stats and game-level penalty/turnover counts."""
+        """Track player stats and game-level turnover counts."""
         stats = self.state.player_stats
         team = self.state.possession
-
-        # Track penalties
-        if result.penalty:
-            pen_type = result.penalty.get("type", "")
-            is_def = "DEF" in pen_type or result.penalty.get("auto_first", False)
-            pen_team = self.state.get_defense_team() if is_def else team
-            self.state.penalties[pen_team] = self.state.penalties.get(pen_team, 0) + 1
-            self.state.penalty_yards[pen_team] = (
-                self.state.penalty_yards.get(pen_team, 0) + result.penalty.get("yards", 0)
-            )
 
         # Track turnovers
         if result.turnover:
@@ -407,7 +395,7 @@ class Game:
                      defensive_strategy: Optional[str] = None,
                      defensive_play: Optional[str] = None,
                      blitz_players: Optional[List[str]] = None) -> PlayResult:
-        """Execute a single play.
+        """Execute a single play using 5th-edition rules.
 
         Args:
             play_call: Optional human-specified offensive play call.
@@ -418,172 +406,11 @@ class Game:
             blitz_players: Optional list of player names to blitz (2-5 LBs/DBs).
         """
         self._current_play_personnel_note = None
-        if self.use_5e:
-            return self._execute_play_5e(play_call, defense_formation,
-                                         player_name=player_name,
-                                         defensive_strategy=defensive_strategy,
-                                         defensive_play=defensive_play,
-                                         blitz_players=blitz_players)
-        return self._execute_play_legacy(play_call, defense_formation, player_name=player_name)
-
-    def _execute_play_legacy(self, play_call: Optional[PlayCall] = None,
-                             defense_formation: Optional[str] = None,
-                             player_name: Optional[str] = None) -> PlayResult:
-        """Execute a single play using legacy dice system."""
-        dice = self.dice.roll()
-        situation = self.state.to_situation()
-
-        if play_call is None:
-            play_call = self.ai.call_play(situation, dice)
-
-        self.state.play_log.append(
-            f"Q{self.state.quarter} {self._time_str()} | "
-            f"{'Home' if self.state.possession == 'home' else 'Away'} ball | "
-            f"{self.state.down}{self._ordinal_suffix(self.state.down)} & {self.state.distance} | "
-            f"Own {self.state.yard_line}"
-        )
-
-        if play_call.play_type == "PUNT":
-            result = self._execute_punt()
-        elif play_call.play_type == "FG":
-            result = self._execute_field_goal()
-        elif play_call.play_type == "KNEEL":
-            result = PlayResult("KNEEL", -1, "KNEEL", description="QB kneels")
-            self._advance_down(-1)
-        elif play_call.play_type == "RUN":
-            result = self._execute_run(dice, play_call, defense_formation)
-        elif play_call.play_type == "SCREEN":
-            result = self._execute_screen(dice, defense_formation)
-        else:
-            result = self._execute_pass(dice, play_call, defense_formation)
-
-        self._apply_current_personnel_note(result)
-        self.state.play_log.append(f"  \u2192 {result.description}")
-
-        # Track stats
-        self._track_play_stats(result)
-
-        if result.penalty:
-            self._apply_penalty(result.penalty)
-            return result
-
-        if result.turnover:
-            self._handle_turnover(result)
-            return result
-
-        if result.is_touchdown or result.result == "TD":
-            self._score_touchdown()
-            kickoff = self._do_kickoff(
-                kicking_team=self.get_offense_team(),
-                receiving_team=self.get_defense_team(),
-            )
-            self.state.play_log.append(kickoff.description)
-            new_yl = self._kickoff_yard_line(kickoff)
-            self._change_possession(new_yl)
-            return result
-
-        if play_call.play_type == "PUNT":
-            return result
-
-        if play_call.play_type == "FG":
-            if result.result == "FG_GOOD":
-                if self.state.possession == "home":
-                    self.state.score.home += 3
-                else:
-                    self.state.score.away += 3
-                self.state.play_log.append(
-                    f"Score: Away {self.state.score.away} - Home {self.state.score.home}"
-                )
-            opp_yl = max(20, 100 - self.state.yard_line - 7)
-            self._change_possession(opp_yl)
-            return result
-
-        if play_call.play_type == "KNEEL":
-            self._advance_time(self.TIME_KNEEL)
-            return result
-
-        self._advance_down(result.yards_gained)
-
-        if self.state.down > 4:
-            self._turnover_on_downs()
-
-        time_used = self._calculate_time(result)
-        self._advance_time(time_used)
-
-        return result
-
-    def _execute_run(self, dice: DiceResult, play_call: PlayCall,
-                     defense_formation: Optional[str] = None) -> PlayResult:
-        rb = self.get_rb()
-        defense = self.get_defense_team()
-        def_run_stop = defense.defense_rating
-        # Get defensive formation (human override or AI)
-        situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense(situation, dice)
-
-        if rb:
-            return self.resolver.resolve_run(
-                dice, rb, play_call.direction, def_run_stop,
-                defense_formation=def_formation,
-                down=self.state.down, distance=self.state.distance,
-                yard_line=self.state.yard_line, quarter=self.state.quarter,
-                time_remaining=self.state.time_remaining,
-            )
-        yards = random.choices([-1, 0, 1, 2, 3, 4, 5],
-                                weights=[5, 8, 10, 15, 20, 15, 10])[0]
-        return PlayResult("RUN", yards, "GAIN", description=f"Run for {yards} yards")
-
-    def _execute_screen(self, dice: DiceResult,
-                        defense_formation: Optional[str] = None) -> PlayResult:
-        qb = self.get_qb()
-        rb = self.get_rb()
-        defense = self.get_defense_team()
-        situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense(situation, dice)
-        is_blitz = dice.play_tendency == PlayTendency.BLITZ
-
-        if qb and rb:
-            return self.resolver.resolve_pass(
-                dice, qb, rb, "SCREEN", defense.defense_rating,
-                defense_pass_rush=defense.defense_rating,
-                defense_formation=def_formation,
-                is_blitz_tendency=is_blitz,
-                down=self.state.down, distance=self.state.distance,
-                yard_line=self.state.yard_line, quarter=self.state.quarter,
-                time_remaining=self.state.time_remaining,
-            )
-        yards = random.randint(2, 8)
-        return PlayResult("PASS", yards, "COMPLETE", description=f"Screen pass for {yards} yards")
-
-    def _execute_pass(self, dice: DiceResult, play_call: PlayCall,
-                      defense_formation: Optional[str] = None) -> PlayResult:
-        qb = self.get_qb()
-        receiver = self._pick_receiver(play_call)
-        defense = self.get_defense_team()
-        situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense(situation, dice)
-        is_blitz = dice.play_tendency == PlayTendency.BLITZ
-
-        length = "LONG" if play_call.play_type == "LONG_PASS" else "SHORT"
-
-        if qb and receiver:
-            return self.resolver.resolve_pass(
-                dice, qb, receiver, length, defense.defense_rating,
-                defense_pass_rush=defense.defense_rating,
-                defense_formation=def_formation,
-                is_blitz_tendency=is_blitz,
-                down=self.state.down, distance=self.state.distance,
-                yard_line=self.state.yard_line, quarter=self.state.quarter,
-                time_remaining=self.state.time_remaining,
-            )
-
-        yards = random.choices([0, 0, 5, 8, 12, 18, 25],
-                                weights=[20, 15, 15, 15, 12, 10, 5])[0]
-        return PlayResult(
-            "PASS", yards,
-            "COMPLETE" if yards > 0 else "INCOMPLETE",
-            description=f"Pass {'complete' if yards > 0 else 'incomplete'} for {yards} yards",
-        )
+        return self._execute_play_5e(play_call, defense_formation,
+                                     player_name=player_name,
+                                     defensive_strategy=defensive_strategy,
+                                     defensive_play=defensive_play,
+                                     blitz_players=blitz_players)
 
     def _pick_receiver(self, play_call: PlayCall, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         team = self.get_offense_team()
@@ -661,20 +488,38 @@ class Game:
             self._change_possession(new_yl)
 
     def _apply_penalty(self, penalty: Dict) -> None:
-        ptype = penalty.get("type", "HOLDING_OFF")
+        """Apply a penalty to the game state.
+
+        Supports the 5E penalty format (from Z-card resolution) which uses
+        a 'team' field ('offense'/'defense'/'kicking'/'receiving') and also
+        the punt/kickoff penalty dicts which use their own conventions.
+        """
+        ptype = penalty.get("type", "")
         yards = penalty.get("yards", 10)
         auto_first = penalty.get("auto_first", False)
         loss_of_down = penalty.get("loss_of_down", False)
+        name = penalty.get("name", ptype)
 
-        self.state.play_log.append(f"  \u26a0 PENALTY: {ptype} - {yards} yards")
+        self.state.play_log.append(f"  ⚠ PENALTY: {name} - {yards} yards")
 
-        off_penalties = {
-            "FALSE_START", "ILLEGAL_MOTION", "DELAY_OF_GAME", "INELIGIBLE_RECEIVER",
-        }
-        if "OFF" in ptype or ptype in off_penalties:
+        # Determine whether this is against the offense or defense.
+        # 5E Z-card penalties have a "team" field; punt penalties have their own
+        # convention.
+        team = penalty.get("team", "")
+        is_against_offense = team in ("offense", "kicking")
+        is_against_defense = team in ("defense", "receiving")
+
+        # Apply half-distance-to-goal
+        if is_against_offense:
+            yards = PlayResolver.apply_half_distance_penalty(
+                yards, self.state.yard_line, is_offense_penalty=True
+            )
             self.state.yard_line = max(1, self.state.yard_line - yards)
             self.state.distance += yards
-        else:
+        elif is_against_defense:
+            yards = PlayResolver.apply_half_distance_penalty(
+                yards, self.state.yard_line, is_offense_penalty=False
+            )
             self.state.yard_line = min(99, self.state.yard_line + yards)
             self.state.distance -= yards
             if auto_first:
@@ -688,13 +533,17 @@ class Game:
             self.state.down = 1
             self.state.distance = 10
 
+        # Track penalty count
+        pen_team_key = (self.state.get_defense_team()
+                        if is_against_defense
+                        else (self.state.possession if self.state.possession else "home"))
+        self.state.penalties[pen_team_key] = self.state.penalties.get(pen_team_key, 0) + 1
+        self.state.penalty_yards[pen_team_key] = (
+            self.state.penalty_yards.get(pen_team_key, 0) + yards
+        )
+
         # Track defensive penalty for half-cannot-end rule
-        if "DEF" in ptype or ptype in ("ROUGHING_PASSER", "FACE_MASK",
-            "PASS_INTERFERENCE_DEF", "ENCROACHMENT", "HOLDING_DEF",
-            "ROUGHING_KICKER", "ILLEGAL_CONTACT", "UNNECESSARY_ROUGHNESS"):
-            self._last_play_had_defensive_penalty = True
-        else:
-            self._last_play_had_defensive_penalty = False
+        self._last_play_had_defensive_penalty = is_against_defense
 
     # ── 5E Timeout Rules ─────────────────────────────────────────────
 
@@ -1043,6 +892,23 @@ class Game:
                 self.state.play_log.append(
                     f"  ⚕ {injured_player} injured! Out for {duration} plays."
                 )
+
+        # ── 5E Z-card penalty resolution ─────────────────────────────
+        if result.z_card_event and result.z_card_event.get("type") == "PENALTY":
+            pen_detail = result.z_card_event.get("detail", "")
+            pen_info = resolve_z_penalty(pen_detail, play_call.play_type)
+            if pen_info:
+                # Intentional Grounding (#10): only on incomplete passes
+                if pen_info.get("only_incomplete") and result.result != "INCOMPLETE":
+                    self.state.play_log.append(
+                        f"  ⚠ Intentional Grounding ignored (pass was not incomplete)"
+                    )
+                else:
+                    result.penalty = pen_info
+                    self.state.play_log.append(
+                        f"  ⚠ Z-CARD PENALTY: {pen_info['name']} "
+                        f"({pen_info['yards']}y vs {pen_info['team']})"
+                    )
 
         # ── 5E Endurance tracking ────────────────────────────────────
         ball_carrier = result.rusher or result.receiver

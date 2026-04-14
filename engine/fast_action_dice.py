@@ -18,7 +18,6 @@ class DiceResult:
     tens: int               # 1-8
     ones: int               # 1-8
     play_tendency: PlayTendency
-    penalty_check: bool     # ~8% chance
     turnover_modifier: int  # 1-8
 
     @property
@@ -67,21 +66,17 @@ class FastActionDice:
         (8, 7): PlayTendency.SHORT_PASS, (8, 8): PlayTendency.RUN,
     }
 
-    PENALTY_COMBOS = {(1, 7), (3, 7), (5, 8), (7, 1), (8, 2)}
-
     def roll(self) -> DiceResult:
         tens = random.randint(1, 8)
         ones = random.randint(1, 8)
         two_digit = tens * 10 + ones
         tendency = self.TENDENCY_MAP.get((tens, ones), PlayTendency.RUN)
-        penalty_check = (tens, ones) in self.PENALTY_COMBOS
         turnover_modifier = random.randint(1, 8)
         return DiceResult(
             two_digit=two_digit,
             tens=tens,
             ones=ones,
             play_tendency=tendency,
-            penalty_check=penalty_check,
             turnover_modifier=turnover_modifier,
         )
 

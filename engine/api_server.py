@@ -436,7 +436,6 @@ def roll_dice():
         "tens": result.tens,
         "ones": result.ones,
         "play_tendency": result.play_tendency.value,
-        "penalty_check": result.penalty_check,
         "turnover_modifier": result.turnover_modifier,
     }
 

@@ -38,13 +38,6 @@ class TestDiceDistribution:
         # RUN appears most in the tendency map
         assert counts[PlayTendency.RUN] >= counts[PlayTendency.BLITZ]
 
-    def test_penalty_rate_approximately_8_percent(self):
-        d = FastActionDice()
-        n = 10000
-        penalty_count = sum(1 for _ in range(n) if d.roll().penalty_check)
-        penalty_rate = penalty_count / n
-        assert 0.03 <= penalty_rate <= 0.15, f"Penalty rate {penalty_rate:.2%} out of expected range"
-
     def test_tens_uniform_distribution(self):
         d = FastActionDice()
         counts = Counter(d.roll().tens for _ in range(8000))
@@ -79,10 +72,6 @@ class TestTendencyMap:
             for o in range(1, 9):
                 assert (t, o) in d.TENDENCY_MAP, f"Missing ({t},{o})"
 
-    def test_penalty_combos_subset_of_all(self):
-        d = FastActionDice()
-        for combo in d.PENALTY_COMBOS:
-            assert combo in d.TENDENCY_MAP
 
 
 class TestDiceResultDataclass:
@@ -92,14 +81,12 @@ class TestDiceResultDataclass:
             tens=4,
             ones=7,
             play_tendency=PlayTendency.BLITZ,
-            penalty_check=False,
             turnover_modifier=3,
         )
         assert r.two_digit == 47
         assert r.tens == 4
         assert r.ones == 7
         assert r.play_tendency == PlayTendency.BLITZ
-        assert r.penalty_check is False
         assert r.turnover_modifier == 3
 
     def test_play_tendency_enum_values(self):
@@ -122,14 +109,3 @@ class TestReproducibility:
         for r1, r2 in zip(results1, results2):
             assert r1.two_digit == r2.two_digit
             assert r1.play_tendency == r2.play_tendency
-
-
-class TestPenaltyFrequency:
-    def test_penalty_combos_count(self):
-        d = FastActionDice()
-        assert len(d.PENALTY_COMBOS) == 5
-
-    def test_specific_penalty_combos(self):
-        d = FastActionDice()
-        expected = {(1, 7), (3, 7), (5, 8), (7, 1), (8, 2)}
-        assert d.PENALTY_COMBOS == expected
