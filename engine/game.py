@@ -466,7 +466,7 @@ class Game:
         if self.state.yard_line >= 100:
             return True  # Touchdown
 
-        # Safety: ball carrier tackled behind own goal line
+        # Safety: ball goes behind own goal line (run loss, sack, etc.)
         if self.state.yard_line <= 0:
             self._score_safety()
             return True
