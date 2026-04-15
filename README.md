@@ -2,7 +2,7 @@
 
 A digital implementation of the classic Statis Pro Football tabletop game, featuring a Python game engine with AI play calling, a React/TypeScript web GUI, and complete player cards for all 32 NFL teams across multiple seasons.
 
-**Status:** Feature-complete. Core 5E engine is fully implemented, the GUI includes complete human play calling with all 5E features, and 600 tests are passing.
+**Status:** Feature-complete. Core 5E engine is fully implemented, the GUI includes complete human play calling with all 5E features, and 598+ tests are passing.
 
 ## Overview
 
@@ -34,15 +34,15 @@ The original **d8×d8 dice-based system** (64 slots, range 11–88) remains full
 - **AI Play Calling** — Solitaire mode with both legacy dice-based and 5th-edition SOLO field-based play selection
 - **Player Card System** — 5th-edition (48/12-slot) and legacy (64-slot) cards generated from real NFL statistics
 - **Two Seasons of Data** — 2024 (2023 NFL stats) and 2025 (2024 NFL stats) with all 32 teams
-- **Web GUI** — React/TypeScript frontend with human offensive play calling, human defensive play calling, defensive run/play cards, player selection, special teams controls, and real-time game state
-- **REST API** — FastAPI backend with endpoints for game management, dice rolling, and card browsing
-- **Comprehensive Tests** — 600 tests covering dice/deck distribution, card generation, game mechanics, GUI-facing API behavior, and 5E rules
+- **Web GUI** — React/TypeScript frontend with human offensive/defensive play calling, formation grid, player substitutions, depth chart, display box assignments, injury tracking, endurance display, player stats panel, FAC card display, BV vs TV battles, and real-time game state
+- **REST API** — FastAPI backend with 30+ endpoints for game management, human play calling, special teams, roster management, and card browsing
+- **Comprehensive Tests** — 598+ tests covering dice/deck distribution, card generation, game mechanics, GUI-facing API behavior, kickoff returns, fumble logging, injury/endurance, blitz/pass-rush, blocking matchups, and 5E rules
 
 ## Implementation Status
 
 - **Engine**: 146/146 5E rules (100%) implemented
 - **GUI**: 88/88 audited features (100%) implemented
-- **Tests**: 600 tests passing
+- **Tests**: 598+ tests passing
 - **Documentation**: Complete audit documents and API reference
 
 See [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) for detailed status.
@@ -100,17 +100,19 @@ If you are actively developing with the GUI open, restart both the API server an
 from engine.team import Team
 from engine.game import Game
 
-# Load two teams
+# Load two teams (primary: 5th-edition format)
 home = Team.load("KC", "2025_5e")   # Kansas City Chiefs
 away = Team.load("BUF", "2025_5e")  # Buffalo Bills
 
-# 5th Edition mode (109-card FAC deck)
+# 5th Edition mode (109-card FAC deck) — default and recommended
 game = Game(home, away, use_5e=True, seed=42)
 state = game.simulate_game()
 print(f"Final Score: {state.away_team} {state.score.away} - {state.home_team} {state.score.home}")
 
-# Legacy mode (d8×d8 dice)
-game = Game(home, away, use_5e=False)
+# Legacy mode (d8×d8 dice) — also supported
+home_legacy = Team.load("KC", "2025")
+away_legacy = Team.load("BUF", "2025")
+game = Game(home_legacy, away_legacy, use_5e=False)
 state = game.simulate_game()
 ```
 
@@ -137,16 +139,20 @@ npm run dev
 ### Generate Player Cards
 
 ```bash
+# Generate 2025 season cards (5th-edition 48/12-slot format) — primary
+python engine/data/generate_2025_5e_data.py
+
 # Generate 2025 season cards (legacy 64-slot format)
 python engine/data/generate_2025_data.py
-
-# Generate 2025 season cards (5th-edition 48/12-slot format)
-python engine/data/generate_2025_5e_data.py
 ```
 
 ### Run Tests
 
 ```bash
+# Run all tests (excluding API server tests which require fastapi installed)
+python3 -m pytest tests/ -x -q --ignore=tests/test_api_server.py -k "not test_oob"
+
+# Run all tests including API server tests
 python3 -m pytest tests/ -x -q
 ```
 
@@ -155,7 +161,7 @@ python3 -m pytest tests/ -x -q
 ```
 Statis-Pro-Football/
 ├── engine/                     # Python game engine
-│   ├── api_server.py           # FastAPI REST server
+│   ├── api_server.py           # FastAPI REST server (30+ endpoints)
 │   ├── card_generator.py       # Generate player cards (legacy + 5th-ed)
 │   ├── charts.py               # Penalty, return, and recovery charts
 │   ├── fac_deck.py             # 109-card FAC deck (5th Edition)
@@ -163,20 +169,32 @@ Statis-Pro-Football/
 │   ├── fast_action_dice.py     # 11-88 dice system (legacy)
 │   ├── game.py                 # Core game state and logic
 │   ├── play_resolver.py        # Play outcome resolution (legacy + 5th-ed)
+│   ├── play_types.py           # 5E defensive/offensive play type enums
 │   ├── player_card.py          # Player card data model
 │   ├── solitaire.py            # AI play calling (legacy + SOLO-based)
 │   ├── stats_fetcher.py        # Stats lookup with fallback data
 │   ├── team.py                 # Team and roster management
 │   └── data/
-│       ├── 2024/               # 2024 season team JSON files (32 teams)
+│       ├── 2024/               # 2024 season team JSON files (32 teams, legacy)
 │       ├── 2025/               # 2025 season team JSON files (legacy, 32 teams)
-│       ├── 2025_5e/            # 2025 season team JSON files (5th-ed, 32 teams)
+│       ├── 2025_5e/            # 2025 season team JSON files (5th-ed, 32 teams) ← primary
 │       ├── generate_2024_data.py
 │       ├── generate_2025_data.py
 │       └── generate_2025_5e_data.py
 ├── gui/                        # React/TypeScript web frontend
 │   ├── src/
-│   │   ├── components/         # UI components
+│   │   ├── components/         # UI components (20+ components)
+│   │   │   ├── BlitzPlayerSelector.tsx   # Blitz player selection
+│   │   │   ├── DefensivePlayCaller.tsx   # Human defensive play calling
+│   │   │   ├── DepthChart.tsx            # Depth chart management
+│   │   │   ├── DisplayBoxes.tsx          # 5E defensive display (A-O boxes)
+│   │   │   ├── FACCardDisplay.tsx        # FAC card visual
+│   │   │   ├── GameBoard.tsx             # Main game board
+│   │   │   ├── HumanPlayCaller.tsx       # Human offensive play calling
+│   │   │   ├── LetterBoards.tsx          # Formation grid
+│   │   │   ├── StartingLineup.tsx        # Lineup management
+│   │   │   ├── SubstitutionPanel.tsx     # Player substitutions
+│   │   │   └── ...
 │   │   ├── hooks/              # React hooks (API integration)
 │   │   ├── types/              # TypeScript type definitions
 │   │   └── styles/             # CSS styling
@@ -184,18 +202,29 @@ Statis-Pro-Football/
 ├── scripts/
 │   ├── generate_cards.py       # CLI for card generation
 │   └── requirements.txt        # Python dependencies
-├── tests/                      # Test suite
-│   ├── test_engine.py          # Integration tests
-│   ├── test_5e_system.py       # 5th-edition system tests
-│   ├── test_fac_system.py      # FAC system tests
-│   ├── test_card_generator.py  # Card generation tests
-│   └── test_fast_action_dice.py # Dice system tests
+├── tests/                      # Test suite (598+ tests)
+│   ├── test_5e_kickoff_return.py
+│   ├── test_5e_rules.py
+│   ├── test_5e_system.py
+│   ├── test_api_server.py
+│   ├── test_blitz_pass_rush_and_receivers.py
+│   ├── test_blocking_matchup_resolution.py
+│   ├── test_card_generator.py
+│   ├── test_engine.py
+│   ├── test_fac_system.py
+│   ├── test_fg_kickoff_and_run_middle.py
+│   ├── test_fumble_return_logging.py
+│   ├── test_human_defense_override.py
+│   ├── test_injury_grid_and_endurance.py
+│   └── test_kickoff_td_and_play_sync.py
 └── docs/                       # Documentation
     ├── getting-started.md      # Setup and installation guide
     ├── game-mechanics.md       # How the game works
     ├── player-cards.md         # Player card explanation and examples
     ├── creating-custom-players.md  # Custom player creation guide
-    └── api-reference.md        # REST API documentation
+    ├── api-reference.md        # REST API documentation
+    ├── 5e-rules-audit.md       # Complete 5E rules implementation tracking
+    └── gui-audit.md            # GUI feature implementation tracking
 ```
 
 ## How It Works
@@ -265,10 +294,12 @@ Players are graded A+, A, B, C, or D based on their real NFL performance. Higher
 For detailed documentation, see the [docs/](docs/) directory:
 
 - **[Getting Started](docs/getting-started.md)** — Installation, setup, running the game
-- **[Game Mechanics](docs/game-mechanics.md)** — Detailed explanation of how the game works
-- **[Player Cards](docs/player-cards.md)** — Understanding player cards with examples
+- **[Game Mechanics](docs/game-mechanics.md)** — Detailed explanation of how the 5E game works
+- **[Player Cards](docs/player-cards.md)** — Understanding 5E player cards with examples
 - **[Creating Custom Players](docs/creating-custom-players.md)** — How to create your own player cards
 - **[API Reference](docs/api-reference.md)** — REST API endpoint documentation
+- **[5E Rules Audit](docs/5e-rules-audit.md)** — Complete mapping of all 146 5E rules to implementation
+- **[GUI Audit](docs/gui-audit.md)** — Tracking of 88 GUI features across 11 categories
 
 ## License
 

@@ -1,110 +1,177 @@
 # Game Mechanics
 
-This document explains how Statis Pro Football simulates an NFL game, from dice rolling to scoring.
+This document explains how Statis Pro Football simulates an NFL game. The primary mode is **5th Edition (5E)**, which uses the FAC deck system. The legacy dice-based system is also supported.
 
-## The Fast Action Dice System
+---
 
-At the heart of every play is the **Fast Action Dice** — a system using two 8-sided dice (d8), each producing values from 1 to 8. Together they create a two-digit number ranging from 11 to 88, giving 64 possible outcomes.
+## 5th Edition: The FAC Deck System
 
-### Dice Components
+### 109-Card Deck
 
-Each roll produces three pieces of information:
+The 5E system uses a physical deck of **109 Fast Action Cards** (FAC):
+
+| Card Type | Count | Description |
+|-----------|-------|-------------|
+| Standard | 96 | Numbers 1–48 (each appearing twice: normal + out-of-bounds variant) |
+| Z Cards | 13 | Special event cards (injuries, penalties, fumbles) |
+
+Cards are drawn **without replacement**. When the deck is exhausted it is automatically reshuffled.
+
+### FAC Card Fields
+
+Each FAC card contains fields that drive all game mechanics:
+
+| Field | Used For |
+|-------|----------|
+| RUN# (1–12) | RB card lookup (inside/outside/sweep) |
+| PASS# (1–48) | QB/receiver card lookup |
+| SL/IL/SR/IR | Defensive blocking matchups (BV vs TV) |
+| ER | End-around resolution |
+| QK/SH/LG | Receiver targeting override / P.Rush trigger |
+| SC | Screen pass result |
+| Z RES | Special events (penalty, injury, fumble) |
+| SOLO | AI solitaire play calling |
+
+### Pass Play Resolution (5E)
+
+1. Draw FAC card
+2. Check **QK/SH/LG target field** — may override the called receiver or trigger **P.Rush** (pass rush by defender in that box)
+3. Look up **PASS#** on QB card → receiver letter (A–E), INC, or INT
+4. If receiver letter → look up same **PASS#** on receiver's pass-gain card → yards
+5. Apply **BV vs TV** blocking matchup using SL/IL/SR/IR field
+6. Apply endurance penalties if applicable
+
+### Run Play Resolution (5E)
+
+1. Draw FAC card
+2. Check **SL/IL/SR/IR** field → BV vs TV blocking matchup
+3. Look up **RUN#** on RB card (inside/outside/sweep) → yards
+4. If `(OB)` suffix on card → out of bounds (clock stops)
+5. Check **Z RES** for fumbles/injuries
+
+### End-Around (ER)
+
+1. Look up **ER field** on FAC card on receiving player's rush column
+2. Only usable once per game per player
+
+---
+
+## Legacy: The Fast Action Dice System
+
+The legacy mode uses two 8-sided dice (d8, values 1–8). Together they create a two-digit number from 11 to 88, giving 64 possible outcomes.
 
 | Component | Range | Purpose |
 |-----------|-------|---------|
 | Two-digit number | 11–88 | Indexes into player card columns |
-| Play Tendency | RUN, SHORT_PASS, LONG_PASS, BLITZ | Suggests the type of play |
+| Play Tendency | RUN/SHORT_PASS/LONG_PASS/BLITZ | Suggests the type of play |
 | Penalty Check | ~8% chance (5 specific combos) | Triggers penalty chart lookup |
 | Turnover Modifier | 1–8 | Additional random factor for turnovers |
 
-### Play Tendency Distribution
+**Play Tendency Distribution:** RUN ~34%, SHORT_PASS ~28%, LONG_PASS ~25%, BLITZ ~13%.
 
-The 64 dice combinations are mapped to play tendencies:
+**Penalty Triggers**: (1,7), (3,7), (5,8), (7,1), (8,2).
 
-- **RUN** — ~34% of outcomes (most common)
-- **SHORT_PASS** — ~28% of outcomes
-- **LONG_PASS** — ~25% of outcomes
-- **BLITZ** — ~13% of outcomes (least common)
-
-### Penalty Triggers
-
-Five specific dice combinations trigger a penalty check:
-- (1,7), (3,7), (5,8), (7,1), (8,2)
-
-When a penalty is triggered, the full 64-entry penalty chart is consulted with a second dice roll to determine the specific penalty type and yardage.
+---
 
 ## Game Flow
 
 ### 1. Coin Flip & Kickoff
 
-The game begins with a random coin flip to determine which team receives. The receiving team gets a kickoff:
-- **75% chance** of a touchback (ball at the 25-yard line)
-- **25% chance** of a return (18–30 yards typically)
+The game begins with a random coin flip to determine which team receives. The receiving team gets a kickoff resolved from the kicking team's **kickoff table** (a 12-entry table derived from real NFL kickoff statistics). Outcomes include:
+
+- **Touchback** — ball placed at the **20-yard line** (5E rule; safety touchbacks at the 15)
+- **Return** — yards determined by the kickoff return table
+- **OOB** — ball placed at the 25-yard line (kicking team's penalty)
+- **TD** — return touchdown
 
 ### 2. Drive Structure
 
 Each drive follows this cycle until it ends:
 
 ```
-Roll Dice → Determine Tendency → AI Calls Play → Resolve Play → Update State
-     ↓                                                    ↓
-  Penalty? ──────── Yes ──→ Apply Penalty ─────────→ Next Play
-     ↓ No                                               ↑
-  Turnover? ─────── Yes ──→ Change Possession ──────→ New Drive
-     ↓ No                                               ↑
-  Touchdown? ────── Yes ──→ Score + XP + Kickoff ───→ New Drive
-     ↓ No                                               ↑
-  4th Down? ─────── Punt/FG/Go For It ─────────────→ ...
-     ↓ No
-  Advance Down ──→ Next Play
+Draw FAC / Roll Dice → Offense + Defense call plays → Resolve Play → Update State
+         |                                                  |
+       Z-Card? --- Yes ---> Injury/Penalty/Fumble -------> Next Play
+         | No                                               ^
+       Turnover? -- Yes ---> Change Possession -----------> New Drive
+         | No                                               ^
+       Touchdown? - Yes ---> Score + PAT/2PC + Kickoff ---> New Drive
+         | No                                               ^
+       4th Down? -- Punt/FG/Go For It -------------------> ...
+         | No
+       Advance Down ---> Next Play
 ```
 
-### 3. Play Resolution
+### 3. Offensive Play Types
 
-#### Running Plays
+| Play | Code | Description |
+|------|------|-------------|
+| Inside Left / Inside Right | IL / IR | Run between the tackles |
+| Sweep Left / Sweep Right | SL / SR | Run to the outside |
+| End-Around | ER | WR/TE rushes — only once per player per game |
+| Quick Pass | QK | Short, fast release (1–2 receiver letters) |
+| Short Pass | SH | Medium pass (up to 3 receiver letters) |
+| Long Pass | LG | Deep pass — not allowed within the opponent's 20 |
+| Screen Pass | SC | Screen — not allowed within 5 yards of the goal line |
+| Punt | — | Special teams |
+| Field Goal | — | Special teams |
 
-1. Roll dice → get slot number (e.g., "45")
-2. Consult the RB's Inside Run or Outside Run card column
-3. The slot returns: result type (GAIN/FUMBLE), yards, and touchdown flag
-4. Apply defense modifier: `yards = yards - (defense_run_stop - 50) / 50`
-5. If FUMBLE: roll fumble recovery (50/50 offense/defense)
+### 4. Offensive Strategies
 
-#### Passing Plays
+| Strategy | Effect |
+|----------|--------|
+| **Flop** | Motion play that shifts the formation |
+| **Sneak** | QB sneaks — uses QB rush column |
+| **Draw** | Draws in the pass rush; uses run resolution |
+| **Play-Action** | Fakes a run before passing |
 
-1. Roll dice → get slot number
-2. Consult the QB's Short Pass, Long Pass, or Screen Pass column
-3. Check the slot: COMPLETE, INCOMPLETE, INT, or SACK
-4. If COMPLETE: also check receiver's reception column (may downgrade to INCOMPLETE)
-5. Apply defense modifier: `yards = yards × (1 - (defense_coverage - 50) / 200)`
-6. If INT: roll interception return chart
-7. If SACK: negative yardage applied
+### 5. Defensive Formations & Plays
 
-#### Field Goals
+**Personnel (Formation):**
 
-1. Calculate distance: `(100 - yard_line) + 17` yards
-2. Look up success rate from kicker's FG chart by distance range
-3. Random roll against that rate
+| Formation | Personnel |
+|-----------|-----------|
+| 4-3 | 4 DL, 3 LB, 4 DB |
+| 3-4 | 3 DL, 4 LB, 4 DB |
+| Nickel | 3 DL, 2 LB, 6 DB |
+| Goal Line | 5 DL, 4 LB, 2 DB |
 
-#### Punts
+**Play Card:**
 
-1. Calculate distance from punter's average ± random variance
-2. Check inside-20 rate for downed punt
-3. If not inside-20: roll punt return chart
+| Play | Usage |
+|------|-------|
+| Pass Defense | Standard pass coverage |
+| Prevent Defense | Late-game, concedes short gains |
+| Run Defense (No Key / Key Back 1/2/3) | Stop the run, optionally keying a specific back |
+| Blitz | 2–5 LBs/DBs declared before offense reveals play |
 
-### 4. Down Management
+**Strategy:**
+
+| Strategy | Effect |
+|----------|--------|
+| Double Coverage | One receiver removed from targets |
+| Triple Coverage | Two receivers removed from targets |
+| Alternate Double Coverage | Variation of double coverage |
+
+### 6. Blocking Matchups (BV vs TV)
+
+The SL/IL/SR/IR field on the FAC card drives a **blocker vs tackler** matchup for both runs and passes. Results: **Offense Only** (offense wins), **Defense Only** (defense wins), or **Contest** (both matter).
+
+### 7. Down Management
 
 - **1st & 10**: Standard start
 - Gaining 10+ yards from the line of scrimmage resets to 1st & 10
-- If all 4 downs are used without a first down: turnover on downs (or punt/FG)
+- If all 4 downs are used without a first down: turnover on downs (or punt/FG/go-for-it decision)
 
-### 5. Clock Management
+### 8. Clock Management
 
 Each play consumes time from the 15-minute (900-second) quarter clock:
 
 | Play Type | Time Used |
 |-----------|-----------|
-| Run | 25–45 seconds |
-| Complete Pass | 20–40 seconds |
+| Run (in bounds) | 35–45 seconds |
+| Run (out of bounds) | 5–10 seconds |
+| Complete Pass (in bounds) | 30–40 seconds |
 | Incomplete Pass | 5–10 seconds |
 | Kneel | 40 seconds |
 | Default | 30 seconds |
@@ -114,9 +181,60 @@ When the clock expires:
 - **End of Q2 (Halftime)**: Second half kickoff with possession change
 - **End of Q4**: Game over (or overtime if tied)
 
-### 6. Overtime
+### 9. Two-Minute Offense
 
-If the score is tied after Q4, a 10-minute overtime period begins. The first team to score wins (simplified sudden death).
+When the offense declares two-minute offense (time <= 2:00 in Q4 or OT):
+- All incomplete passes stop the clock
+- Running plays out of bounds stop the clock
+- **Yardage halving**: rush yards are halved
+- **Completion penalty**: -4 to pass completion range
+- AI uses two-minute drill automatically when trailing with under 2 minutes
+
+### 10. Timeouts
+
+Each team starts with 3 timeouts per half. Timeouts stop the clock and are tracked by the game state. The API endpoint `POST /games/{game_id}/timeout` calls a timeout for the team in possession or a specified team.
+
+### 11. Overtime
+
+If the score is tied after Q4, a 10-minute overtime period begins. The first team to score wins (sudden death). The overtime kickoff follows standard kickoff rules.
+
+---
+
+## Special Teams
+
+### Field Goals
+
+1. Calculate distance: `(100 - yard_line) + 17` yards
+2. Look up success rate from kicker's FG chart by distance range
+3. Random roll against that rate
+4. On success: kicking team kicks off to opponent
+5. On miss: possession changes, no kickoff
+
+### Punts
+
+1. Calculate distance from punter's average +/- random variance
+2. Check inside-20 rate for downed punt
+3. If not inside-20: resolve punt return
+4. **Coffin Corner**: attempt to pin inside 5-yard line
+5. **All-Out Punt Rush**: defense declares max rushers
+
+### Kickoffs
+
+- **Standard kickoff**: resolved from team's kickoff table
+- **Onside kick**: kicking team attempts recovery; receiving team may declare onside defense
+- **Squib kick**: low bouncing kick to avoid a returner
+- **Safety free kick**: from the 20-yard line after a safety; touchback at the 15
+
+### Fake Plays
+
+- **Fake punt**: resolve as a run play from the punt formation
+- **Fake field goal**: resolve as a pass or run from the FG formation
+
+### Two-Point Conversion
+
+After a touchdown, offense may declare a two-point conversion instead of kicking the PAT. Resolved as a regular play from the 3-yard line.
+
+---
 
 ## Scoring
 
@@ -128,85 +246,93 @@ If the score is tied after Q4, a 10-minute overtime period begins. The first tea
 | Field Goal | 3 |
 | Safety | 2 |
 
-After a touchdown, the kicker attempts an extra point based on their XP rate (typically 95–99%).
+**Safety mechanics**: The defense scores 2 points. The team that conceded then kicks off from their own 20-yard line (a **safety free kick**). The receiving team's touchback is placed at the 15 (5 yards closer than a normal touchback).
 
-## AI Play Calling (Solitaire Mode)
+---
 
-The AI evaluates the game situation and calls plays accordingly:
+## The Endurance System
 
-### Situational Logic
+Players have endurance ratings that limit how many consecutive plays they can carry the ball (or be targeted):
 
-| Situation | AI Decision |
-|-----------|------------|
-| 4th down, deep in own territory | PUNT |
-| 4th down, within FG range | FIELD GOAL |
-| 4th down, short yardage in opponent territory | GO FOR IT (run) |
-| Trailing with < 2 minutes left | TWO-MINUTE DRILL (aggressive passing) |
-| Leading with < 1 minute left | KNEEL |
-| 1st down | Follow dice tendency |
-| 2nd and short (≤3 yards) | Run or short pass |
-| 2nd and long (>7 yards) | Pass (short or long) |
-| 3rd and short (≤2 yards) | Run sneak or quick pass |
-| 3rd and long (>10 yards) | Long pass |
+| Level | Rule |
+|-------|------|
+| RB-0 | Unlimited — no restriction |
+| RB-1 | Must rest 1 play after carrying |
+| RB-2 | Must rest 2 plays after carrying |
+| RB-3 | Once per drive |
+| RB-4 | Once per quarter |
 
-### Defensive Formations
+**Violation penalty (runs)**: +2 added to RUN# (effectively reduces gains).
+**Violation penalty (passes)**: -5 to completion range.
 
-The AI also calls defensive formations:
+QB endurance is rated A/B/C and limits how many passes per drive before a penalty applies.
 
-| Situation | Formation |
-|-----------|-----------|
-| 3rd and long | NICKEL_BLITZ or NICKEL_ZONE |
-| 3rd and short | NICKEL_COVER2 |
-| Short yardage | GOAL_LINE |
-| Normal | 4_3, 3_4, 4_3_COVER2, 3_4_ZONE |
-| Blitz tendency | 4_3_BLITZ |
+On **FAC check-off passes** (receiver is not the intended target), endurance penalty for the actual receiver is ignored.
 
-## Penalty System
+---
 
-When a penalty is triggered (~8% of plays), a second dice roll consults the 64-entry penalty chart:
+## The Injury System
 
-### Common Penalties
+When a Z-card or injury roll occurs:
 
-| Penalty | Yards | Auto First Down? |
-|---------|-------|-------------------|
-| Holding (Offense) | 10 | No |
-| False Start | 5 | No |
-| Pass Interference (Defense) | Spot | Yes |
-| Roughing the Passer | 15 | Yes |
-| Holding (Defense) | 5 | Yes |
-| Face Mask | 15 | Yes |
-| Encroachment | 5 | No |
-| Delay of Game | 5 | No |
+1. The injured player is identified
+2. Their backup is immediately promoted to the starter slot
+3. The injury duration (plays) is tracked in `GameState.injuries`
+4. Players return automatically after their injury duration expires
+5. If a player's backup is also injured, the next available depth chart player fills in
 
-### Penalty Application
+---
 
-- **Offensive penalties**: Move the offense backward, add to distance needed
-- **Defensive penalties**: Move the offense forward, may grant automatic first down
-- **Loss of down**: Some penalties (e.g., Ineligible Receiver) cost a down
+## The Display Box System
+
+Defenders are assigned to 15 boxes on the defensive display (A-O):
+
+| Row | Boxes | Positions |
+|-----|-------|-----------|
+| Row 1 | A-E | DL (DE/DT) — 0-2 players per box |
+| Row 2 | F-J | LB only — one per box |
+| Row 3 | K-O | DB — CB in K/O, FS in M, SS in N, any DB in L |
+
+Blitz players are removed from Row 2/3 before the play. Pass coverage assignments link defenders to receiver letters (A-O) for pass defense.
+
+---
+
+## Big Play Defense
+
+Teams that won 9+ games in the prior season may activate **Big Play Defense** once per game. When active:
+- Run defense is significantly strengthened
+- Pass defense is enhanced
+
+---
 
 ## Turnover System
 
 ### Interceptions
 
-When a QB card slot shows INT:
-1. The pass is intercepted
-2. Roll the interception return chart for return yardage
-3. 5% chance of a pick-six (99-yard return = touchdown)
-4. Possession changes
+1. QB card PASS# lookup returns INT
+2. Interception return resolved from the interception table (12 entries, position columns)
+3. Possession changes
 
 ### Fumbles
 
-When a card slot shows FUMBLE:
-1. Roll fumble recovery: OFFENSE (4/8 chance) vs DEFENSE (4/8 chance)
-2. If defense recovers: possession changes
-3. Roll fumble return chart for potential return yardage
-4. 7% chance of fumble return touchdown
+1. Card slot shows FUMBLE
+2. Roll fumble recovery: offense or defense recovers
+3. If defense recovers: possession changes
+4. Roll fumble return chart for potential return yardage
+
+---
 
 ## Team Ratings
 
-Each team has two ratings that modify play outcomes:
+Each team has ratings that modify play outcomes:
 
-- **Offense Rating** (60–95): Higher = better offensive plays, used as context for play resolution
+- **Offense Rating** (60–95): Used for context in play resolution
 - **Defense Rating** (60–90): Applied as a modifier to opponent's offensive plays
-  - Defense Run Stop modifies rushing yards
-  - Defense Coverage modifies passing yards
+  - Run Stop modifies rushing yards
+  - Coverage modifies passing yards
+
+**5E Authentic Defensive Ratings (per player card):**
+- **Pass Rush (PR)**: 0–3 scale
+- **Pass Defense**: -2 to +4 scale
+- **Tackle**: -5 to +4 scale
+- **Intercept Range**: column-based interception threshold

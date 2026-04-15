@@ -1,141 +1,155 @@
 # Player Cards
 
-Player cards are the core of Statis Pro Football. Each player has a card with 64 slots that determine the outcome of plays involving that player.
+Player cards are the core of Statis Pro Football. In **5th Edition (5E)** mode, QB cards have 48 pass rows and RB cards have 12 run rows. The legacy mode uses 64-slot (dice-indexed) cards.
 
-## Card Overview
+---
 
-A player card is a lookup table with 64 entries, one for each possible dice roll (11 through 88). When the dice show "37", you look up slot "37" on the relevant player's card column to find the result.
+## 5th Edition Card System
 
-### Card Structure
+### 5E Card Overview
 
-```
-Player: Patrick Mahomes (QB #15, KC)
-Grade: A
-──────────────────────────────────────
-SHORT PASS COLUMN:
-  Slot 11: SACK, -4 yards
-  Slot 12: INCOMPLETE
-  Slot 13: INT
-  Slot 14: INCOMPLETE
-  Slot 15: COMPLETE, 10 yards
-  Slot 16: COMPLETE, 7 yards
-  Slot 17: COMPLETE, 12 yards, TD
-  Slot 18: COMPLETE, 6 yards
-  ...
-  Slot 88: COMPLETE, 8 yards
-──────────────────────────────────────
-LONG PASS COLUMN:
-  Slot 11: COMPLETE, 22 yards
-  Slot 12: COMPLETE, 25 yards
-  ...
-  Slot 88: INCOMPLETE
-```
+In 5E, every play uses:
+- A **PASS# (1–48)** drawn from the FAC deck to index QB and receiver cards
+- A **RUN# (1–12)** drawn from the FAC deck to index RB run cards
+
+Cards do not use the 11–88 dice range from legacy mode.
+
+---
 
 ## Card Columns by Position
 
 ### Quarterback (QB)
 
-QBs have three card columns:
+QBs have three **passing range** columns. Each column is a two-value threshold:
 
-| Column | Used When | Typical Outcomes |
-|--------|-----------|-----------------|
-| **Short Pass** | Short/medium passes | COMPLETE (4–20 yds), INCOMPLETE, INT, SACK |
-| **Long Pass** | Deep passes | COMPLETE (15–50 yds), INCOMPLETE, INT |
-| **Screen Pass** | Screen plays | COMPLETE (1–15 yds), INCOMPLETE, FUMBLE, INT |
+| Column | Used When | Values |
+|--------|-----------|--------|
+| **passing_quick** | Quick Pass (QK) | `com_max` and `inc_max` (PASS# thresholds) |
+| **passing_short** | Short Pass (SH) | `com_max` and `inc_max` |
+| **passing_long** | Long Pass (LG) | `com_max` and `inc_max` |
 
-**How QB stats translate to cards:**
+**How it works**: A PASS# (1–48) is drawn. If it is ≤ `com_max`, the pass is **complete**; if ≤ `inc_max`, it is **incomplete**; otherwise it is **INT**.
 
-| Real Stat | Card Effect |
-|-----------|------------|
-| Completion % | More COMPLETE slots (e.g., 67% → ~43/64 completions) |
-| Yards per attempt | Higher yard values on COMPLETE slots |
-| Interception rate | More INT slots (e.g., 2.5% → 2/64 INTs) |
-| Sack rate | More SACK slots with negative yardage |
+**Additional QB fields:**
 
-**Grade effects on Short Pass:**
+| Field | Description |
+|-------|-------------|
+| `pass_rush` | `{sack_max, runs_max, com_max}` — determines sack/run/completion from the pass-rush table |
+| `qb_endurance` | A/B/C — limits passes per drive before endurance penalty |
+| `rushing` | 12-row table for QB scrambles (same format as RB) |
+| `long_pass_com_adj` | Adjustment to completion range for long passes |
 
-| Grade | Completion Yards Pool | Notes |
-|-------|----------------------|-------|
-| A+/A | 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20 | Weighted toward 6–10 |
-| B | 3, 4, 5, 6, 7, 8, 9, 10, 12, 14 | Weighted toward 5–7 |
-| C | 2, 3, 4, 5, 6, 7, 8, 10, 12 | Weighted toward 4–6 |
-| D | 1, 2, 3, 4, 5, 6, 7, 8 | Weighted toward 3–5 |
+**Example: Patrick Mahomes (A grade)**
 
-**Example: Patrick Mahomes (A grade, 67.2% comp, 1.6% INT, 5.5% sack)**
-- Short Pass: ~43 COMPLETE, ~14 INCOMPLETE, ~1 INT, ~4 SACK, ~2 with TD flag
-- Long Pass: ~24 COMPLETE (15–50 yds), ~37 INCOMPLETE, ~2 INT
-- Screen Pass: ~42 COMPLETE, ~16 INCOMPLETE, ~3 FUMBLE, ~3 INT
+```json
+{
+  "name": "Patrick Mahomes",
+  "position": "QB",
+  "number": 15,
+  "team": "KC",
+  "overall_grade": "A",
+  "passing_quick": {"com_max": 34, "inc_max": 48},
+  "passing_short": {"com_max": 32, "inc_max": 47},
+  "passing_long":  {"com_max": 28, "inc_max": 47},
+  "pass_rush":     {"sack_max": 7, "runs_max": 30, "com_max": 37},
+  "qb_endurance": "A",
+  "long_pass_com_adj": 0,
+  "stats_summary": {"comp_pct": 0.672, "ypa": 8.8, "int_rate": 0.016, "sack_rate": 0.055}
+}
+```
+
+---
 
 ### Running Back (RB)
 
-RBs have two card columns:
+RBs have a **12-row rushing table** (one row per RUN# 1–12). Each row is a `ThreeValueRow`:
 
-| Column | Used When | Typical Outcomes |
-|--------|-----------|-----------------|
-| **Inside Run** | Runs up the middle/left | GAIN (-3 to +15 yds), FUMBLE |
-| **Outside Run** | Runs to the outside/right | GAIN (-3 to +20 yds), FUMBLE |
+| Column Index | Meaning |
+|-------------|---------|
+| v1 | **Normal gain** yards |
+| v2 | **Sweep/Outside** gain yards |
+| v3 | **BREAKAWAY** threshold (RUN# ≥ v3 → big gain) |
 
-**How RB stats translate to cards:**
+Special row values: `"Sg"` = Short Gain, `"Lg"` = Long Gain (mapped to specific yardage at runtime).
 
-| Real Stat | Card Effect |
-|-----------|------------|
-| Yards per carry | Higher yard values on GAIN slots |
-| Fumble rate | More FUMBLE slots (e.g., 1.2% → 1/64 fumbles) |
+**Additional RB fields:**
 
-**Grade effects on Inside Run:**
+| Field | Description |
+|-------|-------------|
+| `pass_gain` | 12-row table for receptions (same ThreeValueRow format) |
+| `endurance_rushing` | 0–4 — how many consecutive carries before rest required |
+| `endurance_pass` | 0–4 — same for pass targets |
+| `receiver_letter` | A–E — the letter used for QB card pass targeting |
 
-| Grade | Yards Pool | Notes |
-|-------|-----------|-------|
-| A+/A | -1 to 15 | Weighted toward 3–5, rare big gains |
-| B | -1 to 10 | Weighted toward 3–5 |
-| C | -2 to 8 | Weighted toward 2–4 |
-| D | -3 to 6 | Weighted toward 1–3 |
+**Example: Isiah Pacheco (B grade)**
 
-Outside runs have slightly more variance (bigger gains possible, but also more negative plays).
+```json
+{
+  "name": "Isiah Pacheco",
+  "position": "RB",
+  "number": 10,
+  "team": "KC",
+  "overall_grade": "B",
+  "rushing": [
+    ["Sg", 14, 30],
+    [10, 12, 24],
+    [9, 11, 23],
+    ...12 rows total...
+  ],
+  "endurance_rushing": 1,
+  "pass_gain": [
+    [5, 7, 20],
+    [4, 7, 20],
+    ...12 rows total...
+  ],
+  "receiver_letter": "E",
+  "stats_summary": {"ypc": 4.6, "fumble_rate": 0.011}
+}
+```
 
-**Example: Derrick Henry (A grade, 5.1 ypc, 0.8% fumble)**
-- Inside Run: ~63 GAIN (weighted toward 3–7 yards), ~1 FUMBLE, ~2% TD chance
-- Outside Run: ~63 GAIN (wider range, -2 to 20), ~1 FUMBLE, ~4% TD chance
+---
 
 ### Wide Receiver / Tight End (WR/TE)
 
-WRs and TEs have two card columns:
+WRs and TEs have a **12-row pass_gain table** matching the same ThreeValueRow format as RB receiving.
 
-| Column | Used When | Typical Outcomes |
-|--------|-----------|-----------------|
-| **Short Reception** | Short/medium targets | CATCH (2–14 yds), INCOMPLETE |
-| **Long Reception** | Deep targets | CATCH (15–45 yds), INCOMPLETE |
+| Field | Description |
+|-------|-------------|
+| `pass_gain` | 12-row table — yards on each row (v1=short, v2=long, v3=breakaway) |
+| `receiver_letter` | A–E — letter used in QB pass targeting |
+| `endurance_pass` | 0–4 — pass target endurance rating |
 
-**How WR stats translate to cards:**
+**Example: Rashee Rice (A grade)**
 
-| Real Stat | Card Effect |
-|-----------|------------|
-| Catch rate | More CATCH slots (e.g., 72% → ~46/64 catches) |
-| Avg yards | Yard values on CATCH slots |
+```json
+{
+  "name": "Rashee Rice",
+  "position": "WR",
+  "number": 4,
+  "team": "KC",
+  "overall_grade": "A",
+  "receiver_letter": "C",
+  "pass_gain": [
+    ["Lg", "Lg", 60],
+    [13, 18, 40],
+    [12, 18, 39],
+    ...12 rows total...
+  ],
+  "endurance_pass": 0
+}
+```
 
-The long reception column uses `catch_rate × 0.7` for WRs and `catch_rate × 0.6` for TEs to reflect the difficulty of deep catches.
-
-**Grade effects on Short Reception:**
-
-| Grade | Yards Pool |
-|-------|-----------|
-| A+/A | 4, 5, 6, 7, 8, 9, 10, 12, 14 |
-| B | 3, 4, 5, 6, 7, 8, 9, 10, 12 |
-| C | 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| D | 1, 2, 3, 4, 5, 6, 7, 8 |
-
-**Example: CeeDee Lamb (A grade, 74% catch, 14.0 avg yards)**
-- Short Reception: ~47 CATCH (4–14 yds), ~17 INCOMPLETE, ~4% TD chance
-- Long Reception: ~33 CATCH (15–45 yds), ~31 INCOMPLETE, ~6% TD chance
+---
 
 ### Kicker (K)
 
-Kickers don't use the 64-slot system. Instead they have:
+Kickers have a distance-based FG chart and an extra point rate:
 
 | Attribute | Description |
 |-----------|------------|
-| **FG Chart** | Success rates by distance range |
-| **XP Rate** | Extra point success percentage |
+| **fg_chart** | Success rates by distance range |
+| **xp_rate** | Extra point success percentage |
+| **longest_kick** | Maximum FG distance attempted |
 
 **FG Chart Example: Harrison Butker (A grade, 90.0% accuracy)**
 
@@ -147,130 +161,6 @@ Kickers don't use the 64-slot system. Instead they have:
 | 40–49 yards | 90% |
 | 50–59 yards | 75% |
 | 60+ yards | 60% |
-
-The chart is generated from the kicker's base accuracy:
-- `0-19`: accuracy + 15% (capped at 100%)
-- `20-29`: accuracy + 10% (capped at 100%)
-- `30-39`: accuracy + 5%
-- `40-49`: base accuracy
-- `50-59`: accuracy - 15%
-- `60+`: accuracy - 30%
-
-### Punter (P)
-
-Punters have two attributes:
-
-| Attribute | Description | Range |
-|-----------|------------|-------|
-| **Avg Distance** | Average punt distance | 41–50 yards |
-| **Inside-20 Rate** | Chance of pinning inside 20 | 30–45% |
-
-Actual punt distance is: `avg_distance ± random_variance` (gaussian, σ=5).
-
-### Defenders (DEF)
-
-Defenders have three ratings (0–99 scale):
-
-| Rating | Effect |
-|--------|--------|
-| **Pass Rush** | Modifies sack probability and pass rush effectiveness |
-| **Coverage** | Reduces passing yards gained against their defense |
-| **Run Stop** | Reduces rushing yards gained against their defense |
-
-Defensive ratings are influenced by position:
-- **DE/DT/DL**: Higher pass rush, lower coverage
-- **CB/S**: Higher coverage, lower pass rush
-- **LB**: Higher run stop, balanced otherwise
-
-## Player Grades
-
-Grades reflect overall player quality:
-
-| Grade | Tier | Description |
-|-------|------|-------------|
-| A+ | Elite | Top 5 at position (e.g., Mahomes, McCaffrey) |
-| A | Elite | Top 10–15 at position |
-| B | Good | Above average starter |
-| C | Average | Average starter or good backup |
-| D | Below Average | Backup or struggling player |
-
-Grades affect:
-1. The yard value distribution (higher grades = more big plays)
-2. The TD probability on each play
-3. The overall completion/catch/gain rates
-
-## Full Card Example
-
-Here is a complete example of what a QB card looks like in JSON format:
-
-```json
-{
-  "name": "Patrick Mahomes",
-  "position": "QB",
-  "number": 15,
-  "team": "KC",
-  "overall_grade": "A",
-  "short_pass": {
-    "11": {"result": "SACK", "yards": -4, "td": false},
-    "12": {"result": "INCOMPLETE", "yards": 0, "td": false},
-    "13": {"result": "INT", "yards": 0, "td": false},
-    "14": {"result": "INCOMPLETE", "yards": 0, "td": false},
-    "15": {"result": "COMPLETE", "yards": 10, "td": false},
-    "16": {"result": "COMPLETE", "yards": 7, "td": false},
-    "17": {"result": "COMPLETE", "yards": 12, "td": true},
-    "18": {"result": "COMPLETE", "yards": 6, "td": false},
-    "...": "... (64 total entries)"
-  },
-  "long_pass": {
-    "11": {"result": "COMPLETE", "yards": 22, "td": false},
-    "12": {"result": "COMPLETE", "yards": 25, "td": false},
-    "13": {"result": "COMPLETE", "yards": 28, "td": false},
-    "14": {"result": "INCOMPLETE", "yards": 0, "td": false},
-    "...": "... (64 total entries)"
-  },
-  "screen_pass": {
-    "11": {"result": "COMPLETE", "yards": 5, "td": false},
-    "...": "... (64 total entries)"
-  },
-  "stats_summary": {
-    "comp_pct": 0.672,
-    "ypa": 8.8,
-    "int_rate": 0.016,
-    "sack_rate": 0.055
-  }
-}
-```
-
-### RB Card Example
-
-```json
-{
-  "name": "Derrick Henry",
-  "position": "RB",
-  "number": 22,
-  "team": "BAL",
-  "overall_grade": "A",
-  "inside_run": {
-    "11": {"result": "GAIN", "yards": 5, "td": false},
-    "12": {"result": "GAIN", "yards": 3, "td": false},
-    "13": {"result": "GAIN", "yards": 7, "td": false},
-    "14": {"result": "GAIN", "yards": -1, "td": false},
-    "15": {"result": "FUMBLE", "yards": 0, "td": false},
-    "16": {"result": "GAIN", "yards": 12, "td": true},
-    "...": "... (64 total entries)"
-  },
-  "outside_run": {
-    "11": {"result": "GAIN", "yards": 8, "td": false},
-    "...": "... (64 total entries)"
-  },
-  "stats_summary": {
-    "ypc": 5.1,
-    "fumble_rate": 0.008
-  }
-}
-```
-
-### Kicker Card Example
 
 ```json
 {
@@ -288,34 +178,120 @@ Here is a complete example of what a QB card looks like in JSON format:
     "60+": 0.60
   },
   "xp_rate": 0.995,
-  "stats_summary": {
-    "accuracy": 0.90,
-    "xp_rate": 0.995
-  }
+  "longest_kick": 62,
+  "stats_summary": {"accuracy": 0.90, "xp_rate": 0.995}
 }
 ```
 
-## How Cards Interact During a Play
+---
 
-Here's the step-by-step flow for a passing play:
+### Punter (P)
 
-1. **Dice Roll**: 37 → play tendency = LONG_PASS
-2. **AI Play Call**: Long pass to deep right
-3. **QB Card Lookup**: Check QB's `long_pass` column at slot "37"
-   - Result: `{"result": "COMPLETE", "yards": 28, "td": false}`
-4. **Receiver Card Check**: Check WR's `long_reception` column at slot "37"
-   - If `CATCH` → pass stays complete
-   - If `INCOMPLETE` → overrides QB result, pass is now incomplete
-5. **Defense Modifier**: Defense coverage rating adjusts yards
-   - `yards = 28 × (1 - (80 - 50) / 200) = 28 × 0.85 = 23 yards`
-6. **Final Result**: Complete pass for 23 yards
+Punters have two attributes:
 
-For a rushing play:
+| Attribute | Description | Range |
+|-----------|------------|-------|
+| **avg_distance** | Average punt distance | 41–51 yards |
+| **inside_20_rate** | Chance of pinning inside 20 | 30–46% |
+| **blocked_punt_number** | FAC threshold for blocked punt | 1–3 |
 
-1. **Dice Roll**: 52 → play tendency = RUN
-2. **AI Play Call**: Run to the left (inside)
-3. **RB Card Lookup**: Check RB's `inside_run` column at slot "52"
-   - Result: `{"result": "GAIN", "yards": 6, "td": false}`
-4. **Defense Modifier**: Defense run stop rating adjusts yards
-   - `yards = 6 - (82 - 50) / 50 = 6 - 0.64 ≈ 5 yards`
-5. **Final Result**: 5-yard gain on the run
+---
+
+### Defenders (DEF)
+
+5E uses **authentic 5E defensive ratings** on a different scale than legacy:
+
+| Rating | Description | Range |
+|--------|-------------|-------|
+| **Pass Rush (PR)** | Pass rush effectiveness | 0–3 |
+| **Pass Defense** | Coverage / pass defense modifier | -2 to +4 |
+| **Tackle** | Run stop / tackle modifier | -5 to +4 |
+| **Intercept Range** | Interception chance threshold | 0–99 |
+| **defender_letter** | A–O — box assignment on the defensive display | A–O |
+
+Additionally, legacy ratings are retained for backward compatibility:
+- `pass_rush_rating` (0–99), `coverage_rating` (0–99), `run_stop_rating` (0–99)
+
+**Example: Chris Jones (A grade)**
+
+```json
+{
+  "name": "Chris Jones",
+  "position": "DT",
+  "number": 95,
+  "team": "KC",
+  "overall_grade": "A",
+  "pass_rush_rating": 3,
+  "tackle_rating": 1,
+  "pass_defense_rating": 0,
+  "intercept_range": 0,
+  "defender_letter": "A"
+}
+```
+
+---
+
+### Offensive Linemen (OL)
+
+OL players have blocking ratings used in BV vs TV matchups:
+
+| Rating | Description | Range |
+|--------|-------------|-------|
+| **run_block_rating** | Effectiveness run blocking | -1 to +4 |
+| **pass_block_rating** | Effectiveness pass blocking | -1 to +4 |
+
+---
+
+## Player Grades
+
+Grades reflect overall player quality:
+
+| Grade | Tier | Description |
+|-------|------|-------------|
+| A+ | Elite | Top 5 at position (e.g., Mahomes, McCaffrey) |
+| A | Elite | Top 10–15 at position |
+| B | Good | Above average starter |
+| C | Average | Average starter or good backup |
+| D | Below Average | Backup or struggling player |
+
+Grades affect:
+1. The yard value distribution (higher grades = more big plays, `"Lg"` values)
+2. The QB passing completion thresholds (`com_max`)
+3. The overall catch/gain rates
+
+---
+
+## How Cards Interact During a Play (5E)
+
+### Passing Play Example
+
+1. **FAC Draw**: PASS# = 23, QK field = "B"
+2. **Check QK field**: Forces pass to receiver letter B (or triggers P.Rush)
+3. **QB Card Lookup**: `passing_short.com_max = 32` — PASS# 23 ≤ 32 → **COMPLETE**, receiver = B
+4. **Receiver Card Lookup**: Receiver B's `pass_gain` row 23 → `[12, 18, 40]` → 12 yards short, 18 yards long
+5. **Defense Modifier**: Apply pass defense rating
+6. **Final Result**: Complete pass for 12–18 yards (depending on pass type)
+
+### Running Play Example
+
+1. **FAC Draw**: RUN# = 7, direction = IL (inside left)
+2. **BV vs TV**: Check IL field → blocking matchup
+3. **RB Card Lookup**: RB's `rushing` row 7 → `[5, 8, 24]` — 5 yards inside
+4. **Endurance Check**: If RB violated endurance: +2 to RUN# (effectively row 9 → fewer yards)
+5. **Final Result**: 5-yard gain (or less if defense wins the blocking matchup)
+
+---
+
+## Legacy Card System (64-Slot)
+
+The legacy format uses slots 11–88 (64 outcomes from d8×d8 dice):
+
+| Position | Columns | Slot Contents |
+|----------|---------|---------------|
+| QB | Short Pass, Long Pass, Screen Pass | COMPLETE/INCOMPLETE/INT/SACK + yards |
+| RB | Inside Run, Outside Run | GAIN/FUMBLE + yards |
+| WR/TE | Short Reception, Long Reception | CATCH/INCOMPLETE + yards |
+| K | FG Chart (by distance), XP Rate | Success probability |
+| P | Avg Distance, Inside-20 Rate | Distance/placement |
+
+Legacy teams are stored in `engine/data/2025/` and `engine/data/2024/`.

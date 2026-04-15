@@ -47,7 +47,7 @@
 
 ### Test Coverage
 
-- **600 tests** all passing
+- **598+ tests** all passing (excluding API server tests requiring fastapi; `python3 -m pytest tests/ -x -q --ignore=tests/test_api_server.py -k "not test_oob"`)
 - Coverage includes:
   - 5E system tests
   - FAC system tests
@@ -58,6 +58,10 @@
   - Blocking matchup tests
   - Injury/endurance tests
   - Kickoff/return tests
+  - Fumble return logging tests
+  - Human defense override tests
+  - Kickoff TD and play sync tests
+  - FG kickoff and run tests
 
 ### Documentation
 
@@ -124,4 +128,4 @@
 
 ### Conclusion
 
-The Statis Pro Football implementation is **production-ready** for single-player and solitaire games with complete 5E rules support. The engine accurately simulates football with authentic card-based mechanics across all 146 rules, and the GUI provides a full-featured interface for human play with all 88 audited features implemented. 600 tests validate correctness across the entire system.
+The Statis Pro Football implementation is **production-ready** for single-player and solitaire games with complete 5E rules support. The engine accurately simulates football with authentic card-based mechanics across all 146 rules, and the GUI provides a full-featured interface for human play with all 88 audited features implemented. 598+ tests validate correctness across the entire system.
