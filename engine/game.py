@@ -26,6 +26,9 @@ _OFFENSIVE_PLAY_TO_DIRECTION = {
     OffensivePlay.RUNNING_INSIDE_RIGHT: "IR",
 }
 
+# Reverse mapping: FAC direction string → OffensivePlay enum
+_DIRECTION_TO_OFFENSIVE_PLAY = {v: k for k, v in _OFFENSIVE_PLAY_TO_DIRECTION.items()}
+
 
 class Quarter(int, Enum):
     Q1 = 1
@@ -971,6 +974,8 @@ class Game:
         fac_card = self.deck.draw()
         situation = self.state.to_situation()
 
+        human_provided = play_call is not None
+
         if play_call is None:
             play_call = self.ai.call_play_5e(situation, fac_card)
 
@@ -980,16 +985,34 @@ class Game:
         # Synchronize play_call direction with 5E offensive play so the
         # display string ("Running Sweep Left") matches the actual FAC
         # direction used for blocking matchup resolution (SL/IL/SR/IR).
-        if off_play in _OFFENSIVE_PLAY_TO_DIRECTION and play_call.play_type == "RUN":
-            play_call = PlayCall(
-                play_type=play_call.play_type,
-                formation=play_call.formation,
-                direction=_OFFENSIVE_PLAY_TO_DIRECTION[off_play],
-                reasoning=play_call.reasoning,
-                strategy=play_call.strategy,
-                offensive_play=off_play.value,
-                player_involved=player_inv.value,
-            )
+        # When the human provided a play_call, honor *their* direction
+        # and derive the OffensivePlay enum from it instead of overwriting
+        # with the AI's random selection.
+        if play_call.play_type == "RUN":
+            if human_provided:
+                if play_call.direction in _DIRECTION_TO_OFFENSIVE_PLAY:
+                    off_play = _DIRECTION_TO_OFFENSIVE_PLAY[play_call.direction]
+                # else: unrecognised direction – keep off_play from AI for
+                # logging but do NOT overwrite the human's direction.
+                play_call = PlayCall(
+                    play_type=play_call.play_type,
+                    formation=play_call.formation,
+                    direction=play_call.direction,
+                    reasoning=play_call.reasoning,
+                    strategy=play_call.strategy,
+                    offensive_play=off_play.value,
+                    player_involved=player_inv.value,
+                )
+            elif off_play in _OFFENSIVE_PLAY_TO_DIRECTION:
+                play_call = PlayCall(
+                    play_type=play_call.play_type,
+                    formation=play_call.formation,
+                    direction=_OFFENSIVE_PLAY_TO_DIRECTION[off_play],
+                    reasoning=play_call.reasoning,
+                    strategy=play_call.strategy,
+                    offensive_play=off_play.value,
+                    player_involved=player_inv.value,
+                )
 
         # If the human provided a defensive play, use it; otherwise use AI
         if defensive_play is not None:
