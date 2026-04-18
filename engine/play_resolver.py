@@ -2575,13 +2575,34 @@ class PlayResolver:
             yards = row.v1
             if isinstance(yards, str):
                 if yards == "Sg":
-                    # Special gain (breakaway from card)
-                    yards = row.v3 if isinstance(row.v3, int) else random.randint(15, 40)
+                    # Short Gain: draw a new FAC to get a new run number,
+                    # then look up the SG column (v2) at that row.
+                    # Per 5th-edition rules, Long Gain is only earned via a
+                    # BREAK blocking matchup — not from an SG result.
+                    sg_fac = deck.draw()
+                    if sg_fac.is_z_card:
+                        sg_fac = deck.draw_non_z()
+                    if sg_fac.run_num_int is not None:
+                        sg_rn = sg_fac.run_num_int
+                    else:
+                        sg_rn = random.randint(1, 12)
+                        log.append(f"[RUSH] SG FAC has no run number; using random RN={sg_rn}")
+                    sg_row = rusher.get_rushing_row(sg_rn)
+                    yards = sg_row.v2
+                    if isinstance(yards, str):
+                        try:
+                            yards = int(yards)
+                        except (ValueError, TypeError):
+                            # SG column value unreadable — use a short-gain approximation
+                            yards = random.randint(1, 8)
                     is_td = (yard_line + yards) >= 100
                     if is_td:
                         yards = 100 - yard_line
-                    log.append(f"[RUSH] Special Gain (breakaway)! Yards={yards}, TD={is_td}")
-                    desc = f"{rusher.player_name} breaks free for {yards} yards!"
+                    log.append(
+                        f"[RUSH] Short Gain (SG)! New FAC RN={sg_rn}, "
+                        f"SG column={sg_row.v2}, yards={yards}, TD={is_td}"
+                    )
+                    desc = f"{rusher.player_name} gains {yards} yards (short gain)"
                     if is_td:
                         desc += " TOUCHDOWN!"
                     r = PlayResult(

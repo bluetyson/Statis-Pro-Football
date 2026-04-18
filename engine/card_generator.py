@@ -827,12 +827,12 @@ def _make_rushing_12rows(
 ) -> List[Optional[ThreeValueRow]]:
     """Build 12 rows of N/SG/LG rushing values.
 
-    Row 1 has the best values (including "Sg" breakaway potential).
+    Row 1 has the best values (N column shows "Sg" — Short Gain trigger).
     Row 12 has the worst.
 
-    N  = Normal yards (base result)
-    SG = Short-Gain yards (used on SG blocking result)
-    LG = Long-Gain yards (used on LG blocking result)
+    N  = Normal yards (base result); "Sg" means draw new FAC and use SG column
+    SG = Short-Gain yards (consulted when N column result is "Sg")
+    LG = Long-Gain yards (consulted only on BREAK blocking matchup result)
     """
     boost = _GRADE_RUSH_BOOST.get(grade, 0)
     rows: List[ThreeValueRow] = []
@@ -842,7 +842,7 @@ def _make_rushing_12rows(
     for i in range(RUN_NUMBER_MAX):
         # N column: descending from good to bad
         if i == 0:
-            # Row 1: "Sg" (special gain) — represent as string or high value
+            # Row 1: "Sg" (short gain) — draw new FAC, use SG column (v2)
             n_val = "Sg"
         else:
             base_n = round(ypc * 2.2 - i * ypc * 0.25 + boost)
