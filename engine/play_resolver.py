@@ -2582,13 +2582,18 @@ class PlayResolver:
                     sg_fac = deck.draw()
                     if sg_fac.is_z_card:
                         sg_fac = deck.draw_non_z()
-                    sg_rn = sg_fac.run_num_int if sg_fac.run_num_int is not None else random.randint(1, 12)
+                    if sg_fac.run_num_int is not None:
+                        sg_rn = sg_fac.run_num_int
+                    else:
+                        sg_rn = random.randint(1, 12)
+                        log.append(f"[RUSH] SG FAC has no run number; using random RN={sg_rn}")
                     sg_row = rusher.get_rushing_row(sg_rn)
                     yards = sg_row.v2
                     if isinstance(yards, str):
                         try:
                             yards = int(yards)
                         except (ValueError, TypeError):
+                            # SG column value unreadable — use a short-gain approximation
                             yards = random.randint(1, 8)
                     is_td = (yard_line + yards) >= 100
                     if is_td:
