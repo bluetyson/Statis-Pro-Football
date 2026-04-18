@@ -29,6 +29,17 @@ _OFFENSIVE_PLAY_TO_DIRECTION = {
 # Reverse mapping: FAC direction string → OffensivePlay enum
 _DIRECTION_TO_OFFENSIVE_PLAY = {v: k for k, v in _OFFENSIVE_PLAY_TO_DIRECTION.items()}
 
+# Mapping from play_type string to OffensivePlay enum (for human pass calls).
+# Special-teams plays (PUNT, FG, KNEEL) are not offensive play cards and use
+# dedicated execution paths — their off_play value is only used to build the
+# log display string and has no gameplay effect.
+_PLAY_TYPE_TO_OFFENSIVE_PLAY = {
+    "SHORT_PASS": OffensivePlay.SHORT_PASS,
+    "LONG_PASS":  OffensivePlay.LONG_PASS,
+    "QUICK_PASS": OffensivePlay.QUICK_PASS,
+    "SCREEN":     OffensivePlay.SCREEN_PASS,
+}
+
 
 class Quarter(int, Enum):
     Q1 = 1
@@ -980,20 +991,25 @@ class Game:
             play_call = self.ai.call_play_5e(situation, fac_card)
 
         # ── 5E Play calling with proper types ────────────────────────
-        off_play, off_strategy, player_inv = self.ai.call_offense_play_5e(situation, fac_card)
-
-        # Synchronize play_call direction with 5E offensive play so the
-        # display string ("Running Sweep Left") matches the actual FAC
-        # direction used for blocking matchup resolution (SL/IL/SR/IR).
-        # When the human provided a play_call, honor *their* direction
-        # and derive the OffensivePlay enum from it instead of overwriting
-        # with the AI's random selection.
-        if play_call.play_type == "RUN":
-            if human_provided:
-                if play_call.direction in _DIRECTION_TO_OFFENSIVE_PLAY:
-                    off_play = _DIRECTION_TO_OFFENSIVE_PLAY[play_call.direction]
-                # else: unrecognised direction – keep off_play from AI for
-                # logging but do NOT overwrite the human's direction.
+        # When the human provided a play call, derive the OffensivePlay enum
+        # directly from their play_type/direction — never call the AI for the
+        # human's offensive side.  AI play-calling is only used when there is
+        # no human call (solitaire / sim modes).
+        if human_provided:
+            off_play = _DIRECTION_TO_OFFENSIVE_PLAY.get(
+                play_call.direction,
+                _PLAY_TYPE_TO_OFFENSIVE_PLAY.get(play_call.play_type,
+                                                  OffensivePlay.SHORT_PASS),
+            )
+            try:
+                off_strategy = OffensiveStrategy(play_call.strategy) if play_call.strategy else OffensiveStrategy.NONE
+            except ValueError:
+                off_strategy = OffensiveStrategy.NONE
+            # player_inv is not used for display when human_provided (player_name is shown
+            # instead in off_call_str below).  RB_1 is used as a harmless placeholder
+            # for the PlayCall.player_involved field.
+            player_inv = PlayerInvolved.RB_1
+            if play_call.play_type == "RUN":
                 play_call = PlayCall(
                     play_type=play_call.play_type,
                     formation=play_call.formation,
@@ -1003,7 +1019,10 @@ class Game:
                     offensive_play=off_play.value,
                     player_involved=player_inv.value,
                 )
-            elif off_play in _OFFENSIVE_PLAY_TO_DIRECTION:
+        else:
+            off_play, off_strategy, player_inv = self.ai.call_offense_play_5e(situation, fac_card)
+            # For AI run plays: sync the play_call direction with the chosen OffensivePlay.
+            if play_call.play_type == "RUN" and off_play in _OFFENSIVE_PLAY_TO_DIRECTION:
                 play_call = PlayCall(
                     play_type=play_call.play_type,
                     formation=play_call.formation,
@@ -1046,15 +1065,28 @@ class Game:
                 situation, fac_card
             )
 
-        # Use provided defensive_strategy or fall back to AI-called strategy
+        # Ensure defensive_strategy string is always set.
+        # When the human provided a defensive_play, def_strategy_5e is derived from the human
+        # input (defaulting to NONE) — no AI was called.  When the AI chose the defense, use
+        # whatever strategy the AI selected.
         if defensive_strategy is None:
             defensive_strategy = def_strategy_5e.value
 
-        off_call_str = (
-            f"{OFFENSIVE_PLAY_NAMES.get(off_play, off_play.value)}"
-            f" / {OFFENSIVE_STRATEGY_NAMES.get(off_strategy, off_strategy.value)}"
-            f" / {PLAYER_INVOLVED_NAMES.get(player_inv, player_inv.value)}"
-        )
+        if human_provided:
+            # Show the human's actual call: use the named player if given,
+            # or "Auto" so no AI-generated label ever appears for a human play.
+            player_label = player_name if player_name else "Auto"
+            off_call_str = (
+                f"{OFFENSIVE_PLAY_NAMES.get(off_play, off_play.value)}"
+                f" / {OFFENSIVE_STRATEGY_NAMES.get(off_strategy, off_strategy.value)}"
+                f" / {player_label}"
+            )
+        else:
+            off_call_str = (
+                f"{OFFENSIVE_PLAY_NAMES.get(off_play, off_play.value)}"
+                f" / {OFFENSIVE_STRATEGY_NAMES.get(off_strategy, off_strategy.value)}"
+                f" / {PLAYER_INVOLVED_NAMES.get(player_inv, player_inv.value)}"
+            )
         def_call_str = (
             f"{def_formation_5e.value} Formation"
             f" / {DEFENSIVE_PLAY_NAMES.get(def_play_5e, def_play_5e.value)}"
@@ -1094,6 +1126,20 @@ class Game:
 
         # ── Strategy handling ─────────────────────────────────────────
         strategy = getattr(play_call, 'strategy', None)
+
+        # Guard: ensure strategy is compatible with the play type so that
+        # a stale or mis-matched strategy selection never overrides the
+        # explicit play call made by the human.
+        #   - PLAY_ACTION is a pass strategy; discard it on run plays.
+        #   - DRAW is a run strategy; discard it on pass/special plays.
+        _PASS_TYPES = {"SHORT_PASS", "LONG_PASS", "QUICK_PASS", "SCREEN"}
+        _RUN_TYPES  = {"RUN"}
+        if strategy == "PLAY_ACTION" and play_call.play_type not in _PASS_TYPES:
+            strategy = None
+            play_call.strategy = None
+        if strategy == "DRAW" and play_call.play_type not in _RUN_TYPES:
+            strategy = None
+            play_call.strategy = None
         if strategy == "FLOP":
             qb = self.get_qb(player_name)
             if qb:
@@ -1117,7 +1163,14 @@ class Game:
             rusher = self.get_rb(player_name)
             if rusher is None:
                 rusher = self.get_qb(player_name)
-            def_form = defense_formation or self.ai.call_defense_5e(situation, fac_card)
+            # Use the human-provided defense formation when available; only fall back to AI
+            # when no defensive call was provided at all (solitaire/sim mode).
+            if defense_formation:
+                def_form = defense_formation
+            elif defensive_play is None:
+                def_form = self.ai.call_defense_5e(situation, fac_card)
+            else:
+                def_form = DefensiveFormation.FOUR_THREE.value
             defense = self.get_defense_team()
             defenders_by_box = self._build_defenders_by_box(defense)
             if rusher:
@@ -1139,7 +1192,14 @@ class Game:
             receiver = self._pick_receiver(play_call)
             receivers = self._get_all_receivers()
             defense = self.get_defense_team()
-            def_form = defense_formation or self.ai.call_defense_5e(situation, fac_card)
+            # Same logic as DRAW: prefer explicit formation, fall back to AI only in
+            # solitaire/sim mode where no defensive call is provided.
+            if defense_formation:
+                def_form = defense_formation
+            elif defensive_play is None:
+                def_form = self.ai.call_defense_5e(situation, fac_card)
+            else:
+                def_form = DefensiveFormation.FOUR_THREE.value
             
             # Get defensive players for coverage calculations
             defenders = []

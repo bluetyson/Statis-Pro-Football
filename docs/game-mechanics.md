@@ -136,6 +136,8 @@ Draw FAC / Roll Dice → Offense + Defense call plays → Resolve Play → Updat
 | Nickel | 3 DL, 2 LB, 6 DB |
 | Goal Line | 5 DL, 4 LB, 2 DB |
 
+> **Note:** In the 5th-edition rules, the formation name (4-3, 3-4, Nickel, etc.) is **cosmetic and display-only**. It has no effect on play resolution, run-number modifiers, or completion ranges. All gameplay modifiers come exclusively from the **Play Card** selection (Pass Defense, Run Defense, Blitz, etc.) and individual player ratings. The formation label is tracked to support a future auto-formation convenience feature that will auto-populate the defensive display boxes based on the named personnel grouping, but selecting a different formation name than your actual on-field personnel does not change any card results.
+
 **Play Card:**
 
 | Play | Usage |
