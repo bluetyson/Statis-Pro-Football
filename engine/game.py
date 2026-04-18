@@ -1126,6 +1126,7 @@ class Game:
                     defense_run_stop=defense.defense_rating,
                     defensive_play=defensive_play,
                     defenders_by_box=defenders_by_box,
+                    defensive_play_5e=def_play_5e,
                 )
                 self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")

@@ -250,6 +250,67 @@ class TestOffensiveStrategies:
         )
         assert "RN modifier -2" in result.description
 
+    # --- Tests using explicit defensive_play_5e enum (bug-fix coverage) ------
+
+    def test_draw_run_defense_enum_gives_positive_rn_modifier(self):
+        """Draw with RUN_DEFENSE enum + default formation: +2 draw modifier.
+
+        When a human explicitly calls a run defense in the game log the
+        draw-play modifier must be +2 even if the formation string alone
+        would not indicate a run defense.
+        """
+        from engine.play_types import DefensivePlay
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "4_3",
+            defense_run_stop=0,
+            defensive_play_5e=DefensivePlay.RUN_DEFENSE_NO_KEY,
+        )
+        assert "RN modifier +2" in result.description
+
+    def test_draw_pass_defense_enum_gives_negative_rn_modifier(self):
+        """Draw with PASS_DEFENSE enum + run formation: -2 modifier (not +2)."""
+        from engine.play_types import DefensivePlay
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "4_3",  # run formation – should be overridden
+            defense_run_stop=0,
+            defensive_play_5e=DefensivePlay.PASS_DEFENSE,
+        )
+        assert "RN modifier -2" in result.description
+
+    def test_draw_blitz_enum_gives_largest_negative_rn_modifier(self):
+        """Draw with BLITZ enum: -4 modifier."""
+        from engine.play_types import DefensivePlay
+        from engine.card_generator import CardGenerator
+        gen = CardGenerator(seed=42)
+        rb = gen.generate_rb_card_authentic(
+            name="TestRB", team="TST", number=26,
+            ypc=4.5, fumble_rate=0.015, grade="B",
+        )
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_draw(
+            fac_card, deck, rb, "4_3",
+            defense_run_stop=0,
+            defensive_play_5e=DefensivePlay.BLITZ,
+        )
+        assert "RN modifier -4" in result.description
+
 
 class TestPlayActionModifiers:
     """Test Play-Action pass strategy applies PN (completion range) modifiers."""
@@ -309,6 +370,69 @@ class TestPlayActionModifiers:
         result = self.resolver.resolve_play_action(
             fac_card, deck, self.qb, self.wr, [self.wr],
             pass_type="SHORT", defense_formation="blitz",
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier +0" in result.description
+
+    # --- Tests using explicit defensive_play_5e enum (bug-fix coverage) ------
+
+    def test_play_action_pass_defense_enum_takes_priority_over_run_formation(self):
+        """Play-action with PASS_DEFENSE enum + run formation: -5 (not +5).
+
+        This is the primary bug: when a human calls PASS_DEFENSE in the game
+        log but the formation string defaults to "4_3" (run), the modifier
+        must be -5 (defense not fooled), not +5 (run defense fooled).
+        """
+        from engine.play_types import DefensivePlay
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT",
+            defense_formation="4_3",          # run formation string
+            defensive_play_5e=DefensivePlay.PASS_DEFENSE,  # explicit override
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier -5" in result.description
+
+    def test_play_action_prevent_defense_enum_takes_priority_over_run_formation(self):
+        """Play-action with PREVENT_DEFENSE enum + run formation: -10."""
+        from engine.play_types import DefensivePlay
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT",
+            defense_formation="4_3",
+            defensive_play_5e=DefensivePlay.PREVENT_DEFENSE,
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier -10" in result.description
+
+    def test_play_action_run_defense_enum_gives_positive_modifier(self):
+        """Play-action with RUN_DEFENSE enum: +5 (defense fooled)."""
+        from engine.play_types import DefensivePlay
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT",
+            defense_formation="4_3",
+            defensive_play_5e=DefensivePlay.RUN_DEFENSE_NO_KEY,
+        )
+        assert result.strategy == "PLAY_ACTION"
+        assert "completion modifier +5" in result.description
+
+    def test_play_action_blitz_enum_neutral(self):
+        """Play-action with BLITZ enum: 0 modifier."""
+        from engine.play_types import DefensivePlay
+        deck = FACDeck(seed=42)
+        fac_card = deck.draw()
+        result = self.resolver.resolve_play_action(
+            fac_card, deck, self.qb, self.wr, [self.wr],
+            pass_type="SHORT",
+            defense_formation="4_3",
+            defensive_play_5e=DefensivePlay.BLITZ,
         )
         assert result.strategy == "PLAY_ACTION"
         assert "completion modifier +0" in result.description

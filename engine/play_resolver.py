@@ -498,7 +498,8 @@ class PlayResolver:
                      rusher: PlayerCard, defense_formation: str,
                      defense_run_stop: int = 0,
                      defensive_play: Optional[str] = None,
-                     defenders_by_box: Optional[Dict[str, PlayerCard]] = None) -> PlayResult:
+                     defenders_by_box: Optional[Dict[str, PlayerCard]] = None,
+                     defensive_play_5e=None) -> PlayResult:
         """Resolve a Draw Play strategy.
 
         5E Rules: Inside run to any back/QB.
@@ -511,30 +512,47 @@ class PlayResolver:
         Negative RN modifier = lower run number = better rushing row = more yards.
         Positive RN modifier = higher run number = worse rushing row = fewer yards.
 
-        The defensive_play value (BLITZ, PREVENT_DEFENSE, PASS_DEFENSE,
-        RUN_DEFENSE_*) takes priority over formation string when provided.
+        When defensive_play_5e (a DefensivePlay enum) is supplied it takes
+        priority over both the defensive_play string and the formation string,
+        ensuring that human overrides (e.g. RUN_DEFENSE called with the
+        default formation "4_3") are handled correctly.
         """
-        # Draw play modifier — check explicit defensive play first, then formation
-        dp = (defensive_play or "").upper()
-        form_lower = defense_formation.lower()
-
-        if dp == "BLITZ" or "blitz" in form_lower or form_lower == "blz":
-            draw_mod = -4  # Bonus: blitzers commit hard, draw freezes them
-        elif dp == "PREVENT_DEFENSE" or "prevent" in form_lower or form_lower == "3_4_zone":
-            draw_mod = -2  # Bonus: spread/prevent defense is easy to run through
-        elif dp == "PASS_DEFENSE" or form_lower in ("4_3_cover2", "nickel_zone",
-                                                     "nickel_cover2", "nickel"):
-            draw_mod = -2  # Bonus: pass coverage, not keying on run
+        # Draw play modifier — prefer explicit enum, then string, then formation
+        if defensive_play_5e is not None:
+            from .play_types import is_run_defense, DefensivePlay
+            if defensive_play_5e == DefensivePlay.BLITZ:
+                draw_mod = -4  # Bonus: blitzers commit hard, draw freezes them
+            elif defensive_play_5e == DefensivePlay.PREVENT_DEFENSE:
+                draw_mod = -2  # Bonus: spread/prevent defense is easy to run through
+            elif defensive_play_5e == DefensivePlay.PASS_DEFENSE:
+                draw_mod = -2  # Bonus: pass coverage, not keying on run
+            else:
+                draw_mod = 2   # Penalty: any Run Defense is set up to stop the run
         else:
-            draw_mod = 2   # Penalty: Run Defense is set up to stop the run
+            dp = (defensive_play or "").upper()
+            form_lower = defense_formation.lower()
+            if dp == "BLITZ" or "blitz" in form_lower or form_lower == "blz":
+                draw_mod = -4  # Bonus: blitzers commit hard, draw freezes them
+            elif dp == "PREVENT_DEFENSE" or "prevent" in form_lower or form_lower == "3_4_zone":
+                draw_mod = -2  # Bonus: spread/prevent defense is easy to run through
+            elif dp == "PASS_DEFENSE" or form_lower in ("4_3_cover2", "nickel_zone",
+                                                         "nickel_cover2", "nickel"):
+                draw_mod = -2  # Bonus: pass coverage, not keying on run
+            else:
+                draw_mod = 2   # Penalty: Run Defense is set up to stop the run
 
-        # Resolve as inside run with draw modifier applied to RN before lookup
+        # Resolve as inside run with draw modifier applied to RN before lookup.
+        # Pass defensive_play_5e so that the normal run-defense RN modifier
+        # (e.g. +2 for no-key run defense) is also applied inside resolve_run_5e
+        # as required by the 5E rules ("in addition to normal Run Number
+        # modifiers called for on each particular defense").
         result = self.resolve_run_5e(
             fac_card, deck, rusher, "IL",
             defense_run_stop=defense_run_stop,
             defense_formation=defense_formation,
             extra_rn_modifier=draw_mod,
             defenders_by_box=defenders_by_box,
+            defensive_play_5e=defensive_play_5e,
         )
         result.strategy = "DRAW"
         result.description += f" (Draw play, RN modifier {draw_mod:+d})"
@@ -563,19 +581,36 @@ class PlayResolver:
         Positive completion modifier = wider COM range = more completions.
         Negative completion modifier = narrower COM range = fewer completions.
         """
-        # Play-action modifier to completion range
+        # Play-action modifier to completion range.
+        # When the caller supplies an explicit defensive play enum, use it in
+        # preference to the legacy formation string so that human overrides
+        # (e.g. PASS_DEFENSE called with formation "4_3") are handled
+        # correctly.
         pa_mod = 0
-        form_lower = defense_formation.lower()
-        if "blitz" in form_lower:
-            pa_mod = 0
-        elif form_lower in ("4_3", "3_4"):
-            pa_mod = 5  # vs Run Defense — fools them
-        elif form_lower in ("4_3_cover2", "nickel_zone", "nickel_cover2"):
-            pa_mod = -5  # vs Pass Defense — not fooled
-        elif "prevent" in form_lower or form_lower == "3_4_zone":
-            pa_mod = -10  # vs Prevent Defense — deep zone, very not fooled
+        if defensive_play_5e is not None:
+            from .play_types import is_run_defense, DefensivePlay
+            if defensive_play_5e == DefensivePlay.BLITZ:
+                pa_mod = 0  # Blitz: neutral for play-action
+            elif is_run_defense(defensive_play_5e):
+                pa_mod = 5   # vs Run Defense — fools them
+            elif defensive_play_5e == DefensivePlay.PASS_DEFENSE:
+                pa_mod = -5  # vs Pass Defense — not fooled
+            elif defensive_play_5e == DefensivePlay.PREVENT_DEFENSE:
+                pa_mod = -10  # vs Prevent Defense — deep zone, not fooled at all
+            else:
+                pa_mod = 5   # default vs Run
         else:
-            pa_mod = 5  # default vs Run
+            form_lower = defense_formation.lower()
+            if "blitz" in form_lower:
+                pa_mod = 0
+            elif form_lower in ("4_3", "3_4"):
+                pa_mod = 5   # vs Run Defense — fools them
+            elif form_lower in ("4_3_cover2", "nickel_zone", "nickel_cover2"):
+                pa_mod = -5  # vs Pass Defense — not fooled
+            elif "prevent" in form_lower or form_lower == "3_4_zone":
+                pa_mod = -10  # vs Prevent Defense — deep zone, very not fooled
+            else:
+                pa_mod = 5   # default vs Run
 
         result = self.resolve_pass_5e(
             fac_card, deck, qb, receiver, receivers,
