@@ -301,6 +301,12 @@ For detailed documentation, see the [docs/](docs/) directory:
 - **[5E Rules Audit](docs/5e-rules-audit.md)** — Complete mapping of all 146 5E rules to implementation
 - **[GUI Audit](docs/gui-audit.md)** — Tracking of 88 GUI features across 11 categories
 
+## Future Rules / Potential Extensions
+
+The following rules do not appear in the 5th-edition rulebook but may be added as optional house rules in a future release:
+
+- **Shotgun Formation (Offense)** — A pre-snap formation where the QB lines up several yards behind center. A potential house-rule implementation would apply a completion-range bonus on passing plays and a run-number penalty on rushing plays when the Shotgun is declared. No such rule exists in the current 5E rulebook; it would be an extra rule layered on top of the standard mechanics.
+
 ## License
 
 This project is for educational and entertainment purposes.
