@@ -168,8 +168,8 @@ class ThreeValueRow:
       s = Short pass yards gained
       l = Long pass yards gained
 
-    Row 1 may use special markers: "Sg" (special gain / breakaway)
-    or "Lg" (long gain / big play).
+    Row 1 may use special markers: "Sg" (short gain — draw a new FAC,
+    use SG column) or "Lg" (long gain / big play).
     """
     v1: Any = 0  # N or Q
     v2: Any = 0  # SG or S

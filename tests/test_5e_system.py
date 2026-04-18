@@ -893,9 +893,15 @@ class TestAuthenticRunResolution:
         # Should produce variety of yardage
         assert len(results) >= 3
 
-    def test_run_number_1_can_be_breakaway(self):
-        """Run Number 1 should trigger "Sg" (special gain) breakaway."""
-        breakaway_count = 0
+    def test_run_number_1_triggers_short_gain(self):
+        """RN 1 triggers Short Gain (SG): draw new FAC, use SG column (v2), not LG (v3).
+
+        Row 1 for this RB: N="Sg", SG=14, LG=29.
+        A buggy implementation would return the LG column (29 yards).
+        The correct implementation draws a new FAC, looks up the SG column
+        (v2) at the new run number — which for this RB is always ≤14.
+        """
+        sg_results_found = False
         for seed in range(200):
             deck = FACDeck(seed=seed)
             card = deck.draw_non_z()
@@ -903,9 +909,17 @@ class TestAuthenticRunResolution:
                 result = self.resolver.resolve_run_5e(
                     card, deck, self.rb, "IL",
                 )
-                if result.yards_gained > 10:
-                    breakaway_count += 1
-        assert breakaway_count > 0
+                # SG column max for this RB is 14 (row 1). LG column row 1 is 29.
+                # Correct SG resolution must never return the LG value.
+                assert result.yards_gained <= 14, (
+                    f"RN=1 Short Gain should use SG column (max 14 yards for this RB), "
+                    f"not LG column. Got {result.yards_gained} yards."
+                )
+                assert "Short Gain" in "\n".join(result.debug_log), (
+                    "Debug log should report Short Gain (SG) resolution"
+                )
+                sg_results_found = True
+        assert sg_results_found, "No RN=1 cards found in 200 seeds — adjust seed range"
 
     def test_break_blocking_matchup_uses_lg_column(self):
         """BREAK blocking matchup = BREAKAWAY → must use LG column, no run-stop."""
