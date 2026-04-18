@@ -512,14 +512,19 @@ class PlayResolver:
         Negative RN modifier = lower run number = better rushing row = more yards.
         Positive RN modifier = higher run number = worse rushing row = fewer yards.
 
-        When defensive_play_5e (a DefensivePlay enum) is supplied it takes
-        priority over both the defensive_play string and the formation string,
-        ensuring that human overrides (e.g. RUN_DEFENSE called with the
-        default formation "4_3") are handled correctly.
+        Per 5E rules the modifier depends solely on the defensive PLAY CALL
+        (Pass Defense, Run Defense, Blitz, etc.).  The formation name (4-3,
+        Nickel, etc.) carries no modifier of its own.
+
+        ``defensive_play_5e`` (a DefensivePlay enum) is the authoritative
+        source.  ``defensive_play`` (a plain string) is accepted as a
+        convenience fallback when the caller has not yet converted to the enum.
+        When neither is supplied the draw modifier is 0.
         """
-        # Draw play modifier — prefer explicit enum, then string, then formation
+        # Draw play modifier — derive solely from the explicit play call,
+        # never from the formation string.
         if defensive_play_5e is not None:
-            from .play_types import is_run_defense, DefensivePlay
+            from .play_types import DefensivePlay
             if defensive_play_5e == DefensivePlay.BLITZ:
                 draw_mod = -4  # Bonus: blitzers commit hard, draw freezes them
             elif defensive_play_5e == DefensivePlay.PREVENT_DEFENSE:
@@ -529,18 +534,24 @@ class PlayResolver:
             else:
                 # Penalty: covers all RUN_DEFENSE variants (no-key, keyed on back 1/2/3)
                 draw_mod = 2
-        else:
-            dp = (defensive_play or "").upper()
-            form_lower = defense_formation.lower()
-            if dp == "BLITZ" or "blitz" in form_lower or form_lower == "blz":
-                draw_mod = -4  # Bonus: blitzers commit hard, draw freezes them
-            elif dp == "PREVENT_DEFENSE" or "prevent" in form_lower or form_lower == "3_4_zone":
-                draw_mod = -2  # Bonus: spread/prevent defense is easy to run through
-            elif dp == "PASS_DEFENSE" or form_lower in ("4_3_cover2", "nickel_zone",
-                                                         "nickel_cover2", "nickel"):
-                draw_mod = -2  # Bonus: pass coverage, not keying on run
+        elif defensive_play is not None:
+            # Convenience: accept plain string when enum is not available yet
+            dp = defensive_play.upper()
+            if dp == "BLITZ":
+                draw_mod = -4
+            elif dp == "PREVENT_DEFENSE":
+                draw_mod = -2
+            elif dp == "PASS_DEFENSE":
+                draw_mod = -2
+            elif dp.startswith("RUN_DEFENSE"):
+                draw_mod = 2
             else:
-                draw_mod = 2   # Penalty: Run Defense is set up to stop the run
+                # Unknown play string — no modifier
+                draw_mod = 0
+        else:
+            # No defensive play call supplied — cannot determine modifier.
+            # Per 5E rules, the formation name alone carries no modifier.
+            draw_mod = 0
 
         # Resolve as inside run with draw modifier applied to RN before lookup.
         # Pass defensive_play_5e so that the normal run-defense RN modifier
@@ -583,10 +594,12 @@ class PlayResolver:
         Negative completion modifier = narrower COM range = fewer completions.
         """
         # Play-action modifier to completion range.
-        # When the caller supplies an explicit defensive play enum, use it in
-        # preference to the legacy formation string so that human overrides
-        # (e.g. PASS_DEFENSE called with formation "4_3") are handled
-        # correctly.
+        # Per 5E rules, the modifier depends solely on the defensive PLAY CALL
+        # (Run Defense, Pass Defense, Blitz, etc.), never on the formation name.
+        # When the explicit DefensivePlay enum is available, use it.
+        # When only a plain-string play call is available it is already encoded
+        # in the DefensivePlay enum via the caller (from `_execute_play_5e`).
+        # If neither is available, the modifier is 0.
         pa_mod = 0
         if defensive_play_5e is not None:
             from .play_types import is_run_defense, DefensivePlay
@@ -598,20 +611,7 @@ class PlayResolver:
                 pa_mod = -5  # vs Pass Defense — not fooled
             elif defensive_play_5e == DefensivePlay.PREVENT_DEFENSE:
                 pa_mod = -10  # vs Prevent Defense — deep zone, not fooled at all
-            else:
-                pa_mod = 5   # default vs Run
-        else:
-            form_lower = defense_formation.lower()
-            if "blitz" in form_lower:
-                pa_mod = 0
-            elif form_lower in ("4_3", "3_4"):
-                pa_mod = 5   # vs Run Defense — fools them
-            elif form_lower in ("4_3_cover2", "nickel_zone", "nickel_cover2"):
-                pa_mod = -5  # vs Pass Defense — not fooled
-            elif "prevent" in form_lower or form_lower == "3_4_zone":
-                pa_mod = -10  # vs Prevent Defense — deep zone, very not fooled
-            else:
-                pa_mod = 5   # default vs Run
+            # else: unknown enum variant → neutral (0)
 
         result = self.resolve_pass_5e(
             fac_card, deck, qb, receiver, receivers,
@@ -890,31 +890,23 @@ class PlayResolver:
     def get_run_number_modifier(defense_formation: str,
                                 is_key_on_bc: bool = False,
                                 is_no_key: bool = False) -> int:
-        """Return run-number modifier based on defensive formation (Rule 1).
+        """Return run-number modifier based on defensive PLAY CALL (Rule 1).
 
-        Run Defense / Key on Ball Carrier: +4
-        Run Defense / No Key:              +2
-        Run Defense / Wrong Key:            0
-        Pass/Prevent Defense:               0
-        Blitz Defense:                      0
+        .. deprecated::
+            Callers should supply a ``DefensivePlay`` enum and use
+            ``get_run_number_modifier_5e`` from ``play_types`` instead.
 
-        Callers must explicitly set is_key_on_bc or is_no_key to activate
-        the run-defense keying modifiers.  Without either flag the default
-        is 'wrong key' (0).
+            Per 5E rules, run-number modifiers come exclusively from the
+            defensive PLAY CALL (Pass Defense, Run Defense, Blitz, etc.), not
+            from the formation name (4-3, Nickel, etc.).  A formation name
+            like "4_3" merely describes the personnel on the field; it carries
+            no inherent modifier.  Without an explicit defensive play call the
+            modifier is always 0.
+
+        This legacy overload is kept for backward compatibility only.  It
+        always returns 0 regardless of the formation string because the
+        formation name alone does not determine the play-call modifier.
         """
-        form = defense_formation.lower() if defense_formation else ""
-        pass_forms = ("pass", "4_3_cover2", "nickel_zone", "nickel_cover2",
-                      "prevent", "3_4_zone")
-        if "blitz" in form or form == "blz":
-            return 0
-        if form in pass_forms or "prevent" in form:
-            return 0
-        # Run defense formations (4_3, 3_4, goal_line, etc.)
-        if is_key_on_bc:
-            return 4
-        if is_no_key:
-            return 2
-        # Default: wrong key → 0
         return 0
 
     # ── Rule 2: Pass Rush Detailed Calculation ───────────────────────
@@ -3228,20 +3220,18 @@ class PlayResolver:
     def get_screen_run_modifier(defense_formation: str) -> int:
         """Return run number modifier for screen passes (Rule 5).
 
-        Screen passes use the same modifiers as running plays:
-          Run Defense: +2 (no key), +4 (key on back)
-          Pass/Prevent: 0
-          Blitz: 0
+        .. deprecated::
+            Callers should supply a ``DefensivePlay`` enum and use
+            ``get_screen_rn_modifier_5e`` from ``play_types`` instead.
+
+            Per 5E rules, screen run-number modifiers come from the defensive
+            PLAY CALL, not from the formation name.  Without an explicit
+            defensive play call the modifier is always 0.
+
+        This legacy overload is kept for backward compatibility only.
+        It always returns 0 regardless of the formation string.
         """
-        form = defense_formation.lower() if defense_formation else ""
-        if "blitz" in form:
-            return 0
-        pass_forms = ("pass", "4_3_cover2", "nickel_zone", "nickel_cover2",
-                      "prevent", "3_4_zone")
-        if form in pass_forms or "prevent" in form:
-            return 0
-        # Run defense formations
-        return 2
+        return 0
 
     # ── Rule 14: Within-20 Completion Modifier (legacy) ────────────────
 

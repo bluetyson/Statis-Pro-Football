@@ -386,11 +386,22 @@ class SolitaireAI:
 
         When the offense is inside the opponent's 20-yard line, Prevent
         Defense is ineffective and should be converted to Pass Defense.
+
+        This method operates on legacy formation strings for backward
+        compatibility.  The string "PREVENT_DEFENSE" (or the old combined
+        names "3_4_ZONE" / "NICKEL_ZONE") is converted to "4_3_COVER2".
+        All other strings are returned unchanged.
+
+        .. note::
+            In the 5E play-call flow the relevant conversion is performed on
+            the ``DefensivePlay`` enum directly inside
+            ``call_defense_play_5e``; this helper is only kept for legacy
+            callers that still pass formation strings.
         """
         if situation.yard_line >= 80 and defense_formation in (
             "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE",
         ):
-            return "4_3_COVER2"  # Convert to pass defense formation
+            return "4_3_COVER2"  # Convert to pass defense formation string
         return defense_formation
 
 
