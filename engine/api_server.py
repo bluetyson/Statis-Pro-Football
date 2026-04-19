@@ -691,14 +691,14 @@ def substitute_player(game_id: str, request: SubstitutionRequest):
         # Default: first WR → LE, second WR → FL, third WR → RE;
         # first RB → BK1, second RB → BK2; first TE → RE.
         # After the swap player_out_idx holds the outgoing player's original roster index.
-        _slot_by_pos_idx: dict = {
+        slot_by_pos_idx: dict = {
             ("WR", 0): "LE",  ("WR", 1): "FL",  ("WR", 2): "RE",
             ("RB", 0): "BK1", ("RB", 1): "BK2",
             ("TE", 0): "RE",  ("TE", 1): "LE",
             ("QB", 0): "QB",
             ("K",  0): "K",   ("P", 0): "P",
         }
-        out_slot = _slot_by_pos_idx.get((pos, player_out_idx), pos)
+        out_slot = slot_by_pos_idx.get((pos, player_out_idx), pos)
 
     game.state.play_log.append(
         f"SUB: {request.player_in} replaces {request.player_out} at {pos} ({out_slot} slot)"

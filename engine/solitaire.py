@@ -280,7 +280,7 @@ class SolitaireAI:
             "3_4": DefensiveFormation.THREE_FOUR,
             "4_3": DefensiveFormation.FOUR_THREE,
         }
-        base_formation = _BASE_FORMATION.get(base_defense.upper(), DefensiveFormation.FOUR_THREE)
+        base_formation = _BASE_FORMATION.get(base_defense.lower(), DefensiveFormation.FOUR_THREE)
 
         # Formation based on personnel
         if situation.distance <= 2 and situation.yard_line >= 95:

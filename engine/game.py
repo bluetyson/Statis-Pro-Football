@@ -473,7 +473,7 @@ class Game:
             # ── Defensive starters (first 11 in roster order) ─────────
             defs = team.roster.defenders[:11]
             # Compute dynamic box assignments so the log matches the board.
-            def_boxes = PlayResolver.assign_default_display_boxes(list(defs))
+            def_boxes = PlayResolver.assign_default_display_boxes(defs)
             dl_group = [p for p in defs if p.position.upper() in self._DL_POS]
             lb_group = [p for p in defs if p.position.upper() in self._LB_POS]
             db_group = [p for p in defs if p.position.upper() in self._DB_POS]
