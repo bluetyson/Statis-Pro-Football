@@ -286,9 +286,16 @@ class Game:
         slot (index 0), promote the first healthy backup.
 
         The replacement is logged in the play log as a substitution entry
-        so coaches can see exactly who entered the game.
+        so coaches can see exactly who entered the game, at which slot.
         """
+        # Default formation slot by (position, roster-index).  Used when no
+        # explicit on-field slot override is registered for the player.
+        _DEFAULT_SLOT: Dict[str, str] = {
+            "QB": "QB", "RB": "BK1", "WR": "LE", "TE": "RE", "K": "K", "P": "P",
+        }
+
         for team in (self.home_team, self.away_team):
+            side = "home" if team == self.home_team else "away"
             pos_lists = [
                 (team.roster.qbs, "QB"),
                 (team.roster.rbs, "RB"),
@@ -309,10 +316,19 @@ class Game:
                         replacement = player
                         break
                 self._resolve_position_player(players, pos)
+
+                # Determine the formation slot: explicit assignment → default.
+                on_field = self._on_field_offense.get(side, {})
+                slot = next(
+                    (s for s, name in on_field.items()
+                     if name == injured_player_name),
+                    None,
+                ) or _DEFAULT_SLOT.get(pos, pos)
+
                 if replacement:
                     self.state.play_log.append(
                         f"  SUB IN:  {replacement.player_name} ({pos}) "
-                        f"replaces {injured_player_name} ({pos})"
+                        f"replaces {injured_player_name} ({pos}) at {slot}"
                     )
                 return  # each player belongs to one list only
 
@@ -456,19 +472,24 @@ class Game:
 
             # ── Defensive starters (first 11 in roster order) ─────────
             defs = team.roster.defenders[:11]
+            # Compute dynamic box assignments so the log matches the board.
+            def_boxes = PlayResolver.assign_default_display_boxes(list(defs))
             dl_group = [p for p in defs if p.position.upper() in self._DL_POS]
             lb_group = [p for p in defs if p.position.upper() in self._LB_POS]
             db_group = [p for p in defs if p.position.upper() in self._DB_POS]
             def_parts: List[str] = []
             if dl_group:
                 def_parts.append("DL " + ", ".join(
-                    f"{p.position} {p.player_name}" for p in dl_group))
+                    f"{p.position} {p.player_name}({def_boxes.get(p.player_name, '?')})"
+                    for p in dl_group))
             if lb_group:
                 def_parts.append("LB " + ", ".join(
-                    f"{p.position} {p.player_name}" for p in lb_group))
+                    f"{p.position} {p.player_name}({def_boxes.get(p.player_name, '?')})"
+                    for p in lb_group))
             if db_group:
                 def_parts.append("DB " + ", ".join(
-                    f"{p.position} {p.player_name}" for p in db_group))
+                    f"{p.position} {p.player_name}({def_boxes.get(p.player_name, '?')})"
+                    for p in db_group))
 
             self.state.play_log.append(
                 f"{label} ({abbr}) — Base Defense: {base_def}"
@@ -761,18 +782,32 @@ class Game:
         self.state.play_log.append(msg)
 
         # Log specific player substitutions caused by this package change.
+        # Include box letters (A-O) using dynamic assignment so it's clear
+        # exactly which board position each player is coming in/out of.
         new_starters = {p.player_name for p in starters}
         coming_out = prev_starters - new_starters
         coming_in = new_starters - prev_starters
         name_to_card = {p.player_name: p for p in all_def}
+        # Box assignments before the change (for outgoing players).
+        pre_boxes = PlayResolver.assign_default_display_boxes(
+            [p for p in all_def if p.player_name in prev_starters][:11]
+        )
+        # Box assignments after the change (for incoming players).
+        post_boxes = PlayResolver.assign_default_display_boxes(starters)
         for out_name in sorted(coming_out):
             out_card = name_to_card.get(out_name)
             out_pos = out_card.position if out_card else "?"
-            self.state.play_log.append(f"  SUB OUT: {out_name} ({out_pos})")
+            out_box = pre_boxes.get(out_name, "?")
+            self.state.play_log.append(
+                f"  SUB OUT: {out_name} ({out_pos}) — Box {out_box}"
+            )
         for in_name in sorted(coming_in):
             in_card = name_to_card.get(in_name)
             in_pos = in_card.position if in_card else "?"
-            self.state.play_log.append(f"  SUB IN:  {in_name} ({in_pos})")
+            in_box = post_boxes.get(in_name, "?")
+            self.state.play_log.append(
+                f"  SUB IN:  {in_name} ({in_pos}) — Box {in_box}"
+            )
 
         return msg
 
