@@ -480,7 +480,8 @@ class Game:
                     raise ValueError(
                         f"Cannot clear {slot}: LE and RE must always be occupied "
                         f"(NFL 7-man line-of-scrimmage rule). "
-                        f"Reassign {slot} to a different player instead."
+                        f"Reassign {slot} to a different player instead, "
+                        f"or apply the STANDARD package to restore auto-selection."
                     )
                 self._on_field_offense[side].pop(slot, None)
                 msg = f"ON-FIELD SLOT: {slot} ({side}) cleared — auto-select"
