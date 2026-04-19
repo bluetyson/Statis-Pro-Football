@@ -482,9 +482,11 @@ function buildDefensiveLineSlots(players: PlayerBrief[]): DefensiveSlot[] {
 function buildLinebackerSlots(players: PlayerBrief[], formation?: string): DefensiveSlot[] {
   const family = defenseFamily(formation);
   const activeByFamily: Record<typeof family, number[]> = {
-    '4_3': [0, 2, 4],
-    '3_4': [0, 1, 3, 4],
-    'NICKEL': [1, 2, 3],
+    '4_3': [0, 2, 4],       // LOLB (F), MLB (H), ROLB (J)
+    '3_4': [0, 1, 3, 4],    // LOLB (F), LILB (G), RILB (I), ROLB (J)
+    // Nickel (4-2-5): only the two OLBs remain — slot 0 (F=LOLB, covers BK1)
+    // and slot 4 (J=ROLB, covers BK2). ILBs/MLB are replaced by the 5th DB.
+    'NICKEL': [0, 4],
     'GOAL_LINE': [0, 1, 2, 3, 4],
   };
   const labels = ['OLB', 'ILB', 'MLB', 'ILB', 'OLB'];

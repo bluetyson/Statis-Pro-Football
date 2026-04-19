@@ -165,7 +165,7 @@ class HumanPlayCallRequest(BaseModel):
 
 
 class DefensivePlayCallRequest(BaseModel):
-    formation: str = "4_3"  # 4_3, 3_4, NICKEL_ZONE, GOAL_LINE (plus legacy: 4_3_BLITZ, 3_4_ZONE, etc.)
+    formation: str = "4_3"  # 4_3, 3_4, NICKEL, GOAL_LINE
     defensive_play: str = "PASS_DEFENSE"  # PASS_DEFENSE, PREVENT_DEFENSE, RUN_DEFENSE_NO_KEY, etc.
     defensive_strategy: str = "NONE"  # NONE, DOUBLE_COVERAGE, TRIPLE_COVERAGE
     blitz_players: Optional[List[str]] = None  # Names of LBs/DBs to blitz (2-5 players)
@@ -331,8 +331,7 @@ def execute_human_play(game_id: str, request: HumanPlayCallRequest):
 
 
 VALID_FORMATIONS = {
-    "4_3", "3_4", "4_3_BLITZ", "3_4_ZONE", "4_3_COVER2",
-    "NICKEL_BLITZ", "NICKEL_ZONE", "NICKEL_COVER2", "GOAL_LINE",
+    "4_3", "3_4", "NICKEL", "GOAL_LINE",
 }
 
 VALID_DEFENSIVE_PLAYS = {
@@ -351,7 +350,8 @@ def execute_human_defense(game_id: str, request: DefensivePlayCallRequest):
     """Execute a play where the human calls the defensive formation.
 
     The offense is AI-controlled while the human picks the defense.
-    Accepts both legacy formation strings and new 5E defensive play types.
+    Formations: 4_3, 3_4, NICKEL, GOAL_LINE.
+    Defensive plays: PASS_DEFENSE, PREVENT_DEFENSE, RUN_DEFENSE_NO_KEY, etc.
     """
     game = _get_game(game_id)
 
@@ -382,7 +382,7 @@ def execute_human_defense(game_id: str, request: DefensivePlayCallRequest):
     # Validate blitz players if provided
     blitz_players = None
     if request.blitz_players:
-        if defensive_play != "BLITZ" and "BLITZ" not in formation:
+        if defensive_play != "BLITZ":
             raise HTTPException(
                 status_code=400,
                 detail="Blitz players can only be specified with BLITZ defense",

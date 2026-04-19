@@ -204,7 +204,7 @@ function FormationDescription({ formation }: { formation: string }) {
   const descriptions: Record<string, string> = {
     '4_3': '4 DL, 3 LB — Balanced base defense. Good all-around.',
     '3_4': '3 DL, 4 LB — Extra LB for coverage and run support.',
-    'NICKEL_ZONE': '4 DL, 2 LB, 5 DB — Extra DB for pass situations.',
+    'NICKEL': '4 DL, 2 LB, 5 DB — Extra DB for pass situations.',
     'GOAL_LINE': '5+ DL, LB — Heavy run stop, minimal pass coverage.',
   };
 

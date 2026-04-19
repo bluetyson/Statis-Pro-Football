@@ -275,27 +275,19 @@ def get_screen_rn_modifier_5e(defensive_play: DefensivePlay,
     return 0  # Pass Defense
 
 
-# Map old formation strings to new defensive play (for backward compatibility)
+# Map formation strings to defensive play for backward compatibility.
+# Only the four canonical 5E formation names are retained here; the old
+# combo names (4_3_BLITZ, NICKEL_ZONE, etc.) have been removed.
 LEGACY_FORMATION_TO_PLAY = {
-    "4_3": DefensivePlay.RUN_DEFENSE_NO_KEY,
-    "3_4": DefensivePlay.RUN_DEFENSE_NO_KEY,
-    "4_3_BLITZ": DefensivePlay.BLITZ,
-    "3_4_ZONE": DefensivePlay.PASS_DEFENSE,
-    "4_3_COVER2": DefensivePlay.PASS_DEFENSE,
-    "NICKEL_BLITZ": DefensivePlay.BLITZ,
-    "NICKEL_ZONE": DefensivePlay.PASS_DEFENSE,
-    "NICKEL_COVER2": DefensivePlay.PASS_DEFENSE,
+    "4_3":       DefensivePlay.RUN_DEFENSE_NO_KEY,
+    "3_4":       DefensivePlay.RUN_DEFENSE_NO_KEY,
+    "NICKEL":    DefensivePlay.PASS_DEFENSE,
     "GOAL_LINE": DefensivePlay.RUN_DEFENSE_NO_KEY,
 }
 
 LEGACY_FORMATION_TO_FORMATION = {
-    "4_3": DefensiveFormation.FOUR_THREE,
-    "3_4": DefensiveFormation.THREE_FOUR,
-    "4_3_BLITZ": DefensiveFormation.FOUR_THREE,
-    "3_4_ZONE": DefensiveFormation.THREE_FOUR,
-    "4_3_COVER2": DefensiveFormation.FOUR_THREE,
-    "NICKEL_BLITZ": DefensiveFormation.NICKEL,
-    "NICKEL_ZONE": DefensiveFormation.NICKEL,
-    "NICKEL_COVER2": DefensiveFormation.NICKEL,
+    "4_3":       DefensiveFormation.FOUR_THREE,
+    "3_4":       DefensiveFormation.THREE_FOUR,
+    "NICKEL":    DefensiveFormation.NICKEL,
     "GOAL_LINE": DefensiveFormation.GOAL_LINE,
 }

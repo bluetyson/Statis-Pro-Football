@@ -713,15 +713,10 @@ def run_number(tens: int, ones: int) -> int:
 
 # Formation modifiers: {formation: {pass_rush_mod, coverage_mod, run_stop_mod}}
 FORMATION_MODIFIERS: Dict[str, Dict[str, int]] = {
-    "4_3":          {"pass_rush": 0,  "coverage": 0,  "run_stop": 0},
-    "3_4":          {"pass_rush": 0,  "coverage": 0,  "run_stop": 0},
-    "4_3_COVER2":   {"pass_rush": 0,  "coverage": 1,  "run_stop": 0},
-    "3_4_ZONE":     {"pass_rush": 0,  "coverage": 1,  "run_stop": 0},
-    "4_3_BLITZ":    {"pass_rush": 1,  "coverage": -1, "run_stop": 0},
-    "NICKEL_ZONE":  {"pass_rush": 0,  "coverage": 1,  "run_stop": -1},
-    "NICKEL_BLITZ": {"pass_rush": 1,  "coverage": 0,  "run_stop": 0},
-    "NICKEL_COVER2":{"pass_rush": 0,  "coverage": 1,  "run_stop": 0},
-    "GOAL_LINE":    {"pass_rush": 0,  "coverage": -1, "run_stop": 1},
+    "4_3":       {"pass_rush": 0,  "coverage": 0,  "run_stop": 0},
+    "3_4":       {"pass_rush": 0,  "coverage": 0,  "run_stop": 0},
+    "NICKEL":    {"pass_rush": 0,  "coverage": 1,  "run_stop": -1},
+    "GOAL_LINE": {"pass_rush": 0,  "coverage": -1, "run_stop": 1},
 }
 
 # 5E Defensive Play modifiers (keyed by DefensivePlay enum values)

@@ -270,7 +270,7 @@ class TestOffensiveStrategies:
     def test_draw_no_play_call_gives_zero_rn_modifier(self):
         """Draw with no defensive play call: 0 modifier.
 
-        Per 5E rules, formation name alone ("4_3", "NICKEL_ZONE", etc.) does
+        Per 5E rules, formation name alone ("4_3", "NICKEL", etc.) does
         not carry any run-number modifier.  Without an explicit play call the
         draw modifier is 0.
         """
@@ -1070,9 +1070,7 @@ class TestScreenPassModifiers:
         """
         assert PlayResolver.get_screen_run_modifier("4_3") == 0
         assert PlayResolver.get_screen_run_modifier("GOAL_LINE") == 0
-        assert PlayResolver.get_screen_run_modifier("NICKEL_ZONE") == 0
-        assert PlayResolver.get_screen_run_modifier("4_3_COVER2") == 0
-        assert PlayResolver.get_screen_run_modifier("4_3_BLITZ") == 0
+        assert PlayResolver.get_screen_run_modifier("NICKEL") == 0
 
     def test_screen_rn_modifier_run_defense_via_enum(self):
         """Screen vs Run Defense: +2 to RN (using proper DefensivePlay enum)."""
@@ -1227,16 +1225,25 @@ class TestSolitaireRules:
         ai = SolitaireAI()
         sit = GameSituation(down=1, distance=10, yard_line=85,
                             score_diff=0, quarter=1, time_remaining=600)
-        result = ai.convert_prevent_within_20(sit, "3_4_ZONE")
-        assert result == "4_3_COVER2"
+        result = ai.convert_prevent_within_20(sit, "PREVENT_DEFENSE")
+        assert result == "4_3"
+
+    def test_nickel_not_converted_within_20(self):
+        """Nickel is a valid pass formation — it should NOT be converted inside the 20."""
+        from engine.solitaire import SolitaireAI, GameSituation
+        ai = SolitaireAI()
+        sit = GameSituation(down=1, distance=10, yard_line=85,
+                            score_diff=0, quarter=1, time_remaining=600)
+        result = ai.convert_prevent_within_20(sit, "NICKEL")
+        assert result == "NICKEL"
 
     def test_no_conversion_outside_20(self):
         from engine.solitaire import SolitaireAI, GameSituation
         ai = SolitaireAI()
         sit = GameSituation(down=1, distance=10, yard_line=50,
                             score_diff=0, quarter=1, time_remaining=600)
-        result = ai.convert_prevent_within_20(sit, "3_4_ZONE")
-        assert result == "3_4_ZONE"
+        result = ai.convert_prevent_within_20(sit, "PREVENT_DEFENSE")
+        assert result == "PREVENT_DEFENSE"
 
 
 class TestSolitaireZCardRemoval:

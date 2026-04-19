@@ -226,6 +226,15 @@ class SolitaireAI:
 
         If the SOLO field indicates BLZ, use a blitz formation.
         Falls back to situation-based defense calling otherwise.
+
+        Returns one of the four clean formation names: "4_3", "3_4",
+        "NICKEL", "GOAL_LINE".  Blitz calls are signalled via the
+        DefensivePlay enum (call_defense_play_5e); this method only
+        returns the personnel/formation on the field.
+
+        Nickel (4-2-5) is selected on 3rd down with 5+ yards to go:
+        this covers both 3rd-and-medium (5-6 yds) and 3rd-and-long
+        (7+ yds) passing situations where an extra DB replaces a LB.
         """
         if fac_card is not None and not fac_card.is_z_card:
             solo_dict = fac_card.parse_solo()
@@ -233,17 +242,20 @@ class SolitaireAI:
                 sit_num = _situation_number(situation)
                 code = solo_dict.get(sit_num, "")
                 if code == "BLZ":
-                    return random.choice(["4_3_BLITZ", "NICKEL_BLITZ"])
+                    # Formation is chosen situationally; blitz play handled separately
+                    if situation.down == 3 and situation.distance >= 5:
+                        return "NICKEL"
+                    return random.choice(["4_3", "3_4"])
 
-        # Situation-based defense
-        if situation.down == 3 and situation.distance >= 7:
-            return "NICKEL_ZONE"
-        elif situation.down == 3:
-            return "NICKEL_COVER2"
+        # Situation-based defense.
+        # 3rd-and-5+ covers both medium and long passing downs where an extra
+        # DB replacing a LB (Nickel / 4-2-5) provides better pass coverage.
+        if situation.down == 3 and situation.distance >= 5:
+            return "NICKEL"
         elif situation.distance <= 2:
             return "GOAL_LINE"
         else:
-            return random.choice(["4_3", "3_4", "4_3_COVER2", "3_4_ZONE"])
+            return random.choice(["4_3", "3_4"])
 
     # ── 5th-Edition proper play / strategy calling ───────────────────
 
@@ -257,7 +269,7 @@ class SolitaireAI:
         # Formation based on personnel
         if situation.distance <= 2 and situation.yard_line >= 95:
             formation = DefensiveFormation.GOAL_LINE
-        elif situation.down == 3 and situation.distance >= 7:
+        elif situation.down == 3 and situation.distance >= 5:
             formation = DefensiveFormation.NICKEL
         else:
             formation = random.choice([DefensiveFormation.FOUR_THREE, DefensiveFormation.THREE_FOUR])
@@ -387,10 +399,9 @@ class SolitaireAI:
         When the offense is inside the opponent's 20-yard line, Prevent
         Defense is ineffective and should be converted to Pass Defense.
 
-        This method operates on legacy formation strings for backward
-        compatibility.  The string "PREVENT_DEFENSE" (or the old combined
-        names "3_4_ZONE" / "NICKEL_ZONE") is converted to "4_3_COVER2".
-        All other strings are returned unchanged.
+        Only the legacy string "PREVENT_DEFENSE" triggers the conversion.
+        All other strings (including valid canonical formations) are returned
+        unchanged.
 
         .. note::
             In the 5E play-call flow the relevant conversion is performed on
@@ -398,10 +409,8 @@ class SolitaireAI:
             ``call_defense_play_5e``; this helper is only kept for legacy
             callers that still pass formation strings.
         """
-        if situation.yard_line >= 80 and defense_formation in (
-            "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE",
-        ):
-            return "4_3_COVER2"  # Convert to pass defense formation string
+        if situation.yard_line >= 80 and defense_formation == "PREVENT_DEFENSE":
+            return "4_3"  # Convert prevent to base pass defense formation
         return defense_formation
 
 
