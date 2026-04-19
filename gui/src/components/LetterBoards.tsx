@@ -484,7 +484,7 @@ function buildLinebackerSlots(players: PlayerBrief[], formation?: string): Defen
   const activeByFamily: Record<typeof family, number[]> = {
     '4_3': [0, 2, 4],
     '3_4': [0, 1, 3, 4],
-    'NICKEL': [1, 3],
+    'NICKEL': [0, 4],
     'GOAL_LINE': [0, 1, 2, 3, 4],
   };
   const labels = ['OLB', 'ILB', 'MLB', 'ILB', 'OLB'];

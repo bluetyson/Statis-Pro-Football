@@ -267,7 +267,7 @@ class SolitaireAI:
         # Formation based on personnel
         if situation.distance <= 2 and situation.yard_line >= 95:
             formation = DefensiveFormation.GOAL_LINE
-        elif situation.down == 3 and situation.distance >= 7:
+        elif situation.down == 3 and situation.distance >= 5:
             formation = DefensiveFormation.NICKEL
         else:
             formation = random.choice([DefensiveFormation.FOUR_THREE, DefensiveFormation.THREE_FOUR])
@@ -397,9 +397,9 @@ class SolitaireAI:
         When the offense is inside the opponent's 20-yard line, Prevent
         Defense is ineffective and should be converted to Pass Defense.
 
-        The strings "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE", and
-        "NICKEL" are converted to "4_3" (base pass defense formation).
-        All other strings are returned unchanged.
+        Only the legacy string "PREVENT_DEFENSE" triggers the conversion.
+        All other strings (including valid canonical formations) are returned
+        unchanged.
 
         .. note::
             In the 5E play-call flow the relevant conversion is performed on
@@ -407,10 +407,8 @@ class SolitaireAI:
             ``call_defense_play_5e``; this helper is only kept for legacy
             callers that still pass formation strings.
         """
-        if situation.yard_line >= 80 and defense_formation in (
-            "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE", "NICKEL",
-        ):
-            return "4_3"  # Convert prevent/nickel to base pass defense formation
+        if situation.yard_line >= 80 and defense_formation == "PREVENT_DEFENSE":
+            return "4_3"  # Convert prevent to base pass defense formation
         return defense_formation
 
 

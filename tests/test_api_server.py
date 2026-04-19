@@ -49,8 +49,7 @@ def test_run_play_response_includes_resolution_numbers():
     assert 1 <= play_result["run_number"] <= 12
     assert play_result["pass_number"] is None
     assert play_result["defense_formation"] in {
-        "4_3", "3_4", "4_3_BLITZ", "3_4_ZONE", "4_3_COVER2",
-        "NICKEL_BLITZ", "NICKEL_ZONE", "NICKEL_COVER2", "GOAL_LINE",
+        "4_3", "3_4", "NICKEL", "GOAL_LINE",
     }
 
 
@@ -75,8 +74,7 @@ def test_pass_play_response_includes_pass_number_and_optional_run_number():
     if play_result["run_number"] is not None:
         assert 1 <= play_result["run_number"] <= 12
     assert play_result["defense_formation"] in {
-        "4_3", "3_4", "4_3_BLITZ", "3_4_ZONE", "4_3_COVER2",
-        "NICKEL_BLITZ", "NICKEL_ZONE", "NICKEL_COVER2", "GOAL_LINE",
+        "4_3", "3_4", "NICKEL", "GOAL_LINE",
     }
 
 
@@ -85,12 +83,12 @@ def test_human_defense_response_keeps_called_formation():
 
     response = client.post(
         f"/games/{game_id}/human-defense",
-        json={"formation": "NICKEL_BLITZ"},
+        json={"formation": "NICKEL", "defensive_play": "BLITZ"},
     )
 
     assert response.status_code == 200
     play_result = response.json()["play_result"]
-    assert play_result["defense_formation"] == "NICKEL_BLITZ"
+    assert play_result["defense_formation"] == "NICKEL"
 
 
 def test_team_endpoint_includes_team_card_and_returners():

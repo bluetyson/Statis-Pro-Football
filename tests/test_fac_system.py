@@ -141,12 +141,14 @@ class TestFormationModifiers:
             assert "run_stop" in mods
 
     def test_blitz_formations_boost_pass_rush(self):
-        assert FORMATION_MODIFIERS["4_3_BLITZ"]["pass_rush"] > 0
-        assert FORMATION_MODIFIERS["NICKEL_BLITZ"]["pass_rush"] > 0
+        # In 5E, blitz is a defensive play, not a formation.
+        # The BLITZ defensive play modifier should boost pass rush.
+        from engine.fac_distributions import DEFENSIVE_PLAY_MODIFIERS
+        assert DEFENSIVE_PLAY_MODIFIERS["BLITZ"]["pass_rush"] > 0
 
     def test_effective_pass_rush_clamped(self):
-        assert effective_pass_rush(95, "4_3_BLITZ", is_blitz_tendency=True) <= 99
-        assert effective_pass_rush(5, "NICKEL_ZONE", is_blitz_tendency=False) >= 0
+        assert effective_pass_rush(95, "4_3", is_blitz_tendency=True) <= 99
+        assert effective_pass_rush(5, "NICKEL", is_blitz_tendency=False) >= 0
 
     def test_blitz_tendency_boosts_pass_rush(self):
         without = effective_pass_rush(70, "4_3", is_blitz_tendency=False)
@@ -354,7 +356,7 @@ class TestDefenseFormationOverride:
 
         play_call = PlayCall("RUN", "I_FORM", "MIDDLE", "Test")
         result = game.execute_play(
-            play_call=play_call, defense_formation="4_3_BLITZ"
+            play_call=play_call, defense_formation="4_3"
         )
         assert result is not None
 
