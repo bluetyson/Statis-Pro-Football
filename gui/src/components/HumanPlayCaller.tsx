@@ -85,13 +85,16 @@ export function HumanPlayCaller({
   const isPassPlay = ['SHORT_PASS', 'LONG_PASS', 'QUICK_PASS', 'SCREEN'].includes(selectedPlay);
   const isSpecialPlay = ['PUNT', 'FG', 'KNEEL'].includes(selectedPlay);
 
-  // Reset strategy to NONE whenever the play type changes so that a
-  // previously-selected strategy (e.g. Play-Action Pass) never silently
-  // carries over to an incompatible play type (e.g. Run).  The reset is
-  // intentional and unconditional — the strategy picker immediately shows
-  // only valid options for the new play type, so no valid strategy is lost.
+  // Reset strategy and direction whenever the play type changes.
+  // Strategy reset: a previously-selected strategy (e.g. Play-Action Pass)
+  // must never silently carry over to an incompatible play type (e.g. Run).
+  // Direction reset: run directions (IL/IR/SL/SR) are not valid pass
+  // directions (LEFT/RIGHT/MIDDLE).  If a stale run direction is sent on a
+  // pass play the server maps it to a running play name via
+  // _DIRECTION_TO_OFFENSIVE_PLAY, corrupting the offense log label.
   useEffect(() => {
     setSelectedStrategy('NONE');
+    setSelectedDirection('MIDDLE');
   }, [selectedPlay]);
 
   const directions = isRunPlay ? RUN_DIRECTIONS : PASS_DIRECTIONS;
