@@ -1348,14 +1348,18 @@ class TestFlankerDesignation:
     """Test FL#1/FL#2 designation system."""
 
     def test_three_rbs_designates_fl1(self):
-        """With 3 RBs on display, third back becomes FL#1."""
+        """With 3 RBs on display, no flanker — all backs in BK slots.
+
+        7-man line rule: 5 OL + LE + RE = 7.  FL is absent in a 3RB formation.
+        """
         team = Team.load("KC", "2025_5e")
         rbs = team.roster.rbs[:3]
         wrs = team.roster.wrs[:3]
         tes = team.roster.tes[:1]
         flankers = PlayResolver.designate_flankers(3, wrs, tes, rbs)
-        assert 'FL1' in flankers
-        assert flankers['FL1'] == rbs[2].player_name
+        # 3-back formation has no flanker slot occupied
+        assert 'FL1' not in flankers
+        assert 'FL2' not in flankers
 
     def test_two_rbs_wr_is_fl1(self):
         """With 2 RBs, first WR becomes FL#1."""
@@ -1974,12 +1978,14 @@ class TestBacksInToBlock:
         return qb
 
     def _make_receivers(self, n=5):
-        """Create receivers with pass_gain rows."""
+        """Create receivers with pass_gain rows and _formation_slot attributes."""
         from engine.player_card import PlayerCard, ThreeValueRow
+        slot_names = ["FL", "LE", "RE", "BK1", "BK2", "BK3"]
         recs = []
         for i in range(n):
             r = PlayerCard(f"WR{i}", "KC", "WR", 80+i, "B")
             r.pass_gain = [ThreeValueRow(v1=5, v2=8, v3=15) for _ in range(12)]
+            r._formation_slot = slot_names[i] if i < len(slot_names) else f"BK{i}"
             recs.append(r)
         return recs
 
@@ -2081,12 +2087,15 @@ class TestPassDefenseRating:
 
     def _make_receivers(self, n=5):
         from engine.player_card import PlayerCard, ThreeValueRow
+        slot_names = ["FL", "LE", "RE", "BK1", "BK2", "BK3"]
         recs = []
         for i in range(n):
             r = PlayerCard(f"WR{i}", "KC", "WR", 80+i, "B")
             r.pass_gain = [ThreeValueRow(v1=5, v2=8, v3=15) for _ in range(12)]
+            r._formation_slot = slot_names[i] if i < len(slot_names) else f"BK{i}"
             recs.append(r)
         return recs
+
 
     def test_high_pdr_makes_pass_harder(self):
         """High pass_defense_rating defender increases PN → harder to complete."""

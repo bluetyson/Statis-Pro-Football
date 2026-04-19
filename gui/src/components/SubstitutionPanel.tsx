@@ -60,7 +60,7 @@ const PACKAGES = [
   { key: '3TE', label: '3-TE', desc: 'TE1→RE, TE2→LE, TE3→FL' },
   { key: 'JUMBO', label: 'Jumbo', desc: 'Heavy 3-TE blocking set' },
   { key: '4WR', label: '4-WR', desc: 'WR1→LE, WR2→FL, WR3→RE' },
-  { key: '3RB', label: '3-RB', desc: 'WR1→FL, TE1→RE, RB1→BK1, RB2→BK2, RB3→BK3 (power run, LE empty)' },
+  { key: '3RB', label: '3-RB', desc: 'WR1→LE (split end on line), TE1→RE (tight end on line), RB1→BK1, RB2→BK2, RB3→BK3 — no flanker (7-man line: OL×5 + LE + RE)' },
 ] as const;
 
 // Defensive packages

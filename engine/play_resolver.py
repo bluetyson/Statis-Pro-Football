@@ -1467,6 +1467,11 @@ class PlayResolver:
 
         Rule 8: If the targeted position is unoccupied (no receiver matches),
         returns None so the caller treats it as a thrown-away pass (incomplete).
+
+        Targeting uses the ``_formation_slot`` attribute set on each card by
+        ``_get_all_receivers``, so it is robust to absent slots (e.g. FL absent
+        in a 3RB formation — targeting "FL" correctly returns None instead of
+        accidentally returning the player who happens to sit at index 0).
         """
         target = fac_card.get_receiver_target(pass_type)
         if target in ("Orig", "Z"):
@@ -1474,12 +1479,12 @@ class PlayResolver:
         if target == "P.Rush":
             return default_receiver  # caller handles P.Rush as sack
         # Target is a position code: FL, LE, RE, BK1, BK2, BK3, etc.
-        target_map = {"FL": 0, "LE": 1, "RE": 2, "BK1": 3, "BK2": 4, "BK3": 5}
-        idx = target_map.get(target)
-        if idx is not None and idx < len(receivers):
-            return receivers[idx]
-        # Rule 8: Position unoccupied → return None (thrown away)
-        if idx is not None and idx >= len(receivers):
+        # Use slot-name lookup via _formation_slot attribute (set by _get_all_receivers).
+        if target in ("FL", "LE", "RE", "BK1", "BK2", "BK3"):
+            for rec in receivers:
+                if getattr(rec, '_formation_slot', None) == target:
+                    return rec
+            # Rule 8: no receiver occupies the targeted slot → throw it away
             return None
         return default_receiver
 
@@ -3632,10 +3637,12 @@ class PlayResolver:
         'BK3': 'H',   # Back #3 → Box H (typically MLB)
     }
 
-    # Map from FAC target / receiver list index to receiver slot name.
-    # receivers list: [0]=FL, [1]=LE, [2]=RE, [3]=BK1, [4]=BK2, [5]=BK3
-    # Note: BK3 appears at index [4] when LE is absent (e.g. 3RB formation)
-    # since the list is compacted.  Slot name targeting uses target_map (below).
+    # Map from compacted receiver list index to receiver slot name.
+    # Standard formation: [0]=FL, [1]=LE, [2]=RE, [3]=BK1, [4]=BK2
+    # 3RB formation (FL absent): [0]=LE, [1]=RE, [2]=BK1, [3]=BK2, [4]=BK3
+    # NOTE: index-based slot lookups are unreliable when slots are absent.
+    # Always prefer the _formation_slot attribute on each PlayerCard (set by
+    # _get_all_receivers) for slot-name based operations.
     RECEIVER_INDEX_TO_SLOT = {
         0: 'FL',
         1: 'LE',
@@ -3680,8 +3687,10 @@ class PlayResolver:
                                   backs_blocking: Optional[List[int]] = None) -> Dict[str, Optional[PlayerCard]]:
         """Build a position slot → PlayerCard mapping for the current play.
 
-        receivers list order: [0]=FL, [1]=LE, [2]=RE/TE, [3]=BK1, [4]=BK2
-        (BK3 occupies position [4] when LE is absent, e.g. in a 3RB set)
+        Uses the ``_formation_slot`` attribute set on each card by
+        ``_get_all_receivers`` so that the mapping is correct even when FL is
+        absent (e.g. 3RB formation where LE=WR1, RE=TE, BK1/BK2/BK3=RBs).
+
         backs_blocking: list of receiver indices (e.g. [3, 4]) for backs
                         staying in to block instead of running routes.
 
@@ -3689,27 +3698,41 @@ class PlayResolver:
         → PlayerCard or None.
         """
         blocking = set(backs_blocking or [])
-        personnel: Dict[str, Optional[PlayerCard]] = {}
-        for idx, slot in PlayResolver.RECEIVER_INDEX_TO_SLOT.items():
-            if idx < len(receivers) and idx not in blocking:
-                personnel[slot] = receivers[idx]
-            else:
-                personnel[slot] = None
+        # Initialise all known slots to None
+        personnel: Dict[str, Optional[PlayerCard]] = {
+            slot: None for slot in PlayResolver.RECEIVER_INDEX_TO_SLOT.values()
+        }
+        for i, rec in enumerate(receivers):
+            if i not in blocking:
+                slot = getattr(rec, '_formation_slot',
+                               PlayResolver.RECEIVER_INDEX_TO_SLOT.get(i))
+                if slot:
+                    personnel[slot] = rec
         return personnel
 
     @staticmethod
     def get_receiver_slot(receiver: PlayerCard,
                           receivers: List[PlayerCard]) -> Optional[str]:
-        """Return the slot name ('FL', 'LE', 'RE', 'BK1', 'BK2', 'BK3') for a receiver."""
-        for idx, rec in enumerate(receivers):
+        """Return the slot name ('FL', 'LE', 'RE', 'BK1', 'BK2', 'BK3') for a receiver.
+
+        Uses the ``_formation_slot`` attribute set on each card by
+        ``_get_all_receivers`` so that the correct slot name is returned even
+        when slots are absent (e.g. FL missing in a 3RB formation).
+        """
+        for rec in receivers:
             if rec is receiver or rec.player_name == receiver.player_name:
-                return PlayResolver.RECEIVER_INDEX_TO_SLOT.get(idx)
+                # Prefer the authoritative slot attribute; fall back to index
+                # mapping only when the attribute is absent (legacy callers).
+                slot = getattr(rec, '_formation_slot', None)
+                if slot:
+                    return slot
+                return PlayResolver.RECEIVER_INDEX_TO_SLOT.get(receivers.index(rec))
         return None
 
     # ── FL#1/FL#2 Flanker Designation System (5E) ────────────────────
 
     # Per 5E rules:
-    #   If 3 RBs on display → 1 back is in flanker position (FL#1)
+    #   If 3 RBs on display → no flanker (all 3 backs in BK slots, LE/RE on line)
     #   If 2 RBs → 1 WR is designated as flanker (FL#1)
     #   If 1 RB → WR or TE is designated as FL#2
     #   FAC "flanker" always means FL#1
@@ -3725,9 +3748,10 @@ class PlayResolver:
         """
         result: Dict[str, str] = {}
 
-        if rbs_on_display >= 3 and len(rbs) >= 3:
-            # 3 RBs: one back becomes FL#1
-            result['FL1'] = rbs[2].player_name
+        if rbs_on_display >= 3:
+            # 3 RBs: all backs in BK1/BK2/BK3; no flanker (LE and RE are on
+            # the line as the two ends).  7-man line = 5 OL + LE + RE. ✓
+            pass
         elif rbs_on_display == 2:
             # 2 RBs: first available WR is FL#1
             if wrs:
