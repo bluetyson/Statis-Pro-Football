@@ -320,25 +320,38 @@ interface OffenseFormationProps {
 }
 
 function OffenseFormation({ personnel, selectedBallCarrier, onSubstitute }: OffenseFormationProps) {
-  const line = personnel.offense_line; // [LT, LG, C, RG, RT]
+  const assignments = personnel.on_field_assignments ?? {};
+  const findPlayer = (name: string | undefined) =>
+    name ? (personnel.offense_all.find(p => p.name === name) ?? null) : null;
 
-  // Split receivers into WRs and TEs
+  // Build OL row: use on_field_assignments overrides where set, else fall back to ordered array
+  const rawLine = personnel.offense_line; // [LT, LG, C, RG, RT]
+  const lineSlots = (['LT', 'LG', 'C', 'RG', 'RT'] as const).map((slot, i) =>
+    findPlayer(assignments[slot]) ?? rawLine[i] ?? null,
+  );
+
+  // Split receivers into WRs and TEs (fallback derivation)
   const wrs = personnel.offense_receivers.filter(r => r.position !== 'TE');
   const tes = personnel.offense_receivers.filter(r => r.position === 'TE');
 
-  // LE = split end (first WR), RE = tight end (or second WR), FL = next WR
-  const le: PlayerBrief | null = wrs[0] ?? null;
-  const re: PlayerBrief | null = tes[0] ?? wrs[1] ?? null;
-  const fl: PlayerBrief | null = tes.length > 0 ? (wrs[1] ?? null) : (wrs[2] ?? null);
+  // Slot positions: on_field_assignments take priority; fall back to roster ordering
+  const le: PlayerBrief | null = findPlayer(assignments.LE) ?? wrs[0] ?? null;
+  const re: PlayerBrief | null = findPlayer(assignments.RE) ?? tes[0] ?? wrs[1] ?? null;
+  const fl: PlayerBrief | null = findPlayer(assignments.FL) ?? (tes.length > 0 ? (wrs[1] ?? null) : (wrs[2] ?? null));
 
   const qb: PlayerBrief | null = personnel.offense_starters['QB'] ?? null;
-  const defaultBk1: PlayerBrief | null = personnel.offense_starters['RB'] ?? null;
 
-  // Find BK2: second RB/FB/HB in offense_all by position, skipping BK1's slot
-  const defaultBk2: PlayerBrief | null = personnel.offense_all.find(p =>
-    (p.position === 'RB' || p.position === 'FB' || p.position === 'HB') &&
-    p.name !== defaultBk1?.name
-  ) ?? null;
+  // BK1: on_field_assignments → starters RB → first eligible back
+  const defaultBk1: PlayerBrief | null =
+    findPlayer(assignments.BK1) ?? personnel.offense_starters['RB'] ?? null;
+
+  // BK2: on_field_assignments → second RB/FB/HB not occupying BK1 slot
+  const defaultBk2: PlayerBrief | null =
+    findPlayer(assignments.BK2) ??
+    personnel.offense_all.find(p =>
+      (p.position === 'RB' || p.position === 'FB' || p.position === 'HB') &&
+      p.name !== defaultBk1?.name
+    ) ?? null;
 
   // If a ball carrier is explicitly selected from the dropdown, look them up
   // and show them in the BK1 slot (the primary backfield position).
@@ -385,11 +398,11 @@ function OffenseFormation({ personnel, selectedBallCarrier, onSubstitute }: Offe
       {/* Row 1: Line of scrimmage — LE LT LG C RG RT RE */}
       <div className="fmn-row">
         <FormationSlot label="LE" player={le} showEndurance highlighted={isHighlighted(le)} onClick={makeSlotClick(le, 'LE')} />
-        <FormationSlot label="LT" player={line[0] ?? null} />
-        <FormationSlot label="LG" player={line[1] ?? null} />
-        <FormationSlot label="C"  player={line[2] ?? null} />
-        <FormationSlot label="RG" player={line[3] ?? null} />
-        <FormationSlot label="RT" player={line[4] ?? null} />
+        <FormationSlot label="LT" player={lineSlots[0]} />
+        <FormationSlot label="LG" player={lineSlots[1]} />
+        <FormationSlot label="C"  player={lineSlots[2]} />
+        <FormationSlot label="RG" player={lineSlots[3]} />
+        <FormationSlot label="RT" player={lineSlots[4]} />
         <FormationSlot label="RE" player={re} showEndurance highlighted={isHighlighted(re)} onClick={makeSlotClick(re, 'RE')} />
       </div>
 
@@ -574,26 +587,33 @@ export function LetterBoards({ personnel, defenseFormation, selectedBallCarrier,
             {/* Formation view: LE LT LG C RG RT RE / QB / BK1 BK2 FL */}
             <OffenseFormation personnel={personnel} selectedBallCarrier={selectedBallCarrier} onSubstitute={onSubstitute} />
 
-            {/* Detailed cards: OL block ratings */}
+            {/* Detailed cards: OL block ratings — respect on_field_assignments overrides */}
             <div className="board-row board-row-label">
               <span className="row-label-text">LINE RATINGS</span>
             </div>
             <div className="board-row board-row-ol">
-              {personnel.offense_line && personnel.offense_line.length > 0
-                ? personnel.offense_line.map((p, i) => (
-                    <OLCard key={`ol-${i}`} player={p} />
-                  ))
-                : <>
-                    <OLSlot label="LT" />
-                    <OLSlot label="LG" />
-                    <OLSlot label="C" />
-                    <OLSlot label="RG" />
-                    <OLSlot label="RT" />
-                  </>
-              }
+              {(() => {
+                const olAssignments = personnel.on_field_assignments ?? {};
+                const findOl = (name: string | undefined) =>
+                  name ? (personnel.offense_all.find(p => p.name === name) ?? null) : null;
+                const olSlots = (['LT', 'LG', 'C', 'RG', 'RT'] as const).map(
+                  (slot, i) => findOl(olAssignments[slot]) ?? personnel.offense_line[i] ?? null,
+                );
+                return olSlots.some(p => p !== null)
+                  ? olSlots.map((p, i) =>
+                      p ? <OLCard key={`ol-${i}`} player={p} /> : <OLSlot key={`ol-${i}`} label={(['LT','LG','C','RG','RT'])[i]} />
+                    )
+                  : <>
+                      <OLSlot label="LT" />
+                      <OLSlot label="LG" />
+                      <OLSlot label="C" />
+                      <OLSlot label="RG" />
+                      <OLSlot label="RT" />
+                    </>;
+              })()}
             </div>
 
-            {/* Backfield + Receivers detail cards */}
+            {/* Backfield + Receivers detail cards — respect on_field_assignments overrides */}
             <div className="board-row board-row-label">
               <span className="row-label-text">SKILL PLAYER RATINGS</span>
             </div>
@@ -601,27 +621,39 @@ export function LetterBoards({ personnel, defenseFormation, selectedBallCarrier,
               {personnel.offense_starters.QB && (
                 <MiniCard player={personnel.offense_starters.QB} />
               )}
-              {personnel.offense_starters.RB && (
-                <MiniCard player={personnel.offense_starters.RB} />
-              )}
+              {/* Show BK1 player (on_field_assignments.BK1 → starters RB → first RB) */}
+              {(() => {
+                const bk1Assignments = personnel.on_field_assignments ?? {};
+                const bk1Player =
+                  (bk1Assignments.BK1 ? personnel.offense_all.find(p => p.name === bk1Assignments.BK1) : null) ??
+                  personnel.offense_starters['RB'] ??
+                  null;
+                return bk1Player ? <MiniCard player={bk1Player} /> : null;
+              })()}
               {/* Show the selected backup player's full card if they're not already a starter */}
               {(() => {
                 if (!selectedBallCarrier) return null;
                 const sel = personnel.offense_all.find(p => p.name === selectedBallCarrier);
                 if (!sel) return null;
-                // Already shown as QB or RB starter?
+                // Already shown as QB or BK1 starter?
                 if (sel.name === personnel.offense_starters.QB?.name) return null;
-                if (sel.name === personnel.offense_starters.RB?.name) return null;
+                const bk1Name =
+                  (personnel.on_field_assignments?.BK1) ??
+                  personnel.offense_starters.RB?.name;
+                if (sel.name === bk1Name) return null;
                 return <MiniCard key="selected-bc" player={sel} />;
               })()}
-              {/* Show on-field receivers matching the formation grid (LE, RE, FL) */}
+              {/* Show on-field receivers matching the formation grid (LE, RE, FL) using on_field_assignments */}
               {(() => {
+                const recAssignments = personnel.on_field_assignments ?? {};
+                const findRec = (name: string | undefined) =>
+                  name ? (personnel.offense_all.find(p => p.name === name) ?? null) : null;
                 const wrs = personnel.offense_receivers.filter(r => r.position !== 'TE');
                 const tes = personnel.offense_receivers.filter(r => r.position === 'TE');
+                const le = findRec(recAssignments.LE) ?? wrs[0] ?? null;
+                const re = findRec(recAssignments.RE) ?? tes[0] ?? wrs[1] ?? null;
+                const fl = findRec(recAssignments.FL) ?? (tes.length > 0 ? (wrs[1] ?? null) : (wrs[2] ?? null));
                 const onField: PlayerBrief[] = [];
-                const le = wrs[0] ?? null;
-                const re = tes[0] ?? wrs[1] ?? null;
-                const fl = tes.length > 0 ? (wrs[1] ?? null) : (wrs[2] ?? null);
                 const seen = new Set<string>();
                 for (const p of [le, re, fl]) {
                   if (p && !seen.has(p.name)) {
@@ -633,14 +665,21 @@ export function LetterBoards({ personnel, defenseFormation, selectedBallCarrier,
                   <MiniCard key={`rec-${i}`} player={r} />
                 ));
               })()}
-              {/* Show BK2 (blocking back) to match formation grid */}
+              {/* Show BK2 to match formation grid, using on_field_assignments */}
               {(() => {
-                const bk1 = personnel.offense_starters['RB'] ?? null;
-                const bk2 = personnel.offense_all.find(p =>
-                  (p.position === 'RB' || p.position === 'FB' || p.position === 'HB') &&
-                  p.name !== bk1?.name
-                ) ?? null;
-                return bk2 ? <MiniCard player={bk2} /> : null;
+                const bk2Assignments = personnel.on_field_assignments ?? {};
+                const bk1Player =
+                  (bk2Assignments.BK1 ? personnel.offense_all.find(p => p.name === bk2Assignments.BK1) : null) ??
+                  personnel.offense_starters['RB'] ??
+                  null;
+                const bk2Player =
+                  (bk2Assignments.BK2 ? personnel.offense_all.find(p => p.name === bk2Assignments.BK2) : null) ??
+                  personnel.offense_all.find(p =>
+                    (p.position === 'RB' || p.position === 'FB' || p.position === 'HB') &&
+                    p.name !== bk1Player?.name
+                  ) ??
+                  null;
+                return bk2Player ? <MiniCard player={bk2Player} /> : null;
               })()}
             </div>
 

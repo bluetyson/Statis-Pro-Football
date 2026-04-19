@@ -158,6 +158,7 @@ export function SubstitutionPanel({
       setPosChangeMsg(`✅ ${res.data.message}`);
       setPosChangePlayer('');
       setPosChangeTarget('');
+      onRefreshPersonnel?.();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setPosChangeMsg(`❌ ${err.response?.data?.detail ?? err.message}`);
