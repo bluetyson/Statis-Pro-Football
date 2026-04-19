@@ -53,6 +53,13 @@ class Team:
     fumbles_lost_max: int = 21       # Fumbles Lost upper range (1-N means lost on PN 1..N)
     def_fumble_adj: int = 0          # Defensive Fumble Adjustment (opponent's adj)
 
+    # Base defensive scheme stored on the team card ("4_3" or "3_4").
+    # A team without a Nose Tackle (NT) on their roster is almost certainly
+    # a 4-3 team; teams with NT use a 3-4 base.  The AI uses this value as
+    # the default formation for all standard-down snaps — it should NOT flip
+    # randomly between 4-3 and 3-4 play by play.
+    base_defense: str = "4_3"
+
     # ── 5E Kickoff Table (team card, 12 entries for RN 1-12) ──────────
     # Each entry is a string: "TB", "TB(-3)", "TB(-5)", "1", "3", "GL",
     # "OB", or "special" (RN 12's draw-again sub-table).
@@ -97,6 +104,7 @@ class Team:
             "defense_rating": self.defense_rating,
             "fumbles_lost_max": self.fumbles_lost_max,
             "def_fumble_adj": self.def_fumble_adj,
+            "base_defense": self.base_defense,
             "players": [p.to_dict() for p in self.roster.all_players()],
         }
         if self.kickoff_table:
@@ -284,6 +292,7 @@ class Team:
         team.defense_rating = data.get("defense_rating", 0)
         team.fumbles_lost_max = data.get("fumbles_lost_max", 21)
         team.def_fumble_adj = data.get("def_fumble_adj", 0)
+        team.base_defense = data.get("base_defense", "4_3")
         team.kickoff_table = data.get("kickoff_table", [])
         team.kickoff_returners = data.get("kickoff_returners", [])
         team.kickoff_return_table = data.get("kickoff_return_table", [])

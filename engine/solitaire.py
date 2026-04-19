@@ -221,7 +221,8 @@ class SolitaireAI:
         return PlayCall("RUN", "I_FORM", direction, "Default play")
 
     def call_defense_5e(self, situation: GameSituation,
-                        fac_card: Optional[FACCard] = None) -> str:
+                        fac_card: Optional[FACCard] = None,
+                        base_defense: str = "4_3") -> str:
         """Call a defensive formation using 5th-edition SOLO field.
 
         If the SOLO field indicates BLZ, use a blitz formation.
@@ -235,6 +236,9 @@ class SolitaireAI:
         Nickel (4-2-5) is selected on 3rd down with 5+ yards to go:
         this covers both 3rd-and-medium (5-6 yds) and 3rd-and-long
         (7+ yds) passing situations where an extra DB replaces a LB.
+
+        base_defense is the team's base scheme ("4_3" or "3_4") from the
+        team card — the AI should NOT randomly alternate between schemes.
         """
         if fac_card is not None and not fac_card.is_z_card:
             solo_dict = fac_card.parse_solo()
@@ -245,7 +249,7 @@ class SolitaireAI:
                     # Formation is chosen situationally; blitz play handled separately
                     if situation.down == 3 and situation.distance >= 5:
                         return "NICKEL"
-                    return random.choice(["4_3", "3_4"])
+                    return base_defense
 
         # Situation-based defense.
         # 3rd-and-5+ covers both medium and long passing downs where an extra
@@ -255,24 +259,36 @@ class SolitaireAI:
         elif situation.distance <= 2:
             return "GOAL_LINE"
         else:
-            return random.choice(["4_3", "3_4"])
+            return base_defense
 
     # ── 5th-Edition proper play / strategy calling ───────────────────
 
     def call_defense_play_5e(self, situation: GameSituation,
-                              fac_card: Optional[FACCard] = None
+                              fac_card: Optional[FACCard] = None,
+                              base_defense: str = "4_3",
                               ) -> Tuple[DefensiveFormation, DefensivePlay, DefensiveStrategy]:
         """Call a defensive play using 5E rules.
 
         Returns (DefensiveFormation, DefensivePlay, DefensiveStrategy).
+
+        base_defense is the team's base scheme ("4_3" or "3_4") from the
+        team card.  The AI uses it for all standard-down snaps so that a
+        team does not flip randomly between schemes on every play.
         """
+        # Resolve the base formation from the team-card string.
+        _BASE_FORMATION = {
+            "3_4": DefensiveFormation.THREE_FOUR,
+            "4_3": DefensiveFormation.FOUR_THREE,
+        }
+        base_formation = _BASE_FORMATION.get(base_defense.lower(), DefensiveFormation.FOUR_THREE)
+
         # Formation based on personnel
         if situation.distance <= 2 and situation.yard_line >= 95:
             formation = DefensiveFormation.GOAL_LINE
         elif situation.down == 3 and situation.distance >= 5:
             formation = DefensiveFormation.NICKEL
         else:
-            formation = random.choice([DefensiveFormation.FOUR_THREE, DefensiveFormation.THREE_FOUR])
+            formation = base_formation
 
         # Defensive play based on FAC SOLO field
         if fac_card is not None and not fac_card.is_z_card:

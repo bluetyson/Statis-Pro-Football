@@ -177,6 +177,7 @@ class Game:
 
         self.state.possession = random.choice(["home", "away"])
         self.state.play_log.append(f"Coin flip: {self.state.possession} team receives")
+        self._log_starting_lineups()
 
         kickoff_result = self._do_kickoff(
             kicking_team=self.get_defense_team(),
@@ -283,8 +284,18 @@ class Game:
         the replacement at once — not on the next play.  Walk every position
         list on *both* teams and, if the injured player sits in the starter
         slot (index 0), promote the first healthy backup.
+
+        The replacement is logged in the play log as a substitution entry
+        so coaches can see exactly who entered the game, at which slot.
         """
+        # Default formation slot by (position, roster-index).  Used when no
+        # explicit on-field slot override is registered for the player.
+        _DEFAULT_SLOT: Dict[str, str] = {
+            "QB": "QB", "RB": "BK1", "WR": "LE", "TE": "RE", "K": "K", "P": "P",
+        }
+
         for team in (self.home_team, self.away_team):
+            side = "home" if team == self.home_team else "away"
             pos_lists = [
                 (team.roster.qbs, "QB"),
                 (team.roster.rbs, "RB"),
@@ -297,7 +308,28 @@ class Game:
                 if not players or players[0].player_name != injured_player_name:
                     continue
                 # The injured player is currently in the starter slot — swap.
+                # Find the first healthy backup before calling _resolve_position_player
+                # so we can log the exact replacement.
+                replacement = None
+                for idx, player in enumerate(players[1:], start=1):
+                    if not self._is_player_unavailable(player):
+                        replacement = player
+                        break
                 self._resolve_position_player(players, pos)
+
+                # Determine the formation slot: explicit assignment → default.
+                on_field = self._on_field_offense.get(side, {})
+                slot = next(
+                    (s for s, name in on_field.items()
+                     if name == injured_player_name),
+                    None,
+                ) or _DEFAULT_SLOT.get(pos, pos)
+
+                if replacement:
+                    self.state.play_log.append(
+                        f"  SUB IN:  {replacement.player_name} ({pos}) "
+                        f"replaces {injured_player_name} ({pos}) at {slot}"
+                    )
                 return  # each player belongs to one list only
 
     def validate_player_availability(self, player_name: str) -> PlayerCard:
@@ -409,6 +441,66 @@ class Game:
         if kickoff.result == "OOB":
             return 40
         return max(1, kickoff.yards_gained)
+
+    def _log_starting_lineups(self) -> None:
+        """Log both teams' starting lineups and base defensive schemes to the play log.
+
+        Called once at game start so players and coaches can immediately verify
+        who is on the field and in what formation — and can spot any roster or
+        formation bugs before the first snap.
+        """
+        self.state.play_log.append("=== STARTING LINEUPS ===")
+        for label, team in (("HOME", self.home_team), ("AWAY", self.away_team)):
+            abbr = team.abbreviation
+            base_def = team.base_defense.replace("_", "-")  # "4_3" → "4-3"
+
+            # ── Offensive starters ────────────────────────────────────
+            off_parts: List[str] = []
+            if team.roster.qbs:
+                off_parts.append(f"QB {team.roster.qbs[0].player_name}")
+            if team.roster.rbs:
+                off_parts.append(f"RB {team.roster.rbs[0].player_name}")
+            wrs = team.roster.wrs[:3]
+            if wrs:
+                off_parts.append("WR " + ", ".join(p.player_name for p in wrs))
+            tes = team.roster.tes[:1]
+            if tes:
+                off_parts.append(f"TE {tes[0].player_name}")
+            ol = team.roster.offensive_line[:5]
+            if ol:
+                off_parts.append("OL " + " | ".join(p.player_name for p in ol))
+
+            # ── Defensive starters (first 11 in roster order) ─────────
+            defs = team.roster.defenders[:11]
+            # Compute dynamic box assignments so the log matches the board.
+            def_boxes = PlayResolver.assign_default_display_boxes(defs)
+            dl_group = [p for p in defs if p.position.upper() in self._DL_POS]
+            lb_group = [p for p in defs if p.position.upper() in self._LB_POS]
+            db_group = [p for p in defs if p.position.upper() in self._DB_POS]
+            def_parts: List[str] = []
+            if dl_group:
+                def_parts.append("DL " + ", ".join(
+                    f"{p.position} {p.player_name}({def_boxes.get(p.player_name, '?')})"
+                    for p in dl_group))
+            if lb_group:
+                def_parts.append("LB " + ", ".join(
+                    f"{p.position} {p.player_name}({def_boxes.get(p.player_name, '?')})"
+                    for p in lb_group))
+            if db_group:
+                def_parts.append("DB " + ", ".join(
+                    f"{p.position} {p.player_name}({def_boxes.get(p.player_name, '?')})"
+                    for p in db_group))
+
+            self.state.play_log.append(
+                f"{label} ({abbr}) — Base Defense: {base_def}"
+            )
+            self.state.play_log.append(
+                f"  OFF: {' | '.join(off_parts)}"
+            )
+            self.state.play_log.append(
+                f"  DEF ({base_def}): {' | '.join(def_parts)}"
+            )
+        self.state.play_log.append("========================")
 
     def get_qb(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         return self._resolve_position_player(self.get_offense_team().roster.qbs, "QB", player_name)
@@ -647,6 +739,9 @@ class Game:
         unavail = set(self.state.injuries)
 
         all_def = team.roster.defenders
+        # Capture the current on-field unit (first 11) BEFORE the change.
+        prev_starters = {p.player_name for p in all_def[:11]}
+
         h_dls = [p for p in all_def if p.position.upper() in self._DL_POS
                  and p.player_name not in unavail]
         h_lbs = [p for p in all_def if p.position.upper() in self._LB_POS
@@ -685,6 +780,35 @@ class Game:
             f"{actual_dl} DL / {actual_lb} LB / {actual_db} DB on field"
         )
         self.state.play_log.append(msg)
+
+        # Log specific player substitutions caused by this package change.
+        # Include box letters (A-O) using dynamic assignment so it's clear
+        # exactly which board position each player is coming in/out of.
+        new_starters = {p.player_name for p in starters}
+        coming_out = prev_starters - new_starters
+        coming_in = new_starters - prev_starters
+        name_to_card = {p.player_name: p for p in all_def}
+        # Box assignments before the change (for outgoing players).
+        pre_boxes = PlayResolver.assign_default_display_boxes(
+            [p for p in all_def if p.player_name in prev_starters][:11]
+        )
+        # Box assignments after the change (for incoming players).
+        post_boxes = PlayResolver.assign_default_display_boxes(starters)
+        for out_name in sorted(coming_out):
+            out_card = name_to_card.get(out_name)
+            out_pos = out_card.position if out_card else "?"
+            out_box = pre_boxes.get(out_name, "?")
+            self.state.play_log.append(
+                f"  SUB OUT: {out_name} ({out_pos}) — Box {out_box}"
+            )
+        for in_name in sorted(coming_in):
+            in_card = name_to_card.get(in_name)
+            in_pos = in_card.position if in_card else "?"
+            in_box = post_boxes.get(in_name, "?")
+            self.state.play_log.append(
+                f"  SUB IN:  {in_name} ({in_pos}) — Box {in_box}"
+            )
+
         return msg
 
     def _track_play_stats(self, result) -> None:
@@ -1429,7 +1553,8 @@ class Game:
                 def_strategy_5e = DefensiveStrategy.NONE
         else:
             def_formation_5e, def_play_5e, def_strategy_5e = self.ai.call_defense_play_5e(
-                situation, fac_card
+                situation, fac_card,
+                base_defense=self.get_defense_team().base_defense,
             )
 
         # Ensure defensive_strategy string is always set.
@@ -1466,8 +1591,17 @@ class Game:
             f"{self.state.down}{self._ordinal_suffix(self.state.down)} & {self.state.distance} | "
             f"Own {self.state.yard_line}"
         )
-        self.state.play_log.append(f"  OFFENSE: {off_call_str}")
-        self.state.play_log.append(f"  DEFENSE: {def_call_str}")
+        # Determine which sides are human-controlled so we can suppress AI shadow calls.
+        # In full solitaire (both AI) we log both sides for simulation visibility.
+        offense_side = self.state.possession
+        defense_side = "away" if offense_side == "home" else "home"
+        offense_is_ai = self.solitaire_home if offense_side == "home" else self.solitaire_away
+        defense_is_ai = self.solitaire_home if defense_side == "home" else self.solitaire_away
+        full_solitaire = offense_is_ai and defense_is_ai
+        if not offense_is_ai or full_solitaire:
+            self.state.play_log.append(f"  OFFENSE: {off_call_str}")
+        if not defense_is_ai or full_solitaire:
+            self.state.play_log.append(f"  DEFENSE: {def_call_str}")
         if blitz_players:
             self.state.play_log.append(f"  BLITZ PLAYERS: {', '.join(blitz_players)}")
 
@@ -1535,7 +1669,10 @@ class Game:
             if defense_formation:
                 def_form = defense_formation
             elif defensive_play is None:
-                def_form = self.ai.call_defense_5e(situation, fac_card)
+                def_form = self.ai.call_defense_5e(
+                    situation, fac_card,
+                    base_defense=self.get_defense_team().base_defense,
+                )
             else:
                 def_form = DefensiveFormation.FOUR_THREE.value
             defense = self.get_defense_team()
@@ -1564,7 +1701,10 @@ class Game:
             if defense_formation:
                 def_form = defense_formation
             elif defensive_play is None:
-                def_form = self.ai.call_defense_5e(situation, fac_card)
+                def_form = self.ai.call_defense_5e(
+                    situation, fac_card,
+                    base_defense=defense.base_defense,
+                )
             else:
                 def_form = DefensiveFormation.FOUR_THREE.value
             
@@ -1785,7 +1925,10 @@ class Game:
         defense = self.get_defense_team()
         def_run_stop = defense.defense_rating
         situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense_5e(situation, fac_card)
+        def_formation = defense_formation or self.ai.call_defense_5e(
+            situation, fac_card,
+            base_defense=self.get_defense_team().base_defense,
+        )
 
         direction = play_call.direction
         # Map legacy directions to 5th-edition
@@ -1905,7 +2048,10 @@ class Game:
         rb = self.get_rb()
         receivers = self._get_all_receivers()
         situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense_5e(situation, fac_card)
+        def_formation = defense_formation or self.ai.call_defense_5e(
+            situation, fac_card,
+            base_defense=self.get_defense_team().base_defense,
+        )
 
         if qb and rb:
             result = self.resolver.resolve_pass_5e(
@@ -1942,7 +2088,10 @@ class Game:
         receivers = self._get_all_receivers()
         defense = self.get_defense_team()
         situation = self.state.to_situation()
-        def_formation = defense_formation or self.ai.call_defense_5e(situation, fac_card)
+        def_formation = defense_formation or self.ai.call_defense_5e(
+            situation, fac_card,
+            base_defense=defense.base_defense,
+        )
         
         # Get defensive players for coverage calculations
         defenders = []

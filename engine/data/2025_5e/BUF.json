@@ -4248,5 +4248,6 @@
       "punt_column": {}
     }
   ],
-  "edition": "5e"
+  "edition": "5e",
+  "base_defense": "4_3"
 }

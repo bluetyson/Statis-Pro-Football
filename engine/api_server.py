@@ -12,6 +12,7 @@ from .game import Game, GameState
 from .team import Team, list_available_teams
 from .solitaire import SolitaireAI, GameSituation, PlayCall
 from .card_generator import CardGenerator
+from .play_resolver import PlayResolver
 
 app = FastAPI(
     title="Statis Pro Football API",
@@ -526,6 +527,20 @@ def get_personnel(game_id: str):
             # Default: put unknown defensive positions in DL
             defense_line.append(brief)
 
+    # Compute dynamic box assignments (A-O) from current on-field order so
+    # that the letter badges shown on the board match actual box positions.
+    # This overrides the static defender_letter stored on the player card,
+    # which was assigned by roster-slot order in the JSON file and therefore
+    # doesn't match the position-based (DE=A/E, DT=B/D, NT=C, …) layout.
+    _dynamic_boxes = PlayResolver.assign_default_display_boxes(
+        list(defense_team.roster.defenders[:11])
+    )
+    for group in (defense_line, linebackers, defensive_backs):
+        for brief in group:
+            box = _dynamic_boxes.get(brief["name"])
+            if box:
+                brief["defender_letter"] = box
+
     return {
         "possession": game.state.possession,
         "offense_team": offense_team.abbreviation,
@@ -587,16 +602,33 @@ def substitute_player(game_id: str, request: SubstitutionRequest):
                 status_code=404,
                 detail=f"Player '{request.player_out}' not found in OL",
             )
-        player_list[player_out_idx], player_list[player_in_idx] = (
-            player_list[player_in_idx], player_list[player_out_idx]
+    # Determine which OL slot the outgoing player held (look at on_field_ol first,
+    # then fall back to the OL position from their player card).
+    off_side = game.state.possession
+    ol_assignments = game._on_field_ol.get(off_side, {})
+    out_slot = next(
+        (slot for slot, name in ol_assignments.items()
+         if name.lower() == request.player_out.lower()),
+        None,
+    )
+    if not out_slot:
+        # Find the player's card position (LT/LG/C/RG/RT) from the list
+        out_card = next(
+            (p for p in player_list if p.player_name.lower() == request.player_out.lower()),
+            None,
         )
-        game.state.play_log.append(
-            f"OL SUB: {request.player_in} replaces {request.player_out} at {pos}"
-        )
-        return {
-            "message": f"{request.player_in} now starting at {pos} (OL)",
-            "state": _serialize_state(game.state),
-        }
+        out_slot = out_card.position if out_card else pos
+
+    player_list[player_out_idx], player_list[player_in_idx] = (
+        player_list[player_in_idx], player_list[player_out_idx]
+    )
+    game.state.play_log.append(
+        f"OL SUB: {request.player_in} replaces {request.player_out} at {out_slot}"
+    )
+    return {
+        "message": f"{request.player_in} now starting at {pos} (OL)",
+        "state": _serialize_state(game.state),
+    }
 
     pos_map = {
         "QB": team.roster.qbs,
@@ -645,8 +677,31 @@ def substitute_player(game_id: str, request: SubstitutionRequest):
         player_list[player_out_idx],
     )
 
+    # Determine which formation slot the outgoing player was in.
+    # Priority: explicit on_field_assignments override → default by position+order.
+    offense_side = game.state.possession
+    field_assignments = game.get_field_assignments(offense_side)
+    # Reverse lookup: which slot was the outgoing player explicitly assigned to?
+    out_slot = next(
+        (slot for slot, name in field_assignments.items()
+         if name.lower() == request.player_out.lower()),
+        None,
+    )
+    if not out_slot:
+        # Default: first WR → LE, second WR → FL, third WR → RE;
+        # first RB → BK1, second RB → BK2; first TE → RE.
+        # After the swap player_out_idx holds the outgoing player's original roster index.
+        slot_by_pos_idx: dict = {
+            ("WR", 0): "LE",  ("WR", 1): "FL",  ("WR", 2): "RE",
+            ("RB", 0): "BK1", ("RB", 1): "BK2",
+            ("TE", 0): "RE",  ("TE", 1): "LE",
+            ("QB", 0): "QB",
+            ("K",  0): "K",   ("P", 0): "P",
+        }
+        out_slot = slot_by_pos_idx.get((pos, player_out_idx), pos)
+
     game.state.play_log.append(
-        f"SUB: {request.player_in} replaces {request.player_out} at {pos}"
+        f"SUB: {request.player_in} replaces {request.player_out} at {pos} ({out_slot} slot)"
     )
 
     return {
@@ -1344,12 +1399,21 @@ def substitute_defense_player(game_id: str, request: SubstitutionRequest):
     if player_out_idx is None:
         raise HTTPException(status_code=404, detail=f"Player '{request.player_out}' not found on defense")
 
+    # Compute box assignments BEFORE the swap so we can log the outgoing player's box.
+    pre_boxes = PlayResolver.assign_default_display_boxes(list(defenders[:11]))
+    out_box = pre_boxes.get(request.player_out, "?")
+
     defenders[player_out_idx], defenders[player_in_idx] = (
         defenders[player_in_idx], defenders[player_out_idx]
     )
 
+    # Compute box assignments AFTER the swap to find the incoming player's new box.
+    post_boxes = PlayResolver.assign_default_display_boxes(list(defenders[:11]))
+    in_box = post_boxes.get(request.player_in, "?")
+
     game.state.play_log.append(
-        f"DEF SUB: {request.player_in} replaces {request.player_out} at {pos}"
+        f"DEF SUB: {request.player_in} ({pos}) — Box {in_box} "
+        f"replaces {request.player_out} ({pos}) — Box {out_box}"
     )
 
     return {
