@@ -19,9 +19,9 @@ interface BoxData {
 }
 
 const ROW_LABELS: Record<string, string> = {
-  A: 'A (LE)', B: 'B (LT)', C: 'C (NT)', D: 'D (RT)', E: 'E (RE)',
-  F: 'F (LOLB)', G: 'G (LILB)', H: 'H (MLB)', I: 'I (RILB)', J: 'J (ROLB)',
-  K: 'K (LCB)', L: 'L (DB)', M: 'M (FS)', N: 'N (SS)', O: 'O (RCB)',
+  A: 'A (RE)', B: 'B (RT)', C: 'C (NT)', D: 'D (LT)', E: 'E (LE)',
+  F: 'F (RLB)', G: 'G (OLB)', H: 'H (MLB)', I: 'I (ILB)', J: 'J (LLB)',
+  K: 'K (RCB)', L: 'L (DB)', M: 'M (FS)', N: 'N (SS)', O: 'O (LCB)',
 };
 
 const PASS_DEFENSE_MAP: Record<string, string> = {
@@ -145,37 +145,37 @@ export function DisplayBoxes({ gameId }: DisplayBoxesProps) {
 
       {isOpen && boxData && (
         <div style={{ padding: '6px 0' }}>
-          {/* Row 3: DB (K-O) — top of display */}
+          {/* Row 3: DB (O-K) — top of display, reversed so O(LCB) left, N(SS) near left, K(RCB) right */}
           <div style={{ marginBottom: '2px' }}>
             <span style={{ fontSize: '0.6em', color: '#666', textTransform: 'uppercase' }}>
-              Row 3 — Defensive Backs (K-O)
+              Row 3 — Defensive Backs (O-K)
             </span>
             <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
-              {Object.entries(boxData.rows.row3_db).map(([box, player]) => (
+              {Object.entries(boxData.rows.row3_db).reverse().map(([box, player]) => (
                 <BoxCell key={box} box={box} player={player} />
               ))}
             </div>
           </div>
 
-          {/* Row 2: LB (F-J) */}
+          {/* Row 2: LB (J-F) — reversed so J(LLB) left, H(MLB) centre, F(RLB) right */}
           <div style={{ marginBottom: '2px' }}>
             <span style={{ fontSize: '0.6em', color: '#666', textTransform: 'uppercase' }}>
-              Row 2 — Linebackers (F-J)
+              Row 2 — Linebackers (J-F)
             </span>
             <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
-              {Object.entries(boxData.rows.row2_lb).map(([box, player]) => (
+              {Object.entries(boxData.rows.row2_lb).reverse().map(([box, player]) => (
                 <BoxCell key={box} box={box} player={player} />
               ))}
             </div>
           </div>
 
-          {/* Row 1: DL (A-E) — bottom of display */}
+          {/* Row 1: DL (E-A) — reversed so E(LE) left, C(NT) centre, A(RE) right */}
           <div>
             <span style={{ fontSize: '0.6em', color: '#666', textTransform: 'uppercase' }}>
-              Row 1 — Defensive Line (A-E)
+              Row 1 — Defensive Line (E-A)
             </span>
             <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
-              {Object.entries(boxData.rows.row1_dl).map(([box, player]) => (
+              {Object.entries(boxData.rows.row1_dl).reverse().map(([box, player]) => (
                 <BoxCell key={box} box={box} player={player} />
               ))}
             </div>
@@ -201,7 +201,7 @@ export function DisplayBoxes({ gameId }: DisplayBoxesProps) {
 
           {/* Legend */}
           <div style={{ fontSize: '0.55em', color: '#666', marginTop: '4px' }}>
-            📋 Pass Defense Assignments: RE→N, LE→K, FL#1→O, FL#2→M, BK#1→F, BK#2→J, BK#3→H
+            📋 Pass Defense: RE→N(SS), LE→K(RCB), FL#1→O(LCB), FL#2→M(FS), BK#1→F(RLB), BK#2→J(LLB), BK#3→H(MLB)
           </div>
         </div>
       )}
