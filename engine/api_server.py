@@ -332,7 +332,7 @@ def execute_human_play(game_id: str, request: HumanPlayCallRequest):
 
 VALID_FORMATIONS = {
     "4_3", "3_4", "4_3_BLITZ", "3_4_ZONE", "4_3_COVER2",
-    "NICKEL_BLITZ", "NICKEL_ZONE", "NICKEL_COVER2", "GOAL_LINE",
+    "NICKEL", "NICKEL_BLITZ", "NICKEL_ZONE", "NICKEL_COVER2", "GOAL_LINE",
 }
 
 VALID_DEFENSIVE_PLAYS = {

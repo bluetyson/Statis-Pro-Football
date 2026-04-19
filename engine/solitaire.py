@@ -226,6 +226,11 @@ class SolitaireAI:
 
         If the SOLO field indicates BLZ, use a blitz formation.
         Falls back to situation-based defense calling otherwise.
+
+        Returns one of the four clean formation names: "4_3", "3_4",
+        "NICKEL", "GOAL_LINE".  Blitz calls are signalled via the
+        DefensivePlay enum (call_defense_play_5e); this method only
+        returns the personnel/formation on the field.
         """
         if fac_card is not None and not fac_card.is_z_card:
             solo_dict = fac_card.parse_solo()
@@ -233,17 +238,18 @@ class SolitaireAI:
                 sit_num = _situation_number(situation)
                 code = solo_dict.get(sit_num, "")
                 if code == "BLZ":
-                    return random.choice(["4_3_BLITZ", "NICKEL_BLITZ"])
+                    # Formation is chosen situationally; blitz play handled separately
+                    if situation.down == 3 and situation.distance >= 5:
+                        return "NICKEL"
+                    return random.choice(["4_3", "3_4"])
 
         # Situation-based defense
-        if situation.down == 3 and situation.distance >= 7:
-            return "NICKEL_ZONE"
-        elif situation.down == 3:
-            return "NICKEL_COVER2"
+        if situation.down == 3 and situation.distance >= 5:
+            return "NICKEL"
         elif situation.distance <= 2:
             return "GOAL_LINE"
         else:
-            return random.choice(["4_3", "3_4", "4_3_COVER2", "3_4_ZONE"])
+            return random.choice(["4_3", "3_4"])
 
     # ── 5th-Edition proper play / strategy calling ───────────────────
 
@@ -399,7 +405,7 @@ class SolitaireAI:
             callers that still pass formation strings.
         """
         if situation.yard_line >= 80 and defense_formation in (
-            "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE",
+            "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE", "NICKEL",
         ):
             return "4_3_COVER2"  # Convert to pass defense formation string
         return defense_formation

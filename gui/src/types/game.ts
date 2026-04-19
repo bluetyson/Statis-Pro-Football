@@ -240,7 +240,7 @@ export interface StartingLineupData {
 export const DEFENSIVE_FORMATIONS = [
   { value: '4_3', label: '4-3 Base', icon: '🛡️' },
   { value: '3_4', label: '3-4 Base', icon: '🛡️' },
-  { value: 'NICKEL_ZONE', label: 'Nickel', icon: '🪙' },
+  { value: 'NICKEL', label: 'Nickel', icon: '🪙' },
   { value: 'GOAL_LINE', label: 'Goal Line', icon: '🧱' },
 ] as const;
 
