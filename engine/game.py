@@ -434,6 +434,11 @@ class Game:
     _SKILL_SLOTS = {"FL", "LE", "RE", "BK1", "BK2"}
     _OL_SLOTS = {"LT", "LG", "C", "RG", "RT"}
 
+    # Defensive position groups (used by apply_defense_package)
+    _DL_POS = {"DE", "DT", "DL", "NT"}
+    _LB_POS = {"LB", "OLB", "ILB", "MLB"}
+    _DB_POS = {"CB", "S", "SS", "FS", "DB"}
+
     def set_field_slot(self, side: str, slot: str, player_name: Optional[str]) -> str:
         """Assign (or clear) a named player to an on-field slot for *side*.
 
@@ -503,6 +508,8 @@ class Game:
         ``3TE``       — TE1→RE, TE2→LE, TE3→FL (three tight-end set).
         ``JUMBO``     — same as 3TE but logged as Jumbo package.
         ``4WR``       — WR1→LE, WR2→FL, WR3→RE, no TE on field.
+        ``3RB``       — WR1→LE, TE1→RE, RB3→FL, RB1→BK1, RB2→BK2 (power
+                        run set with three backs, typically FB + 2 RBs).
         """
         side = side.lower()
         package = package.upper()
@@ -517,6 +524,7 @@ class Game:
 
         wrs = _healthy(team.roster.wrs)
         tes = _healthy(team.roster.tes)
+        rbs = _healthy(team.roster.rbs)
 
         # Clear current overrides first
         self._on_field_offense[side] = {}
@@ -570,12 +578,98 @@ class Game:
             self._on_field_offense[side] = new_overrides
             assignments = ", ".join(f"{k}={v}" for k, v in new_overrides.items())
             msg = f"PACKAGE: 2TE_1WR ({side}) — {assignments}"
+        elif package == "3RB":
+            # Power run set: WR1→LE, TE1→RE, RB3→FL, RB1→BK1, RB2→BK2
+            # The third RB (often a fullback) fills the FL (flanker) slot so all
+            # three backs can be on the field simultaneously.
+            new_overrides_3rb: Dict[str, str] = {}
+            if wrs:
+                new_overrides_3rb["LE"] = wrs[0].player_name
+            if tes:
+                new_overrides_3rb["RE"] = tes[0].player_name
+            if len(rbs) >= 3:
+                new_overrides_3rb["FL"] = rbs[2].player_name
+                new_overrides_3rb["BK1"] = rbs[0].player_name
+                new_overrides_3rb["BK2"] = rbs[1].player_name
+            elif len(rbs) == 2:
+                new_overrides_3rb["BK1"] = rbs[0].player_name
+                new_overrides_3rb["BK2"] = rbs[1].player_name
+            elif len(rbs) == 1:
+                new_overrides_3rb["BK1"] = rbs[0].player_name
+            self._on_field_offense[side] = new_overrides_3rb
+            assignments_3rb = ", ".join(f"{k}={v}" for k, v in new_overrides_3rb.items())
+            msg = f"PACKAGE: 3RB ({side}) — {assignments_3rb}"
         else:
             raise ValueError(
                 f"Unknown package '{package}'. "
-                f"Valid: STANDARD, 2TE_1WR, 3TE, JUMBO, 4WR"
+                f"Valid: STANDARD, 2TE_1WR, 3TE, JUMBO, 4WR, 3RB"
             )
 
+        self.state.play_log.append(msg)
+        return msg
+
+    def apply_defense_package(self, side: str, package: str) -> str:
+        """Reorder the defense roster to reflect a named coverage/rush package.
+
+        The first 11 entries in ``team.roster.defenders`` are treated as the
+        on-field unit.  This method reorders that list so the desired mix of
+        DL / LB / DB is at positions 0–10.  It mirrors how individual defensive
+        substitutions already work, so existing play logic requires no changes.
+
+        Supported packages
+        ------------------
+        ``STANDARD``  — restore 4-3 base: up to 4 DL + 3 LB + 4 DB.
+        ``NICKEL``    — 4-2-5: 4 DL, 2 LB, 5 DB (drop 1 LB, add 1 DB).
+        ``DIME``      — 4-1-6: 4 DL, 1 LB, 6 DB (drop 2 LBs, add 2 DBs).
+        ``335``       — 3-3-5: 3 DL, 3 LB, 5 DB (3-4 nickel base).
+        ``PREVENT``   — 2-2-7: 2 DL, 2 LB, 7 DB (prevent / cover-2 deep).
+        """
+        side = side.lower()
+        package = package.upper()
+        if side not in ("home", "away"):
+            raise ValueError(f"Invalid side: {side}")
+
+        team = self.home_team if side == "home" else self.away_team
+        unavail = set(self.state.injuries)
+
+        all_def = team.roster.defenders
+        h_dls = [p for p in all_def if p.position.upper() in self._DL_POS
+                 and p.player_name not in unavail]
+        h_lbs = [p for p in all_def if p.position.upper() in self._LB_POS
+                 and p.player_name not in unavail]
+        h_dbs = [p for p in all_def if p.position.upper() in self._DB_POS
+                 and p.player_name not in unavail]
+
+        # Packages: (n_dl, n_lb, n_db) wanted in first 11
+        _PKG_COUNTS: Dict[str, tuple] = {
+            "STANDARD": (4, 3, 4),
+            "NICKEL":   (4, 2, 5),
+            "DIME":     (4, 1, 6),
+            "335":      (3, 3, 5),
+            "PREVENT":  (2, 2, 7),
+        }
+        if package not in _PKG_COUNTS:
+            raise ValueError(
+                f"Unknown defense package '{package}'. "
+                f"Valid: {', '.join(sorted(_PKG_COUNTS))}"
+            )
+
+        n_dl, n_lb, n_db = _PKG_COUNTS[package]
+        starters = h_dls[:n_dl] + h_lbs[:n_lb] + h_dbs[:n_db]
+
+        # If we still don't have 11 starters (roster shortage), fill with
+        # remaining healthy players in their original order.
+        starter_ids = {id(p) for p in starters}
+        backups = [p for p in all_def if id(p) not in starter_ids]
+        team.roster.defenders = starters + backups
+
+        actual_dl = sum(1 for p in starters if p.position.upper() in self._DL_POS)
+        actual_lb = sum(1 for p in starters if p.position.upper() in self._LB_POS)
+        actual_db = sum(1 for p in starters if p.position.upper() in self._DB_POS)
+        msg = (
+            f"DEF PACKAGE: {package} ({side}) — "
+            f"{actual_dl} DL / {actual_lb} LB / {actual_db} DB on field"
+        )
         self.state.play_log.append(msg)
         return msg
 

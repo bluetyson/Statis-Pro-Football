@@ -59,6 +59,16 @@ const PACKAGES = [
   { key: '3TE', label: '3-TE', desc: 'TE1→RE, TE2→LE, TE3→FL' },
   { key: 'JUMBO', label: 'Jumbo', desc: 'Heavy 3-TE blocking set' },
   { key: '4WR', label: '4-WR', desc: 'WR1→LE, WR2→FL, WR3→RE' },
+  { key: '3RB', label: '3-RB', desc: 'WR1→LE, TE1→RE, RB3→FL, RB1→BK1, RB2→BK2 (power run)' },
+] as const;
+
+// Defensive packages
+const DEF_PACKAGES = [
+  { key: 'STANDARD', label: 'Base (4-3)', desc: '4 DL / 3 LB / 4 DB — base formation' },
+  { key: 'NICKEL',   label: 'Nickel (4-2-5)', desc: '4 DL, 2 LB, 5 DB — drop 1 LB, add 1 DB' },
+  { key: 'DIME',     label: 'Dime (4-1-6)', desc: '4 DL, 1 LB, 6 DB — drop 2 LBs, add 2 DBs' },
+  { key: '335',      label: '3-3-5', desc: '3 DL, 3 LB, 5 DB — 3-4 nickel look' },
+  { key: 'PREVENT',  label: 'Prevent', desc: '2 DL, 2 LB, 7 DB — deep coverage' },
 ] as const;
 
 // Small shared styles
@@ -96,6 +106,10 @@ export function SubstitutionPanel({
   // Package state
   const [packageMsg, setPackageMsg] = useState<string>('');
   const [activePackage, setActivePackage] = useState<string>('');
+
+  // Defense package state
+  const [defPackageMsg, setDefPackageMsg] = useState<string>('');
+  const [activeDefPackage, setActiveDefPackage] = useState<string>('');
 
   if (!personnel) return null;
 
@@ -211,6 +225,25 @@ export function SubstitutionPanel({
     }
   };
 
+  const handleApplyDefensePackage = async (pkg: string) => {
+    setDefPackageMsg('');
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/apply-defense-package`, {
+        package: pkg,
+        team: 'defense',
+      });
+      setDefPackageMsg(`✅ ${res.data.message}`);
+      setActiveDefPackage(pkg);
+      onRefreshPersonnel?.();
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setDefPackageMsg(`❌ ${err.response?.data?.detail ?? err.message}`);
+      } else {
+        setDefPackageMsg(`❌ ${err instanceof Error ? err.message : 'An unknown error occurred'}`);
+      }
+    }
+  };
+
   // Get compatible positions for the selected player
   const selectedPlayerPos = allPlayers.find(p => p.name === posChangePlayer)?.position?.toUpperCase() ?? '';
   const compatiblePositions = COMPATIBLE_POSITIONS[selectedPlayerPos] ?? [];
@@ -286,7 +319,8 @@ export function SubstitutionPanel({
             </div>
           </div>
 
-          {/* ── Formation Packages ── */}
+          {/* ── Formation Packages (offense) ── */}
+          {!isDefPos && (
           <div style={sectionStyle}>
             <div style={sectionTitleStyle}>🏈 Formation Packages</div>
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '4px' }}>
@@ -317,8 +351,44 @@ export function SubstitutionPanel({
               Packages set which players fill each receiver slot (FL/LE/RE/BK1/BK2).
             </div>
           </div>
+          )}
 
-          {/* ── On-Field Skill Slots ── */}
+          {/* ── Defensive Packages ── */}
+          {isDefPos && (
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>🛡️ Defensive Packages</div>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '4px' }}>
+              {DEF_PACKAGES.map(({ key, label, desc }) => (
+                <button
+                  key={key}
+                  onClick={() => handleApplyDefensePackage(key)}
+                  disabled={loading}
+                  title={desc}
+                  style={{
+                    ...btnStyle,
+                    background: activeDefPackage === key ? '#1a3a2a' : '#1e293b',
+                    border: activeDefPackage === key ? '1px solid #4ade80' : '1px solid #374151',
+                    color: activeDefPackage === key ? '#bbf7d0' : '#6ee7b7',
+                    fontWeight: activeDefPackage === key ? 'bold' : 'normal',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {defPackageMsg && (
+              <div style={{ fontSize: '0.65em', color: defPackageMsg.startsWith('✅') ? '#22c55e' : '#ef4444', marginTop: '2px' }}>
+                {defPackageMsg}
+              </div>
+            )}
+            <div style={{ fontSize: '0.55em', color: '#666', marginTop: '2px' }}>
+              Reorders the defensive roster so the chosen DL/LB/DB mix starts.
+            </div>
+          </div>
+          )}
+
+          {/* ── On-Field Skill Slots (offense only) ── */}
+          {!isDefPos && (
           <div style={sectionStyle}>
             <div style={sectionTitleStyle}>🎯 On-Field Slot Assignments</div>
             <div style={{ fontSize: '0.6em', color: '#888', marginBottom: '4px' }}>
@@ -375,6 +445,7 @@ export function SubstitutionPanel({
               </div>
             )}
           </div>
+          )}
 
           {/* ── OL Slot Assignments (shown when OL tab active) ── */}
           {isOLPos && (

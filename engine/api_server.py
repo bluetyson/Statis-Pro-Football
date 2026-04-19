@@ -191,8 +191,14 @@ class SetFieldSlotRequest(BaseModel):
 
 class ApplyPackageRequest(BaseModel):
     """Apply a named formation package to an offense."""
-    package: str   # STANDARD, 2TE_1WR, 3TE, JUMBO, 4WR
+    package: str   # STANDARD, 2TE_1WR, 3TE, JUMBO, 4WR, 3RB
     team: str = "possession"  # 'home', 'away', or 'possession' (auto-detect)
+
+
+class ApplyDefensePackageRequest(BaseModel):
+    """Apply a named coverage/rush package to a defense."""
+    package: str   # STANDARD, NICKEL, DIME, 335, PREVENT
+    team: str = "defense"  # 'defense', 'home', or 'away'
 
 
 class StartingLineupRequest(BaseModel):
@@ -1247,6 +1253,7 @@ def apply_formation_package(game_id: str, request: ApplyPackageRequest):
     ``3TE``       — TE1→RE, TE2→LE, TE3→FL (three-TE set).
     ``JUMBO``     — same as 3TE, logged as Jumbo.
     ``4WR``       — WR1→LE, WR2→FL, WR3→RE (four-wide, no TE).
+    ``3RB``       — WR1→LE, TE1→RE, RB3→FL, RB1→BK1, RB2→BK2 (power run).
     """
     game = _get_game(game_id)
     side = _resolve_side(game, request.team)
@@ -1258,6 +1265,40 @@ def apply_formation_package(game_id: str, request: ApplyPackageRequest):
         "message": msg,
         "package": request.package.upper(),
         "on_field_assignments": game.get_field_assignments(side),
+        "state": _serialize_state(game.state),
+    }
+
+
+@app.post("/games/{game_id}/apply-defense-package")
+def apply_defense_package(game_id: str, request: ApplyDefensePackageRequest):
+    """Apply a named coverage/rush package to the defense.
+
+    Reorders the defensive roster so the desired mix of DL / LB / DB occupies
+    the first 11 slots (the on-field unit).  Changes take effect on the next
+    play.
+
+    Packages
+    --------
+    ``STANDARD``  — 4-3 base: 4 DL + 3 LB + 4 DB.
+    ``NICKEL``    — 4-2-5: 4 DL, 2 LB, 5 DB (drop 1 LB, add 1 DB).
+    ``DIME``      — 4-1-6: 4 DL, 1 LB, 6 DB (drop 2 LBs, add 2 DBs).
+    ``335``       — 3-3-5: 3 DL, 3 LB, 5 DB (nickel 3-4 look).
+    ``PREVENT``   — 2-2-7: 2 DL, 2 LB, 7 DB (prevent/deep coverage).
+    """
+    game = _get_game(game_id)
+    # Resolve which team is on defense
+    team_param = request.team.lower()
+    if team_param == "defense":
+        side = game.state.get_defense_team()  # "home" or "away"
+    else:
+        side = _resolve_side(game, team_param)
+    try:
+        msg = game.apply_defense_package(side, request.package)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {
+        "message": msg,
+        "package": request.package.upper(),
         "state": _serialize_state(game.state),
     }
 
