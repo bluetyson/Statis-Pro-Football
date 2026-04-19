@@ -409,7 +409,8 @@ export function GameBoard({
               )}
               {(lastPlay.offensive_play_call || lastPlay.defensive_play_call) && (
                 <div className="last-play-calls">
-                  {lastPlay.offensive_play_call && <span className="play-call-badge off-call">OFF: {lastPlay.offensive_play_call}</span>}
+                  {/* Don't reveal AI's offensive play call to the human defender */}
+                  {lastPlay.offensive_play_call && !isHumanOnDefense && <span className="play-call-badge off-call">OFF: {lastPlay.offensive_play_call}</span>}
                   {lastPlay.defensive_play_call && <span className="play-call-badge def-call">DEF: {lastPlay.defensive_play_call}</span>}
                 </div>
               )}
