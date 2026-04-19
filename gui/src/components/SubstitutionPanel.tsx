@@ -112,6 +112,10 @@ export function SubstitutionPanel({
   const [defPackageMsg, setDefPackageMsg] = useState<string>('');
   const [activeDefPackage, setActiveDefPackage] = useState<string>('');
 
+  // Defense slot assignment state
+  const [defSlotSelections, setDefSlotSelections] = useState<Record<string, string>>({});
+  const [defSlotMsg, setDefSlotMsg] = useState<string>('');
+
   if (!personnel) return null;
 
   const DEF_POSITIONS = new Set(['DL', 'LB', 'DB', 'DE', 'DT', 'NT', 'CB', 'S', 'SS', 'FS', 'OLB', 'ILB', 'MLB']);
@@ -142,9 +146,108 @@ export function SubstitutionPanel({
     ? posPlayers.length > 0 ? posPlayers[0] : null
     : personnel.offense_starters[selectedPos] ?? null;
 
-  const handleSub = (benchPlayer: PlayerBrief) => {
+  const handleSub = async (benchPlayer: PlayerBrief) => {
     if (!starter) return;
-    onSubstitute(selectedPos, starter.name, benchPlayer.name);
+    if (isDefPos) {
+      // Defensive substitutions must use the dedicated defense endpoint
+      setDefSlotMsg('');
+      try {
+        const res = await axios.post(`${API_BASE}/games/${gameId}/substitute-defense`, {
+          position: selectedPos,
+          player_out: starter.name,
+          player_in: benchPlayer.name,
+        });
+        setDefSlotMsg(`✅ ${res.data.message}`);
+        onRefreshPersonnel?.();
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          setDefSlotMsg(`❌ ${err.response?.data?.detail ?? err.message}`);
+        } else {
+          setDefSlotMsg(`❌ ${err instanceof Error ? err.message : 'An unknown error occurred'}`);
+        }
+      }
+    } else {
+      onSubstitute(selectedPos, starter.name, benchPlayer.name);
+    }
+  };
+
+  // Build a map of defender_letter → PlayerBrief for current on-field defenders
+  const defBoxMap: Record<string, PlayerBrief> = {};
+  for (const p of personnel.defense_all) {
+    if (p.defender_letter) defBoxMap[p.defender_letter] = p;
+  }
+
+  // Defensive slot definitions (Vassal layout order within each row)
+  // Display reversed (E→A, J→F, O→K) to match Vassal board: strong side (TE) on left
+  const DEF_SLOT_ROWS: { label: string; boxes: { box: string; pos: string; name: string }[] }[] = [
+    {
+      label: 'Defensive Line',
+      boxes: [
+        { box: 'E', pos: 'DE', name: 'E (LE)' },
+        { box: 'D', pos: 'DT', name: 'D (LT)' },
+        { box: 'C', pos: 'NT', name: 'C (NT)' },
+        { box: 'B', pos: 'DT', name: 'B (RT)' },
+        { box: 'A', pos: 'DE', name: 'A (RE)' },
+      ],
+    },
+    {
+      label: 'Linebackers',
+      boxes: [
+        { box: 'J', pos: 'OLB', name: 'J (LLB)' },
+        { box: 'I', pos: 'ILB', name: 'I (ILB)' },
+        { box: 'H', pos: 'MLB', name: 'H (MLB)' },
+        { box: 'G', pos: 'OLB', name: 'G (OLB)' },
+        { box: 'F', pos: 'OLB', name: 'F (RLB)' },
+      ],
+    },
+    {
+      label: 'Defensive Backs',
+      boxes: [
+        { box: 'O', pos: 'CB', name: 'O (LCB)' },
+        { box: 'N', pos: 'SS', name: 'N (SS)' },
+        { box: 'M', pos: 'FS', name: 'M (FS)' },
+        { box: 'L', pos: 'DB', name: 'L (5th DB)' },
+        { box: 'K', pos: 'CB', name: 'K (RCB)' },
+      ],
+    },
+  ];
+
+  // Compatible pool for each slot type (used to populate dropdown options)
+  const DEF_SLOT_POOL: Record<string, string[]> = {
+    DE: ['DE', 'DT', 'DL', 'NT', 'LB', 'OLB'],
+    DT: ['DT', 'DL', 'NT', 'DE'],
+    NT: ['NT', 'DT', 'DL', 'DE'],
+    OLB: ['OLB', 'LB', 'ILB', 'MLB', 'DE'],
+    ILB: ['ILB', 'LB', 'MLB', 'OLB'],
+    MLB: ['MLB', 'LB', 'ILB', 'OLB'],
+    CB: ['CB', 'S', 'SS', 'FS', 'DB'],
+    SS: ['SS', 'S', 'FS', 'CB', 'DB'],
+    FS: ['FS', 'S', 'SS', 'CB', 'DB'],
+    DB: ['DB', 'CB', 'S', 'SS', 'FS'],
+  };
+
+  const handleDefSlotChange = async (box: string, pos: string) => {
+    const playerName = defSlotSelections[box];
+    if (!playerName) return;
+    const currentPlayer = defBoxMap[box];
+    if (!currentPlayer) return;
+    setDefSlotMsg('');
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/substitute-defense`, {
+        position: pos,
+        player_out: currentPlayer.name,
+        player_in: playerName,
+      });
+      setDefSlotMsg(`✅ ${res.data.message}`);
+      setDefSlotSelections(prev => ({ ...prev, [box]: '' }));
+      onRefreshPersonnel?.();
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setDefSlotMsg(`❌ ${err.response?.data?.detail ?? err.message}`);
+      } else {
+        setDefSlotMsg(`❌ ${err instanceof Error ? err.message : 'An unknown error occurred'}`);
+      }
+    }
   };
 
   const handlePositionChange = async () => {
@@ -319,6 +422,11 @@ export function SubstitutionPanel({
                 <span className="sub-empty">No backup at {selectedPos}</span>
               )}
             </div>
+            {isDefPos && defSlotMsg && (
+              <div style={{ fontSize: '0.65em', color: defSlotMsg.startsWith('✅') ? '#22c55e' : '#ef4444', marginTop: '2px' }}>
+                {defSlotMsg}
+              </div>
+            )}
           </div>
 
           {/* ── Formation Packages (offense) ── */}
@@ -386,6 +494,66 @@ export function SubstitutionPanel({
             <div style={{ fontSize: '0.55em', color: '#666', marginTop: '2px' }}>
               Reorders the defensive roster so the chosen DL/LB/DB mix starts.
             </div>
+          </div>
+          )}
+
+          {/* ── Defensive Slot Assignments (defense only) ── */}
+          {isDefPos && (
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>🎯 Defensive Slot Assignments</div>
+            <div style={{ fontSize: '0.6em', color: '#888', marginBottom: '4px' }}>
+              Assign a specific player to a defensive box (E=LE … A=RE, J=LLB … F=RLB, O=LCB … K=RCB)
+            </div>
+            {DEF_SLOT_ROWS.map(row => (
+              <div key={row.label} style={{ marginBottom: '6px' }}>
+                <div style={{ fontSize: '0.6em', color: '#6ee7b7', fontWeight: 'bold', marginBottom: '2px' }}>
+                  {row.label}
+                </div>
+                {row.boxes.map(({ box, pos, name }) => {
+                  const currentPlayer = defBoxMap[box];
+                  const poolPositions = DEF_SLOT_POOL[pos] ?? [pos];
+                  const candidates = personnel.defense_all.filter(
+                    p => poolPositions.includes(p.position.toUpperCase()),
+                  );
+                  return (
+                    <div key={box} style={{ display: 'flex', gap: '4px', alignItems: 'center', marginBottom: '3px' }}>
+                      <span style={{ fontSize: '0.6em', color: '#6b7280', minWidth: '56px', fontWeight: 'bold' }}>
+                        {name}
+                      </span>
+                      {currentPlayer && (
+                        <span style={{ fontSize: '0.6em', color: '#22c55e', minWidth: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          ✓ {currentPlayer.name}
+                        </span>
+                      )}
+                      <select
+                        value={defSlotSelections[box] ?? ''}
+                        onChange={e => setDefSlotSelections(prev => ({ ...prev, [box]: e.target.value }))}
+                        style={{ ...selectStyle, flex: 1, minWidth: '0' }}
+                      >
+                        <option value="">— swap in —</option>
+                        {candidates.map(p => (
+                          <option key={p.name} value={p.name}>
+                            {p.name} ({p.position} {p.overall_grade})
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleDefSlotChange(box, pos)}
+                        disabled={!defSlotSelections[box] || !currentPlayer || loading}
+                        style={btnStyle}
+                      >
+                        Set
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+            {defSlotMsg && (
+              <div style={{ fontSize: '0.65em', color: defSlotMsg.startsWith('✅') ? '#22c55e' : '#ef4444', marginTop: '2px' }}>
+                {defSlotMsg}
+              </div>
+            )}
           </div>
           )}
 

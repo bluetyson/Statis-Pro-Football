@@ -512,13 +512,15 @@ function buildLinebackerSlots(players: PlayerBrief[], formation?: string): Defen
 
 function buildSecondarySlots(players: PlayerBrief[], formation?: string): DefensiveSlot[] {
   const family = defenseFamily(formation);
+  // Vassal layout (left→right when displayed reversed): RCB(K), 5th(L), FS(M), SS(N), LCB(O)
+  // After reversing the render order this displays as: O(LCB), N(SS), M(FS), L(5th), K(RCB)
   const activeByFamily: Record<typeof family, number[]> = {
-    '4_3': [0, 1, 2, 4],
-    '3_4': [0, 1, 2, 4],
+    '4_3': [0, 2, 3, 4],
+    '3_4': [0, 2, 3, 4],
     'NICKEL': [0, 1, 2, 3, 4],
-    'GOAL_LINE': [0, 1, 2, 4],
+    'GOAL_LINE': [0, 2, 3, 4],
   };
-  const labels = ['CB', 'FS', 'SS', 'OBOX', 'CB'];
+  const labels = ['CB', 'OBOX', 'FS', 'SS', 'CB'];
   const cbs = players.filter(p => p.position.toUpperCase() === 'CB');
   const strongSafeties = players.filter(p => p.position.toUpperCase() === 'SS');
   const freeSafeties = players.filter(p => p.position.toUpperCase() === 'FS');
@@ -711,35 +713,35 @@ export function LetterBoards({ personnel, defenseFormation, selectedBallCarrier,
 
         {!collapsed.def && (
           <>
-            {/* Row 1: Defensive Line (a-f) */}
+            {/* Row 1: Defensive Line — display reversed so A(RE) is rightmost, E(LE) is leftmost */}
             <div className="board-row board-row-label">
               <span className="row-label-text">DEFENSIVE LINE</span>
-              <span className="row-letters">A(LE) B(LT) C(NT) D(RT) E(RE)</span>
+              <span className="row-letters">E(LE) D(LT) C(NT) B(RT) A(RE)</span>
             </div>
             <div className="board-row board-row-dl">
-              {defensiveLineSlots.map(slot => (
+              {[...defensiveLineSlots].reverse().map(slot => (
                 <DefensiveSlotCard key={slot.key} slot={slot} />
               ))}
             </div>
 
-            {/* Row 2: Linebackers (g-k) */}
+            {/* Row 2: Linebackers — reversed so J(LLB) is leftmost, F(RLB) is rightmost */}
             <div className="board-row board-row-label">
               <span className="row-label-text">LINEBACKERS</span>
-              <span className="row-letters">F(LOLB) G(LILB) H(MLB) I(RILB) J(ROLB)</span>
+              <span className="row-letters">J(LLB) I(ILB) H(MLB) G(OLB) F(RLB)</span>
             </div>
             <div className="board-row board-row-lb">
-              {linebackerSlots.map(slot => (
+              {[...linebackerSlots].reverse().map(slot => (
                 <DefensiveSlotCard key={slot.key} slot={slot} />
               ))}
             </div>
 
-            {/* Row 3: Defensive Backs (l-p) */}
+            {/* Row 3: Defensive Backs — reversed so O(LCB) is leftmost, N(SS) near left, K(RCB) rightmost */}
             <div className="board-row board-row-label">
               <span className="row-label-text">DEFENSIVE BACKS</span>
-              <span className="row-letters">K(LCB) L(DB) M(FS) N(SS) O(RCB)</span>
+              <span className="row-letters">O(LCB) N(SS) M(FS) L(DB) K(RCB)</span>
             </div>
             <div className="board-row board-row-db">
-              {secondarySlots.map(slot => (
+              {[...secondarySlots].reverse().map(slot => (
                 <DefensiveSlotCard key={slot.key} slot={slot} />
               ))}
             </div>
