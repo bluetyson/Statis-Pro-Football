@@ -247,7 +247,9 @@ class SolitaireAI:
                         return "NICKEL"
                     return random.choice(["4_3", "3_4"])
 
-        # Situation-based defense
+        # Situation-based defense.
+        # 3rd-and-5+ covers both medium and long passing downs where an extra
+        # DB replacing a LB (Nickel / 4-2-5) provides better pass coverage.
         if situation.down == 3 and situation.distance >= 5:
             return "NICKEL"
         elif situation.distance <= 2:
