@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { GameState, PlayResult, DriveResult, PersonnelData, HumanPlayCall, DefensivePlayCall, GameMode } from '../types/game';
+import type { SignificantEvent } from '../hooks/useGameEngine';
 import { Scoreboard } from './Scoreboard';
 import { PlayCaller } from './PlayCaller';
 import { HumanPlayCaller } from './HumanPlayCaller';
@@ -113,6 +114,7 @@ interface GameBoardProps {
   lastDrive: DriveResult | null;
   lastDice: DiceRollResult | null;
   personnel: PersonnelData | null;
+  significantEvents: SignificantEvent[];
   loading: boolean;
   isHumanTurn: boolean;
   isHumanOnDefense: boolean;
@@ -145,6 +147,7 @@ export function GameBoard({
   lastDrive,
   lastDice,
   personnel,
+  significantEvents,
   loading,
   isHumanTurn,
   isHumanOnDefense,
@@ -202,6 +205,24 @@ export function GameBoard({
       </div>
 
       <Scoreboard state={state} />
+
+      {/* Significant Events ticker — injuries, TDs, turnovers, first downs */}
+      {significantEvents.length > 0 && (
+        <div className="significant-events-panel">
+          <span className="significant-events-header">⚡ Key Events</span>
+          <div className="significant-events-list">
+            {significantEvents.map((ev) => (
+              <div
+                key={ev.id}
+                className={`significant-event significant-event-${ev.kind}`}
+              >
+                <span className="se-icon">{ev.icon}</span>
+                <span className="se-text">{ev.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Halftime / Quarter break / Overtime indicators */}
       {isHalftime && (

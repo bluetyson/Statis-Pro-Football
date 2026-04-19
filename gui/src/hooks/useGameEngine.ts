@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import type {
   GameState,
@@ -12,6 +12,15 @@ import type {
 
 const API_BASE = '/api';
 
+const MAX_SIGNIFICANT_EVENTS = 20;
+
+export interface SignificantEvent {
+  id: number;
+  icon: string;
+  text: string;
+  kind: 'injury' | 'touchdown' | 'turnover' | 'first_down' | 'score';
+}
+
 interface UseGameEngineReturn {
   gameId: string | null;
   gameState: GameState | null;
@@ -20,6 +29,7 @@ interface UseGameEngineReturn {
   lastDrive: DriveResult | null;
   lastDice: null;
   personnel: PersonnelData | null;
+  significantEvents: SignificantEvent[];
   loading: boolean;
   error: string | null;
   startGame: (homeTeam: string, awayTeam: string, mode: GameMode, seed?: number) => Promise<void>;
@@ -52,8 +62,74 @@ export function useGameEngine(): UseGameEngineReturn {
   const [lastPlay, setLastPlay] = useState<PlayResult | null>(null);
   const [lastDrive, setLastDrive] = useState<DriveResult | null>(null);
   const [personnel, setPersonnel] = useState<PersonnelData | null>(null);
+  const [significantEvents, setSignificantEvents] = useState<SignificantEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const eventIdRef = useRef(0);
+
+  const addSignificantEvents = useCallback(
+    (play: PlayResult, state: GameState) => {
+      const newEvents: SignificantEvent[] = [];
+      const nextId = () => ++eventIdRef.current;
+
+      if (play.injury_player) {
+        newEvents.push({
+          id: nextId(),
+          icon: '🏥',
+          kind: 'injury',
+          text: `${play.injury_player} INJURED — out for ${play.injury_duration ?? '?'} plays (auto-subbed)`,
+        });
+      }
+      if (play.is_touchdown) {
+        const scorer = play.rusher ?? play.receiver ?? play.passer ?? '?';
+        newEvents.push({
+          id: nextId(),
+          icon: '🎉',
+          kind: 'touchdown',
+          text: `TOUCHDOWN by ${scorer}! ${state.home_team} ${state.score.home} – ${state.away_team} ${state.score.away}`,
+        });
+      } else if (play.result === 'FG_GOOD') {
+        newEvents.push({
+          id: nextId(),
+          icon: '🥅',
+          kind: 'score',
+          text: `FIELD GOAL! ${state.home_team} ${state.score.home} – ${state.away_team} ${state.score.away}`,
+        });
+      }
+      if (play.turnover) {
+        const type = play.result === 'INT' ? 'Interception' : 'Fumble';
+        newEvents.push({
+          id: nextId(),
+          icon: '🔄',
+          kind: 'turnover',
+          text: `TURNOVER — ${type}!`,
+        });
+      }
+      // First down: yards >= distance means the play achieved a first down
+      // We detect it indirectly via the state (down reset to 1 on a new series).
+      // Instead, flag if a run/pass resulted in a gain that wasn't a TD/turnover.
+      if (
+        !play.is_touchdown &&
+        !play.turnover &&
+        play.result === 'FIRST_DOWN'
+      ) {
+        const carrier = play.rusher ?? play.receiver ?? '?';
+        newEvents.push({
+          id: nextId(),
+          icon: '📋',
+          kind: 'first_down',
+          text: `FIRST DOWN — ${carrier} (${play.yards >= 0 ? '+' : ''}${play.yards} yds)`,
+        });
+      }
+
+      if (newEvents.length > 0) {
+        setSignificantEvents((prev) =>
+          [...newEvents, ...prev].slice(0, MAX_SIGNIFICANT_EVENTS)
+        );
+      }
+    },
+    [],
+  );
 
   const handleError = (err: unknown) => {
     if (axios.isAxiosError(err)) {
@@ -85,6 +161,7 @@ export function useGameEngine(): UseGameEngineReturn {
       setLastPlay(null);
       setLastDrive(null);
       setPersonnel(null);
+      setSignificantEvents([]);
 
       // Fetch initial personnel
       try {
@@ -106,6 +183,7 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/play`);
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
       // Refresh personnel after play
       try {
         const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
@@ -116,7 +194,7 @@ export function useGameEngine(): UseGameEngineReturn {
     } finally {
       setLoading(false);
     }
-  }, [gameId, gameMode]);
+  }, [gameId, gameMode, addSignificantEvents]);
 
   const executeHumanPlay = useCallback(async (call: HumanPlayCall) => {
     if (!gameId) return;
@@ -126,6 +204,7 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/human-play`, call);
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
       // Refresh personnel after play
       try {
         const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
@@ -136,7 +215,7 @@ export function useGameEngine(): UseGameEngineReturn {
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, addSignificantEvents]);
 
   const executeHumanDefense = useCallback(async (call: DefensivePlayCall) => {
     if (!gameId) return;
@@ -146,6 +225,7 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/human-defense`, call);
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
       // Refresh personnel after play
       try {
         const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
@@ -156,7 +236,7 @@ export function useGameEngine(): UseGameEngineReturn {
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, addSignificantEvents]);
 
   const simulateDrive = useCallback(async () => {
     if (!gameId) return;
@@ -268,6 +348,7 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/fake-punt`);
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
       try {
         const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
         setPersonnel(pRes.data);
@@ -277,7 +358,7 @@ export function useGameEngine(): UseGameEngineReturn {
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, addSignificantEvents]);
 
   const executeFakeFG = useCallback(async () => {
     if (!gameId) return;
@@ -287,6 +368,7 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/fake-fg`);
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
       try {
         const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
         setPersonnel(pRes.data);
@@ -296,7 +378,7 @@ export function useGameEngine(): UseGameEngineReturn {
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, addSignificantEvents]);
 
   const executeCoffinCorner = useCallback(async (deduction: number) => {
     if (!gameId) return;
@@ -306,6 +388,7 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/coffin-corner`, { deduction });
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
       try {
         const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
         setPersonnel(pRes.data);
@@ -315,7 +398,7 @@ export function useGameEngine(): UseGameEngineReturn {
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, addSignificantEvents]);
 
   const executeOnsideKick = useCallback(async (onsideDefense: boolean = false) => {
     if (!gameId) return;
@@ -325,6 +408,7 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/onside-kick`, { onside_defense: onsideDefense });
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
       try {
         const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
         setPersonnel(pRes.data);
@@ -334,7 +418,7 @@ export function useGameEngine(): UseGameEngineReturn {
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, addSignificantEvents]);
 
   const executeSquibKick = useCallback(async () => {
     if (!gameId) return;
@@ -344,6 +428,7 @@ export function useGameEngine(): UseGameEngineReturn {
       const res = await axios.post(`${API_BASE}/games/${gameId}/squib-kick`);
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
       try {
         const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
         setPersonnel(pRes.data);
@@ -353,7 +438,7 @@ export function useGameEngine(): UseGameEngineReturn {
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, addSignificantEvents]);
 
   const executeTwoPointConversion = useCallback(async (playType: string) => {
     if (!gameId) return;
@@ -366,12 +451,13 @@ export function useGameEngine(): UseGameEngineReturn {
       });
       setLastPlay(res.data.play_result);
       setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
     } catch (err) {
       handleError(err);
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, addSignificantEvents]);
 
   const activateBigPlayDefense = useCallback(async () => {
     if (!gameId) return;
@@ -411,6 +497,7 @@ export function useGameEngine(): UseGameEngineReturn {
     lastDrive,
     lastDice: null,
     personnel,
+    significantEvents,
     loading,
     error,
     startGame,

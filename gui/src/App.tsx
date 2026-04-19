@@ -14,6 +14,7 @@ export default function App() {
     lastPlay,
     lastDrive,
     personnel,
+    significantEvents,
     loading,
     error,
     startGame,
@@ -96,6 +97,7 @@ export default function App() {
                 lastDrive={lastDrive}
                 lastDice={null}
                 personnel={personnel}
+                significantEvents={significantEvents}
                 loading={loading}
                 isHumanTurn={isHumanTurn()}
                 isHumanOnDefense={isHumanOnDefense()}
