@@ -43,13 +43,14 @@ const COMPATIBLE_POSITIONS: Record<string, string[]> = {
 };
 
 // Skill formation slots and their display labels
-const SKILL_SLOTS = ['FL', 'LE', 'RE', 'BK1', 'BK2'] as const;
+const SKILL_SLOTS = ['FL', 'LE', 'RE', 'BK1', 'BK2', 'BK3'] as const;
 const SKILL_SLOT_LABELS: Record<string, string> = {
-  FL: 'FL (Flanker/WR2)',
-  LE: 'LE (Left End/WR1)',
-  RE: 'RE (Right End/TE)',
-  BK1: 'BK1 (Back 1/RB1)',
-  BK2: 'BK2 (Back 2/RB2)',
+  FL: 'FL (Flanker / FL#2)',
+  LE: 'LE (Left End / FL#1)',
+  RE: 'RE (Right End / TE)',
+  BK1: 'BK1 (Back 1 / B1)',
+  BK2: 'BK2 (Back 2 / B2)',
+  BK3: 'BK3 (Back 3 / B3 — 3RB set)',
 };
 
 // Formation packages
@@ -59,7 +60,7 @@ const PACKAGES = [
   { key: '3TE', label: '3-TE', desc: 'TE1→RE, TE2→LE, TE3→FL' },
   { key: 'JUMBO', label: 'Jumbo', desc: 'Heavy 3-TE blocking set' },
   { key: '4WR', label: '4-WR', desc: 'WR1→LE, WR2→FL, WR3→RE' },
-  { key: '3RB', label: '3-RB', desc: 'WR1→LE, TE1→RE, RB3→FL, RB1→BK1, RB2→BK2 (power run)' },
+  { key: '3RB', label: '3-RB', desc: 'WR1→FL, TE1→RE, RB1→BK1, RB2→BK2, RB3→BK3 (power run, LE empty)' },
 ] as const;
 
 // Defensive packages

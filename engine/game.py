@@ -431,7 +431,7 @@ class Game:
     # ── On-field slot management ─────────────────────────────────────
 
     # Valid skill slots and OL slots
-    _SKILL_SLOTS = {"FL", "LE", "RE", "BK1", "BK2"}
+    _SKILL_SLOTS = {"FL", "LE", "RE", "BK1", "BK2", "BK3"}
     _OL_SLOTS = {"LT", "LG", "C", "RG", "RT"}
 
     # Defensive position groups (used by apply_defense_package)
@@ -447,8 +447,8 @@ class Game:
         side : str
             ``'home'`` or ``'away'``.
         slot : str
-            Skill slot (``FL``, ``LE``, ``RE``, ``BK1``, ``BK2``) or OL slot
-            (``LT``, ``LG``, ``C``, ``RG``, ``RT``).
+            Skill slot (``FL``, ``LE``, ``RE``, ``BK1``, ``BK2``, ``BK3``) or
+            OL slot (``LT``, ``LG``, ``C``, ``RG``, ``RT``).
         player_name : str or None
             Player name to assign.  Pass ``None`` (or empty string) to clear
             the override and revert to automatic selection.
@@ -508,8 +508,9 @@ class Game:
         ``3TE``       — TE1→RE, TE2→LE, TE3→FL (three tight-end set).
         ``JUMBO``     — same as 3TE but logged as Jumbo package.
         ``4WR``       — WR1→LE, WR2→FL, WR3→RE, no TE on field.
-        ``3RB``       — WR1→LE, TE1→RE, RB3→FL, RB1→BK1, RB2→BK2 (power
-                        run set with three backs, typically FB + 2 RBs).
+        ``3RB``       — WR1→FL, TE1→RE, RB1→BK1, RB2→BK2, RB3→BK3 (three backs
+                        in the B-slots; LE is left empty — single WR, one TE,
+                        three backs). Typically a FB + two HBs power-run set.
         """
         side = side.lower()
         package = package.upper()
@@ -579,23 +580,20 @@ class Game:
             assignments = ", ".join(f"{k}={v}" for k, v in new_overrides.items())
             msg = f"PACKAGE: 2TE_1WR ({side}) — {assignments}"
         elif package == "3RB":
-            # Power run set: WR1→LE, TE1→RE, RB3→FL, RB1→BK1, RB2→BK2
-            # The third RB (often a fullback) fills the FL (flanker) slot so all
-            # three backs can be on the field simultaneously.
+            # Three-back power set: single WR at FL, TE at RE, three RBs in
+            # the B-slots (BK1/BK2/BK3).  LE is intentionally left empty so
+            # exactly 5 skill players are on the field (WR + TE + RB + RB + RB).
             new_overrides_3rb: Dict[str, str] = {}
             if wrs:
-                new_overrides_3rb["LE"] = wrs[0].player_name
+                new_overrides_3rb["FL"] = wrs[0].player_name   # WR1 as sole flanker
             if tes:
-                new_overrides_3rb["RE"] = tes[0].player_name
+                new_overrides_3rb["RE"] = tes[0].player_name   # TE at right end
+            if len(rbs) >= 1:
+                new_overrides_3rb["BK1"] = rbs[0].player_name
+            if len(rbs) >= 2:
+                new_overrides_3rb["BK2"] = rbs[1].player_name
             if len(rbs) >= 3:
-                new_overrides_3rb["FL"] = rbs[2].player_name
-                new_overrides_3rb["BK1"] = rbs[0].player_name
-                new_overrides_3rb["BK2"] = rbs[1].player_name
-            elif len(rbs) == 2:
-                new_overrides_3rb["BK1"] = rbs[0].player_name
-                new_overrides_3rb["BK2"] = rbs[1].player_name
-            elif len(rbs) == 1:
-                new_overrides_3rb["BK1"] = rbs[0].player_name
+                new_overrides_3rb["BK3"] = rbs[2].player_name
             self._on_field_offense[side] = new_overrides_3rb
             assignments_3rb = ", ".join(f"{k}={v}" for k, v in new_overrides_3rb.items())
             msg = f"PACKAGE: 3RB ({side}) — {assignments_3rb}"
@@ -1183,16 +1181,20 @@ class Game:
     def _get_all_receivers(self) -> list:
         """Get on-field receivers in formation position order.
 
-        5E formation has 5 receiver-eligible positions in this order:
-          [0] FL  (Flanker)   — typically WR2
-          [1] LE  (Left End)  — typically WR1 (primary receiver)
-          [2] RE  (Right End) — typically TE1
-          [3] BK1 (Back 1)   — RB1
-          [4] BK2 (Back 2)   — RB2
+        The board has 6 possible skill slots in this order:
+          [0] FL  (Flanker / FL#2)  — typically WR2 (or WR1 in 3RB)
+          [1] LE  (Left End)        — typically WR1 (empty in 3RB)
+          [2] RE  (Right End)       — typically TE1
+          [3] BK1 (Back 1 / B1)    — RB1
+          [4] BK2 (Back 2 / B2)    — RB2
+          [5] BK3 (Back 3 / B3)    — RB3 (only set via override, e.g. 3RB package)
 
-        The FAC card targeting system (FL→0, LE→1, RE→2, BK1→3, BK2→4)
-        relies on this exact ordering so the correct on-field player is
-        targeted for each pass.
+        The on-field list is at most 5 receivers (5 OL + QB + 5 skill = 11).
+        BK3 is included when explicitly overridden; any None slot is dropped
+        and the remaining slots are capped at 5, preserving positional order.
+
+        The FAC card targeting system (A→[0], B→[1], C→[2], D→[3], E→[4])
+        relies on this ordering so the correct on-field player is targeted.
 
         If on-field slot overrides are set (via set_field_slot or
         apply_formation_package), those player assignments take precedence
@@ -1231,11 +1233,15 @@ class Game:
         re = _resolve_override("RE")
         bk1 = _resolve_override("BK1")
         bk2 = _resolve_override("BK2")
+        # BK3 is only populated via explicit override (e.g. 3RB package).
+        # It is never auto-filled so that the standard 5-slot formation is
+        # unchanged when no 3RB package is active.
+        bk3 = _resolve_override("BK3")
 
         # Track which cards are already assigned by overrides (using object id)
         # so the default logic doesn't double-assign them.
         def _assigned_ids() -> set:
-            return {id(c) for c in [fl, le, re, bk1, bk2] if c is not None}
+            return {id(c) for c in [fl, le, re, bk1, bk2, bk3] if c is not None}
 
         avail_wrs = [w for w in wrs if id(w) not in _assigned_ids()]
         avail_tes = [t for t in tes if id(t) not in _assigned_ids()]
@@ -1284,7 +1290,9 @@ class Game:
         if bk2 is None:
             bk2 = avail_rbs[0] if avail_rbs else None
 
-        receivers = [r for r in [fl, le, re, bk1, bk2] if r is not None]
+        # Build ordered list (FL, LE, RE, BK1, BK2, BK3), drop absent slots,
+        # and cap at 5 to keep exactly 5 skill positions on the field.
+        receivers = [r for r in [fl, le, re, bk1, bk2, bk3] if r is not None][:5]
 
         # Assign receiver letters if not already set
         letters = ["A", "B", "C", "D", "E"]

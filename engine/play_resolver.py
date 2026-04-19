@@ -1473,8 +1473,8 @@ class PlayResolver:
             return default_receiver
         if target == "P.Rush":
             return default_receiver  # caller handles P.Rush as sack
-        # Target is a position code: FL, LE, RE, BK1, BK2, etc.
-        target_map = {"FL": 0, "LE": 1, "RE": 2, "BK1": 3, "BK2": 4}
+        # Target is a position code: FL, LE, RE, BK1, BK2, BK3, etc.
+        target_map = {"FL": 0, "LE": 1, "RE": 2, "BK1": 3, "BK2": 4, "BK3": 5}
         idx = target_map.get(target)
         if idx is not None and idx < len(receivers):
             return receivers[idx]
@@ -3633,13 +3633,16 @@ class PlayResolver:
     }
 
     # Map from FAC target / receiver list index to receiver slot name.
-    # receivers list: [0]=FL, [1]=LE, [2]=RE, [3]=BK1, [4]=BK2
+    # receivers list: [0]=FL, [1]=LE, [2]=RE, [3]=BK1, [4]=BK2, [5]=BK3
+    # Note: BK3 appears at index [4] when LE is absent (e.g. 3RB formation)
+    # since the list is compacted.  Slot name targeting uses target_map (below).
     RECEIVER_INDEX_TO_SLOT = {
         0: 'FL',
         1: 'LE',
         2: 'RE',
         3: 'BK1',
         4: 'BK2',
+        5: 'BK3',
     }
 
     @staticmethod
@@ -3678,10 +3681,12 @@ class PlayResolver:
         """Build a position slot → PlayerCard mapping for the current play.
 
         receivers list order: [0]=FL, [1]=LE, [2]=RE/TE, [3]=BK1, [4]=BK2
+        (BK3 occupies position [4] when LE is absent, e.g. in a 3RB set)
         backs_blocking: list of receiver indices (e.g. [3, 4]) for backs
                         staying in to block instead of running routes.
 
-        Returns dict with keys: 'FL', 'LE', 'RE', 'BK1', 'BK2' → PlayerCard or None.
+        Returns dict with keys: 'FL', 'LE', 'RE', 'BK1', 'BK2', 'BK3'
+        → PlayerCard or None.
         """
         blocking = set(backs_blocking or [])
         personnel: Dict[str, Optional[PlayerCard]] = {}
@@ -3695,7 +3700,7 @@ class PlayResolver:
     @staticmethod
     def get_receiver_slot(receiver: PlayerCard,
                           receivers: List[PlayerCard]) -> Optional[str]:
-        """Return the slot name ('FL', 'LE', 'RE', 'BK1', 'BK2') for a receiver."""
+        """Return the slot name ('FL', 'LE', 'RE', 'BK1', 'BK2', 'BK3') for a receiver."""
         for idx, rec in enumerate(receivers):
             if rec is receiver or rec.player_name == receiver.player_name:
                 return PlayResolver.RECEIVER_INDEX_TO_SLOT.get(idx)

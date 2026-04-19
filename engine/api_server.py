@@ -184,7 +184,7 @@ class PositionChangeRequest(BaseModel):
 
 class SetFieldSlotRequest(BaseModel):
     """Assign a specific player to an on-field formation slot."""
-    slot: str        # FL, LE, RE, BK1, BK2  or  LT, LG, C, RG, RT
+    slot: str        # FL, LE, RE, BK1, BK2, BK3  or  LT, LG, C, RG, RT
     player_name: Optional[str] = None  # None / empty to clear the slot
     team: str = "possession"  # 'home', 'away', or 'possession' (auto-detect)
 
@@ -1208,7 +1208,7 @@ def _resolve_side(game: Game, team_param: str) -> str:
 def set_field_slot(game_id: str, request: SetFieldSlotRequest):
     """Assign (or clear) a player to an on-field formation slot.
 
-    Skill slots: FL, LE, RE, BK1, BK2
+    Skill slots: FL, LE, RE, BK1, BK2, BK3
     OL slots:    LT, LG, C, RG, RT
 
     Passing ``player_name`` as null or empty string clears the slot and
