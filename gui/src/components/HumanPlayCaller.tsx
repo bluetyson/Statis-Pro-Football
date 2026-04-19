@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState, HumanPlayCall, PersonnelData } from '../types/game';
 import { OFFENSIVE_STRATEGIES } from '../types/game';
 
@@ -131,6 +131,25 @@ export function HumanPlayCaller({
     () => availableBallCarriers.find((p) => p.position === 'RB') ?? availableBallCarriers[0] ?? null,
     [availableBallCarriers],
   );
+
+  // For human pass plays, default to the best healthy receiver rather than
+  // "Auto (FAC card)".  5E rules always require the human to name a target.
+  // Priority: lowest endurance_pass (0 = unlimited is best) → WR before TE
+  // → first in list order.
+  const defaultReceiver = useMemo(() => {
+    if (availableReceiverTargets.length === 0) return null;
+    const sorted = [...availableReceiverTargets].sort((a, b) => {
+      const endA = a.endurance_pass ?? 99;
+      const endB = b.endurance_pass ?? 99;
+      if (endA !== endB) return endA - endB;
+      // Tie-break: WR before TE
+      const posRankA = a.position === 'WR' ? 0 : 1;
+      const posRankB = b.position === 'WR' ? 0 : 1;
+      return posRankA - posRankB;
+    });
+    return sorted[0] ?? null;
+  }, [availableReceiverTargets]);
+
   const noEligiblePlayer = useMemo(
     () => ((selectedPlay === 'RUN' || selectedPlay === 'END_AROUND') && availableBallCarriers.length === 0) ||
       (['SHORT_PASS', 'LONG_PASS', 'QUICK_PASS', 'SCREEN'].includes(selectedPlay) && availableReceiverTargets.length === 0),
@@ -140,9 +159,36 @@ export function HumanPlayCaller({
   useEffect(() => {
     const pool = isRunPlay ? availableBallCarriers : availableReceiverTargets;
     if (selectedPlayer && !pool.some((p) => p.name === selectedPlayer)) {
-      setSelectedPlayer('');
+      // When switching from run to pass or personnel changes and selected
+      // player is no longer available, auto-select best receiver for passes.
+      if (isPassPlay && defaultReceiver) {
+        setSelectedPlayer(defaultReceiver.name);
+      } else {
+        setSelectedPlayer('');
+      }
     }
-  }, [availableBallCarriers, availableReceiverTargets, isRunPlay, selectedPlayer]);
+  }, [availableBallCarriers, availableReceiverTargets, isRunPlay, isPassPlay, selectedPlayer, defaultReceiver]);
+
+  // When switching to a pass play, auto-select the best healthy receiver
+  // (human players must always name a target — there is no FAC auto-select rule).
+  // Use a ref to track previous isPassPlay so we only react to the transition.
+  const prevIsPassPlayRef = useRef(isPassPlay);
+  useEffect(() => {
+    const wasPassPlay = prevIsPassPlayRef.current;
+    prevIsPassPlayRef.current = isPassPlay;
+    if (isPassPlay && !wasPassPlay) {
+      // Switched TO a pass play — auto-select best receiver if nothing chosen.
+      if (!selectedPlayer && defaultReceiver) {
+        setSelectedPlayer(defaultReceiver.name);
+      }
+    } else if (!isPassPlay && wasPassPlay) {
+      // Switched AWAY from a pass play — clear receiver to avoid it being
+      // misinterpreted as a ball carrier on run plays.
+      if (selectedPlayer) {
+        setSelectedPlayer('');
+      }
+    }
+  }, [isPassPlay, selectedPlayer, defaultReceiver]);
 
   // Notify parent whenever the selected ball carrier changes
   useEffect(() => {
@@ -313,13 +359,18 @@ export function HumanPlayCaller({
             onChange={(e) => setSelectedPlayer(e.target.value)}
             disabled={disabled}
           >
-            <option value="">Auto (FAC card determines)</option>
+            <option value="">— pick a receiver —</option>
             {receiverTargets.map((p) => (
               <option key={p.name} value={p.name} disabled={p.injured}>
                 {p.name} ({p.position}{p.receiver_letter ? ` [${p.receiver_letter}]` : ''}) - {p.overall_grade}{p.injured ? ' [INJ]' : ''}
               </option>
             ))}
           </select>
+          {selectedPlayer && defaultReceiver && selectedPlayer === defaultReceiver.name && (
+            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '2px' }}>
+              ✓ Auto-selected best available receiver
+            </div>
+          )}
         </div>
       )}
 

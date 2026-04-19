@@ -278,18 +278,21 @@ class Game:
         return None
 
     def _immediate_injury_swap(self, injured_player_name: str) -> None:
-        """Immediately swap an injured player out of the starter slot.
+        """Immediately swap an injured player out of their roster slot.
 
         When a player is injured mid-play, the formation grid must reflect
         the replacement at once — not on the next play.  Walk every position
-        list on *both* teams and, if the injured player sits in the starter
-        slot (index 0), promote the first healthy backup.
+        list on *both* teams.  If the injured player is found at *any* index
+        (not only the starter slot), move them to the end of the list and
+        promote the first healthy backup into their vacated slot so that
+        subsequent ``_resolve_position_player`` calls and personnel views
+        both reflect the active in-game lineup.
 
         The replacement is logged in the play log as a substitution entry
         so coaches can see exactly who entered the game, at which slot.
         """
-        # Default formation slot by (position, roster-index).  Used when no
-        # explicit on-field slot override is registered for the player.
+        # Default formation slot by position.  Used when no explicit on-field
+        # slot override is registered for the injured player.
         _DEFAULT_SLOT: Dict[str, str] = {
             "QB": "QB", "RB": "BK1", "WR": "LE", "TE": "RE", "K": "K", "P": "P",
         }
@@ -305,27 +308,49 @@ class Game:
                 (team.roster.punters, "P"),
             ]
             for players, pos in pos_lists:
-                if not players or players[0].player_name != injured_player_name:
-                    continue
-                # The injured player is currently in the starter slot — swap.
-                # Find the first healthy backup before calling _resolve_position_player
-                # so we can log the exact replacement.
-                replacement = None
-                for idx, player in enumerate(players[1:], start=1):
-                    if not self._is_player_unavailable(player):
-                        replacement = player
-                        break
-                self._resolve_position_player(players, pos)
-
-                # Determine the formation slot: explicit assignment → default.
-                on_field = self._on_field_offense.get(side, {})
-                slot = next(
-                    (s for s, name in on_field.items()
-                     if name == injured_player_name),
+                # Find the injured player at any roster index
+                injured_idx = next(
+                    (i for i, p in enumerate(players)
+                     if p.player_name == injured_player_name),
                     None,
-                ) or _DEFAULT_SLOT.get(pos, pos)
+                )
+                if injured_idx is None:
+                    continue
 
-                if replacement:
+                # Find the first healthy backup beyond the injured player's slot
+                replacement = None
+                replacement_idx = None
+                for idx in range(injured_idx + 1, len(players)):
+                    if not self._is_player_unavailable(players[idx]):
+                        replacement = players[idx]
+                        replacement_idx = idx
+                        break
+
+                if replacement is not None and replacement_idx is not None:
+                    # Swap the injured player with the healthy backup so the
+                    # backup occupies the vacated slot and the injured player
+                    # moves toward the end of the depth chart.
+                    players[injured_idx], players[replacement_idx] = (
+                        players[replacement_idx], players[injured_idx]
+                    )
+                    # If there is an explicit on-field slot override pointing
+                    # at the injured player, redirect it to the replacement.
+                    on_field = self._on_field_offense.get(side, {})
+                    slot = next(
+                        (s for s, name in on_field.items()
+                         if name == injured_player_name),
+                        None,
+                    )
+                    if slot:
+                        on_field[slot] = replacement.player_name
+                    else:
+                        slot = _DEFAULT_SLOT.get(pos, pos)
+
+                    note = (
+                        f"Auto-sub at {pos}: {replacement.player_name} "
+                        f"replaces injured {injured_player_name} at {slot}"
+                    )
+                    self._record_personnel_note(note)
                     self.state.play_log.append(
                         f"  SUB IN:  {replacement.player_name} ({pos}) "
                         f"replaces {injured_player_name} ({pos}) at {slot}"

@@ -50,6 +50,8 @@ export interface PlayResult {
   personnel_note?: string | null;
   box_assignments?: Record<string, string> | null;
   debug_log?: string[];
+  injury_player?: string | null;
+  injury_duration?: number | null;
 }
 
 export interface DriveResult {
