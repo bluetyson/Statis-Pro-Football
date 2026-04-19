@@ -1228,7 +1228,7 @@ class TestSolitaireRules:
         sit = GameSituation(down=1, distance=10, yard_line=85,
                             score_diff=0, quarter=1, time_remaining=600)
         result = ai.convert_prevent_within_20(sit, "3_4_ZONE")
-        assert result == "4_3_COVER2"
+        assert result == "4_3"
 
     def test_no_conversion_outside_20(self):
         from engine.solitaire import SolitaireAI, GameSituation

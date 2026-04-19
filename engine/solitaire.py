@@ -231,6 +231,10 @@ class SolitaireAI:
         "NICKEL", "GOAL_LINE".  Blitz calls are signalled via the
         DefensivePlay enum (call_defense_play_5e); this method only
         returns the personnel/formation on the field.
+
+        Nickel (4-2-5) is selected on 3rd down with 5+ yards to go:
+        this covers both 3rd-and-medium (5-6 yds) and 3rd-and-long
+        (7+ yds) passing situations where an extra DB replaces a LB.
         """
         if fac_card is not None and not fac_card.is_z_card:
             solo_dict = fac_card.parse_solo()
@@ -393,9 +397,8 @@ class SolitaireAI:
         When the offense is inside the opponent's 20-yard line, Prevent
         Defense is ineffective and should be converted to Pass Defense.
 
-        This method operates on legacy formation strings for backward
-        compatibility.  The string "PREVENT_DEFENSE" (or the old combined
-        names "3_4_ZONE" / "NICKEL_ZONE") is converted to "4_3_COVER2".
+        The strings "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE", and
+        "NICKEL" are converted to "4_3" (base pass defense formation).
         All other strings are returned unchanged.
 
         .. note::
@@ -407,7 +410,7 @@ class SolitaireAI:
         if situation.yard_line >= 80 and defense_formation in (
             "PREVENT_DEFENSE", "3_4_ZONE", "NICKEL_ZONE", "NICKEL",
         ):
-            return "4_3_COVER2"  # Convert to pass defense formation string
+            return "4_3"  # Convert prevent/nickel to base pass defense formation
         return defense_formation
 
 
