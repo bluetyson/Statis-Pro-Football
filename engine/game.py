@@ -1712,6 +1712,9 @@ class Game:
                 )
                 self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
+                if hasattr(result, 'debug_log') and result.debug_log:
+                    for dl_entry in result.debug_log:
+                        self.state.play_log.append(f"    {dl_entry}")
                 self._advance_down(result.yards_gained)
                 time_used = self._calculate_time(result)
                 self._advance_time(time_used)
@@ -1752,6 +1755,9 @@ class Game:
                 )
                 self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
+                if hasattr(result, 'debug_log') and result.debug_log:
+                    for dl_entry in result.debug_log:
+                        self.state.play_log.append(f"    {dl_entry}")
                 if result.turnover:
                     self._handle_turnover(result)
                     return result

@@ -1642,7 +1642,10 @@ class PlayResolver:
                 log.append("[P.RUSH] Pass rush triggered by FAC card")
             # Pass rush result → check QB's pass_rush ranges
             if qb.pass_rush:
-                pn = fac_card.pass_num_int or random.randint(1, 48)
+                # PN comes directly from the FAC card (1-48 per 5E rules).
+                # The fallback random.randint(1, 48) covers unparseable cards.
+                # PN is never modified — only the QB's sack range shifts.
+                pn = min(fac_card.pass_num_int or random.randint(1, 48), 48)
                 log.append(f"[P.RUSH] PN={pn}, QB pass_rush ranges: sack_max={qb.pass_rush.sack_max}, runs_max={qb.pass_rush.runs_max}, com_max={qb.pass_rush.com_max}")
 
                 # Per 5E rules Steps 1-3:
