@@ -206,7 +206,7 @@ export function SubstitutionPanel({
         { box: 'O', pos: 'CB', name: 'O (LCB)' },
         { box: 'N', pos: 'SS', name: 'N (SS)' },
         { box: 'M', pos: 'FS', name: 'M (FS)' },
-        { box: 'L', pos: 'DB', name: 'L (5th DB)' },
+        { box: 'L', pos: 'DB', name: 'L (NCB)' },
         { box: 'K', pos: 'CB', name: 'K (RCB)' },
       ],
     },

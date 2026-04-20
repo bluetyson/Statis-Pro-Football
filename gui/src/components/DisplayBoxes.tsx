@@ -21,7 +21,7 @@ interface BoxData {
 const ROW_LABELS: Record<string, string> = {
   A: 'A (RE)', B: 'B (RT)', C: 'C (NT)', D: 'D (LT)', E: 'E (LE)',
   F: 'F (RLB)', G: 'G (OLB)', H: 'H (MLB)', I: 'I (ILB)', J: 'J (LLB)',
-  K: 'K (RCB)', L: 'L (DB)', M: 'M (FS)', N: 'N (SS)', O: 'O (LCB)',
+  K: 'K (RCB)', L: 'L (NCB)', M: 'M (FS)', N: 'N (SS)', O: 'O (LCB)',
 };
 
 const PASS_DEFENSE_MAP: Record<string, string> = {
