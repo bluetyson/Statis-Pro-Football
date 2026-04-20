@@ -528,19 +528,27 @@ function buildSecondarySlots(players: PlayerBrief[], formation?: string): Defens
   const extras = players.filter(p => !['CB', 'SS', 'FS', 'S', 'DB'].includes(p.position.toUpperCase()));
   const active = new Set(activeByFamily[family]);
 
-  return labels.map((label, index) => {
-    if (!active.has(index)) {
-      return { key: `db-${index}`, label, player: null };
-    }
+  // Fill slots in priority order: K(CB), O(CB), M(FS), N(SS), then L(OBOX/5th DB).
+  // Filling the two CB corners and both safety slots first ensures the OBOX nickel-back
+  // slot receives whichever DB is left over rather than stealing a safety from FS/SS —
+  // which would leave one of those positions empty in NICKEL.
+  const slotPlayers: (PlayerBrief | null)[] = [null, null, null, null, null];
+  const fillOrder = [0, 4, 2, 3, 1]; // K(RCB), O(LCB), M(FS), N(SS), L(OBOX)
+  for (const idx of fillOrder) {
+    if (!active.has(idx)) continue;
+    const label = labels[idx];
+    slotPlayers[idx] =
+      label === 'CB'   ? takeFirst([cbs, safeties, extras]) :
+      label === 'SS'   ? takeFirst([strongSafeties, safeties, extras]) :
+      label === 'FS'   ? takeFirst([freeSafeties, safeties, extras]) :
+      takeFirst([safeties, cbs, extras]);  // OBOX: spare DB or CB as nickel back
+  }
 
-    const player =
-      label === 'CB' ? takeFirst([cbs, safeties, extras]) :
-      label === 'SS' ? takeFirst([strongSafeties, safeties, extras]) :
-      label === 'FS' ? takeFirst([freeSafeties, safeties, extras]) :
-      takeFirst([safeties, cbs, extras]);
-
-    return { key: `db-${index}`, label, player };
-  });
+  return labels.map((label, index) => ({
+    key: `db-${index}`,
+    label,
+    player: active.has(index) ? slotPlayers[index] : null,
+  }));
 }
 
 function DefensiveSlotCard({ slot }: { slot: DefensiveSlot }) {

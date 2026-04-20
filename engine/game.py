@@ -533,6 +533,20 @@ class Game:
     def get_rb(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         return self._resolve_position_player(self.get_offense_team().roster.rbs, "RB", player_name)
 
+    def _pick_fresh_rb(self) -> Optional[PlayerCard]:
+        """Return the first healthy RB without an endurance violation.
+
+        Used by AI play calling so a fatigued back is not sent on a run when
+        a fresher alternative is available.  Falls back to the first healthy
+        RB when every available back has an endurance issue.
+        """
+        rbs = self.get_offense_team().roster.rbs
+        healthy = [r for r in rbs if not self._is_player_unavailable(r)]
+        if not healthy:
+            return None
+        fresh = [r for r in healthy if self._check_endurance_violation(r) is None]
+        return fresh[0] if fresh else healthy[0]
+
     def get_wr(self, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         return self._resolve_position_player(self.get_offense_team().roster.wrs, "WR", player_name)
 
@@ -1686,7 +1700,11 @@ class Game:
                 return result
         elif strategy == "DRAW":
             # Draw play can use any back (RB or QB) as ball carrier
-            rusher = self.get_rb(player_name)
+            if player_name:
+                rusher = self.get_rb(player_name)
+            else:
+                # AI play: prefer a fresh (non-fatigued) RB
+                rusher = self._pick_fresh_rb()
             if rusher is None:
                 rusher = self.get_qb(player_name)
             # Use the human-provided defense formation when available; only fall back to AI
@@ -1941,16 +1959,20 @@ class Game:
                         player_name: Optional[str] = None,
                         defensive_play_5e: Optional[DefensivePlay] = None) -> PlayResult:
         # Allow QB or WR as ball carrier (end-around, designed QB run)
-        rusher = self.get_rb(player_name)
-        if player_name and (rusher is None or rusher.player_name != player_name):
-            # Check if it's a QB or WR being used as ball carrier
-            qb = self.get_qb(player_name)
-            if qb and qb.player_name == player_name:
-                rusher = qb
-            else:
-                wr = self.get_wr(player_name)
-                if wr and wr.player_name == player_name:
-                    rusher = wr
+        if player_name:
+            rusher = self.get_rb(player_name)
+            if rusher is None or rusher.player_name != player_name:
+                # Check if it's a QB or WR being used as ball carrier
+                qb = self.get_qb(player_name)
+                if qb and qb.player_name == player_name:
+                    rusher = qb
+                else:
+                    wr = self.get_wr(player_name)
+                    if wr and wr.player_name == player_name:
+                        rusher = wr
+        else:
+            # AI play: prefer a fresh (non-fatigued) RB when options exist
+            rusher = self._pick_fresh_rb()
         if rusher is None:
             rusher = self.get_rb()
         defense = self.get_defense_team()
