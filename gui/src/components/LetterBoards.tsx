@@ -512,15 +512,15 @@ function buildLinebackerSlots(players: PlayerBrief[], formation?: string): Defen
 
 function buildSecondarySlots(players: PlayerBrief[], formation?: string): DefensiveSlot[] {
   const family = defenseFamily(formation);
-  // Vassal layout (left→right when displayed reversed): RCB(K), 5th(L), FS(M), SS(N), LCB(O)
-  // After reversing the render order this displays as: O(LCB), N(SS), M(FS), L(5th), K(RCB)
+  // Array layout (left→right when displayed reversed): RCB(K), NCB(L), FS(M), SS(N), LCB(O)
+  // After reversing the render order this displays as: O(LCB), N(SS), M(FS), L(NCB), K(RCB)
   const activeByFamily: Record<typeof family, number[]> = {
     '4_3': [0, 2, 3, 4],
     '3_4': [0, 2, 3, 4],
     'NICKEL': [0, 1, 2, 3, 4],
     'GOAL_LINE': [0, 2, 3, 4],
   };
-  const labels = ['CB', 'OBOX', 'FS', 'SS', 'CB'];
+  const labels = ['CB', 'NCB', 'FS', 'SS', 'CB'];
   const cbs = players.filter(p => p.position.toUpperCase() === 'CB');
   const strongSafeties = players.filter(p => p.position.toUpperCase() === 'SS');
   const freeSafeties = players.filter(p => p.position.toUpperCase() === 'FS');
@@ -528,19 +528,27 @@ function buildSecondarySlots(players: PlayerBrief[], formation?: string): Defens
   const extras = players.filter(p => !['CB', 'SS', 'FS', 'S', 'DB'].includes(p.position.toUpperCase()));
   const active = new Set(activeByFamily[family]);
 
-  return labels.map((label, index) => {
-    if (!active.has(index)) {
-      return { key: `db-${index}`, label, player: null };
-    }
+  // Fill slots in priority order: K(CB), O(CB), M(FS), N(SS), then L(NCB/nickel back).
+  // Filling the two CB corners and both safety slots first ensures box L receives
+  // whichever DB is left over rather than stealing a safety from FS/SS —
+  // which would leave one of those positions empty in NICKEL.
+  const slotPlayers: (PlayerBrief | null)[] = [null, null, null, null, null];
+  const fillOrder = [0, 4, 2, 3, 1]; // K(RCB), O(LCB), M(FS), N(SS), L(NCB)
+  for (const idx of fillOrder) {
+    if (!active.has(idx)) continue;
+    const label = labels[idx];
+    slotPlayers[idx] =
+      label === 'CB'   ? takeFirst([cbs, safeties, extras]) :
+      label === 'SS'   ? takeFirst([strongSafeties, safeties, extras]) :
+      label === 'FS'   ? takeFirst([freeSafeties, safeties, extras]) :
+      takeFirst([safeties, cbs, extras]);  // NCB (box L): spare DB or CB as nickel back
+  }
 
-    const player =
-      label === 'CB' ? takeFirst([cbs, safeties, extras]) :
-      label === 'SS' ? takeFirst([strongSafeties, safeties, extras]) :
-      label === 'FS' ? takeFirst([freeSafeties, safeties, extras]) :
-      takeFirst([safeties, cbs, extras]);
-
-    return { key: `db-${index}`, label, player };
-  });
+  return labels.map((label, index) => ({
+    key: `db-${index}`,
+    label,
+    player: active.has(index) ? slotPlayers[index] : null,
+  }));
 }
 
 function DefensiveSlotCard({ slot }: { slot: DefensiveSlot }) {
@@ -738,7 +746,7 @@ export function LetterBoards({ personnel, defenseFormation, selectedBallCarrier,
             {/* Row 3: Defensive Backs — reversed so O(LCB) is leftmost, N(SS) near left, K(RCB) rightmost */}
             <div className="board-row board-row-label">
               <span className="row-label-text">DEFENSIVE BACKS</span>
-              <span className="row-letters">O(LCB) N(SS) M(FS) L(DB) K(RCB)</span>
+              <span className="row-letters">O(LCB) N(SS) M(FS) L(NCB) K(RCB)</span>
             </div>
             <div className="board-row board-row-db">
               {[...secondarySlots].reverse().map(slot => (
