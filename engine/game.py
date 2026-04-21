@@ -1688,6 +1688,7 @@ class Game:
                 self.state.play_log.append(f"  → {result.description}")
                 self._advance_down(result.yards_gained)
                 self._advance_time(self.TIME_STANDARD_PLAY)
+                self._track_play_stats(result)
                 return result
         elif strategy == "SNEAK":
             qb = self.get_qb(player_name)
@@ -1697,6 +1698,7 @@ class Game:
                 self.state.play_log.append(f"  → {result.description}")
                 self._advance_down(result.yards_gained)
                 self._advance_time(self.TIME_STANDARD_PLAY)
+                self._track_play_stats(result)
                 return result
         elif strategy == "DRAW":
             # Draw play can use any back (RB or QB) as ball carrier
