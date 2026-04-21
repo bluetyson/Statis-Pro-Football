@@ -131,6 +131,7 @@ interface GameBoardProps {
   onCoffinCorner: (deduction: number) => void;
   onOnsideKick: (onsideDefense?: boolean) => void;
   onSquibKick: () => void;
+  onPATKick: () => void;
   onTwoPointConversion: (playType: string) => void;
   onBigPlayDefense: () => void;
   onTwoMinuteOffense: () => void;
@@ -164,6 +165,7 @@ export function GameBoard({
   onCoffinCorner,
   onOnsideKick,
   onSquibKick,
+  onPATKick,
   onTwoPointConversion,
   onBigPlayDefense,
   onTwoMinuteOffense,
@@ -178,8 +180,8 @@ export function GameBoard({
   /** Name of the ball carrier selected in the HumanPlayCaller dropdown ('' = auto). */
   const [selectedBallCarrier, setSelectedBallCarrier] = useState<string>('');
 
-  // Detect touchdown for two-point conversion option
-  const isTouchdown = lastPlay?.is_touchdown === true;
+  // Show the PAT/2-pt prompt only when the engine is waiting for the human's decision
+  const isTouchdown = state.pending_extra_point === true;
 
   // Halftime / Quarter break detection
   const isHalftime = state.quarter === 2 && state.time_remaining === 0 && !state.is_over;
@@ -266,20 +268,33 @@ export function GameBoard({
         </div>
       )}
 
-      {/* Two-point conversion prompt after TD */}
+      {/* PAT / Two-point conversion prompt — shown when the human's team just scored a TD */}
       {isTouchdown && isInteractive && (
         <div className="two-point-prompt">
-          <span className="two-point-label">🎉 TOUCHDOWN! Extra point attempt:</span>
+          <span className="two-point-label">🎉 TOUCHDOWN! Choose your extra-point attempt:</span>
           <div className="two-point-buttons">
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowTwoPoint(false)} disabled={loading}>
-              ✅ PAT (kick)
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => { onPATKick(); setShowTwoPoint(false); }}
+              disabled={loading}
+              title="Kick the extra point (1 pt if good)"
+            >
+              🦵 PAT — Kick Extra Point
             </button>
-            <button className="btn btn-accent btn-sm" onClick={() => setShowTwoPoint(true)} disabled={loading}>
-              2️⃣ Two-Point Conversion
+            <button
+              className="btn btn-accent btn-sm"
+              onClick={() => setShowTwoPoint(true)}
+              disabled={loading}
+              title="Go for 2 points from the 2-yard line"
+            >
+              2️⃣ Go for 2-Point Conversion
             </button>
           </div>
           {showTwoPoint && (
             <div className="two-point-options">
+              <span style={{ fontSize: '0.8em', color: '#aaa', marginBottom: '4px', display: 'block' }}>
+                Choose play type for 2-pt attempt from the 2-yard line:
+              </span>
               <button className="btn btn-primary btn-sm" onClick={() => { onTwoPointConversion('RUN'); setShowTwoPoint(false); }} disabled={loading}>
                 🏃 Run
               </button>

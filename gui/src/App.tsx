@@ -30,6 +30,7 @@ export default function App() {
     executeCoffinCorner,
     executeOnsideKick,
     executeSquibKick,
+    executePATKick,
     executeTwoPointConversion,
     activateBigPlayDefense,
     declareTwoMinuteOffense,
@@ -114,6 +115,7 @@ export default function App() {
                 onCoffinCorner={executeCoffinCorner}
                 onOnsideKick={executeOnsideKick}
                 onSquibKick={executeSquibKick}
+                onPATKick={executePATKick}
                 onTwoPointConversion={executeTwoPointConversion}
                 onBigPlayDefense={activateBigPlayDefense}
                 onTwoMinuteOffense={declareTwoMinuteOffense}

@@ -287,6 +287,11 @@ def execute_play(game_id: str):
 
     if game.state.is_over:
         raise HTTPException(status_code=400, detail="Game is over")
+    if game.state.pending_extra_point:
+        raise HTTPException(
+            status_code=400,
+            detail="A touchdown was just scored — choose PAT (kick) or 2-point conversion before calling a new play.",
+        )
 
     result = game.execute_play()
 
@@ -304,6 +309,11 @@ def execute_human_play(game_id: str, request: HumanPlayCallRequest):
 
     if game.state.is_over:
         raise HTTPException(status_code=400, detail="Game is over")
+    if game.state.pending_extra_point:
+        raise HTTPException(
+            status_code=400,
+            detail="A touchdown was just scored — choose PAT (kick) or 2-point conversion before calling a new play.",
+        )
 
     play_call = PlayCall(
         play_type=request.play_type.upper(),
@@ -358,6 +368,11 @@ def execute_human_defense(game_id: str, request: DefensivePlayCallRequest):
 
     if game.state.is_over:
         raise HTTPException(status_code=400, detail="Game is over")
+    if game.state.pending_extra_point:
+        raise HTTPException(
+            status_code=400,
+            detail="A touchdown was just scored — choose PAT (kick) or 2-point conversion before calling a new play.",
+        )
 
     formation = request.formation.upper()
     if formation not in VALID_FORMATIONS:
@@ -799,6 +814,7 @@ def _serialize_state(state: GameState) -> dict:
         "penalty_yards": state.penalty_yards,
         "turnovers": state.turnovers,
         "player_stats": state.player_stats,
+        "pending_extra_point": state.pending_extra_point,
     }
 
 
@@ -931,47 +947,54 @@ def execute_all_out_punt_rush(game_id: str):
 
 @app.post("/games/{game_id}/two-point-conversion")
 def execute_two_point_conversion(game_id: str, request: TwoPointConversionRequest):
-    """Execute a two-point conversion attempt after a touchdown."""
+    """Execute a two-point conversion attempt after a human-scored touchdown."""
     game = _get_game(game_id)
     if game.state.is_over:
         raise HTTPException(status_code=400, detail="Game is over")
+    if not game.state.pending_extra_point:
+        raise HTTPException(
+            status_code=400,
+            detail="No touchdown pending — cannot attempt a two-point conversion right now.",
+        )
 
-    # Create a play call for the 2-point conversion
-    play_call = PlayCall(
-        play_type=request.play_type.upper(),
-        formation="SHOTGUN",
-        direction=request.direction.upper(),
-        reasoning="Two-point conversion attempt",
-    )
+    try:
+        result = game.execute_two_point_conversion_attempt(
+            play_type=request.play_type,
+            player_name=request.player_name if request.player_name else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
-    # Set field position to 2-yard line
-    original_yl = game.state.yard_line
-    game.state.yard_line = 98  # 2 yards from opponent's end zone
-
-    result = game.execute_play(
-        play_call=play_call,
-        player_name=request.player_name if request.player_name else None,
-    )
-
-    # Check if the play gained at least 2 yards
-    if result.yards_gained >= 2 or result.is_touchdown:
-        # Two-point conversion successful
-        if game.state.possession == "home":
-            game.state.score.home += 2
-        else:
-            game.state.score.away += 2
-        game.state.play_log.append("✅ Two-point conversion GOOD!")
-        result_desc = "Two-point conversion successful!"
-    else:
-        game.state.play_log.append("❌ Two-point conversion FAILED")
-        result_desc = "Two-point conversion failed"
-
-    # Restore state for kickoff
-    game.state.yard_line = original_yl
+    success = "Two-point conversion GOOD!" in (game.state.play_log[-5:] if game.state.play_log else [])
+    result_desc = "Two-point conversion successful!" if success else "Two-point conversion failed"
 
     return {
         "game_id": game_id,
         "result": result_desc,
+        "play_result": _serialize_play_result(result),
+        "state": _serialize_state(game.state),
+    }
+
+
+@app.post("/games/{game_id}/pat-kick")
+def execute_pat_kick(game_id: str):
+    """Execute the PAT (point-after-touchdown) kick after a human-scored touchdown."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+    if not game.state.pending_extra_point:
+        raise HTTPException(
+            status_code=400,
+            detail="No touchdown pending — cannot attempt a PAT kick right now.",
+        )
+
+    try:
+        result = game.execute_pat_kick()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return {
+        "game_id": game_id,
         "play_result": _serialize_play_result(result),
         "state": _serialize_state(game.state),
     }

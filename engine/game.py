@@ -98,6 +98,9 @@ class GameState:
     turnovers: Dict[str, int] = field(default_factory=lambda: {"home": 0, "away": 0})
     # Player stats: {player_name: {stat_type: value}}
     player_stats: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    # Human PAT/2-pt decision: set True after a human team scores a TD, cleared
+    # once the human chooses PAT kick or 2-point conversion.
+    pending_extra_point: bool = False
 
     def get_possession_team(self) -> str:
         return self.possession
@@ -968,6 +971,151 @@ class Game:
             else:
                 self.state.score.away += 1
 
+    def _score_td_only(self) -> None:
+        """Score 6 points for a touchdown by the human player's team.
+
+        Unlike _score_touchdown(), this does NOT auto-kick the PAT or perform
+        the kickoff — instead it sets pending_extra_point so the human can
+        choose between a PAT kick and a 2-point conversion.
+        """
+        if self.state.possession == "home":
+            self.state.score.home += 6
+        else:
+            self.state.score.away += 6
+        self.state.play_log.append(
+            f"TOUCHDOWN! Score: Away {self.state.score.away} - Home {self.state.score.home}"
+        )
+        self.state.pending_extra_point = True
+
+    def execute_pat_kick(self) -> "PlayResult":
+        """Execute the PAT (point-after-touchdown) kick chosen by the human.
+
+        Resolves the XP kick, awards 1 point if good, performs the kickoff,
+        and clears pending_extra_point.
+        """
+        if not self.state.pending_extra_point:
+            raise ValueError("No pending extra point to resolve")
+        self.state.pending_extra_point = False
+
+        kicker = self.get_kicker()
+        if kicker:
+            xp = self.resolver.resolve_xp(kicker)
+            self.state.play_log.append(xp.description)
+            if xp.result == "XP_GOOD":
+                if self.state.possession == "home":
+                    self.state.score.home += 1
+                else:
+                    self.state.score.away += 1
+        else:
+            # No kicker on roster — auto-award the point
+            if self.state.possession == "home":
+                self.state.score.home += 1
+            else:
+                self.state.score.away += 1
+            from .play_resolver import PlayResult as _PR
+            xp = _PR("XP", 0, "XP_GOOD", description="Extra point is good! (auto)")
+
+        self.state.play_log.append(
+            f"Score: Away {self.state.score.away} - Home {self.state.score.home}"
+        )
+
+        # Kickoff after the extra point
+        kickoff = self._do_kickoff(
+            kicking_team=self.get_offense_team(),
+            receiving_team=self.get_defense_team(),
+        )
+        self._log_kickoff(kickoff)
+        new_yl = self._kickoff_yard_line(kickoff)
+        self._change_possession(new_yl)
+
+        return xp
+
+    def execute_two_point_conversion_attempt(
+        self, play_type: str, player_name: Optional[str] = None
+    ) -> "PlayResult":
+        """Execute a 2-point conversion attempt chosen by the human.
+
+        Resolves the play at the 2-yard line using the FAC resolver (without
+        going through the full execute_play() state machine), awards 2 points
+        on success, performs the kickoff, and clears pending_extra_point.
+
+        play_type: 'RUN', 'SHORT_PASS', or 'QUICK_PASS'
+        Returns the PlayResult for the conversion attempt.
+        """
+        if not self.state.pending_extra_point:
+            raise ValueError("No pending extra point to resolve")
+        self.state.pending_extra_point = False
+
+        fac_card = self.deck.draw()
+        situation = self.state.to_situation()
+
+        # AI calls defense for the 2-pt attempt
+        def_formation, def_play_5e, def_strategy_5e = self.ai.call_defense_play_5e(
+            situation, fac_card,
+            base_defense=self.get_defense_team().base_defense,
+        )
+
+        play_call = PlayCall(
+            play_type=play_type.upper(),
+            formation="SHOTGUN",
+            direction="MIDDLE",
+            reasoning="Two-point conversion attempt",
+        )
+
+        self.state.play_log.append(
+            f"⚡ 2-PT CONVERSION ATTEMPT — {play_type.upper()}"
+        )
+
+        play_upper = play_type.upper()
+        if play_upper in ("SHORT_PASS", "QUICK_PASS", "LONG_PASS"):
+            result = self._execute_pass_5e(
+                fac_card, play_call,
+                defense_formation=def_formation.value,
+                defensive_strategy=def_strategy_5e.value,
+                player_name=player_name,
+                defensive_play_5e=def_play_5e,
+            )
+        else:
+            # RUN (or any unrecognised type → default run)
+            result = self._execute_run_5e(
+                fac_card, play_call,
+                defense_formation=def_formation.value,
+                player_name=player_name,
+                defensive_play_5e=def_play_5e,
+            )
+
+        self.state.play_log.append(f"  → {result.description}")
+        if getattr(result, 'debug_log', None):
+            for dl_entry in result.debug_log:
+                self.state.play_log.append(f"    {dl_entry}")
+
+        # Success: 2+ yards gained from the 2-yard line (or any TD result)
+        success = result.yards_gained >= 2 or result.is_touchdown or result.result == "TD"
+
+        if success:
+            if self.state.possession == "home":
+                self.state.score.home += 2
+            else:
+                self.state.score.away += 2
+            self.state.play_log.append("✅ Two-point conversion GOOD!")
+        else:
+            self.state.play_log.append("❌ Two-point conversion FAILED")
+
+        self.state.play_log.append(
+            f"Score: Away {self.state.score.away} - Home {self.state.score.home}"
+        )
+
+        # Kickoff after the conversion attempt
+        kickoff = self._do_kickoff(
+            kicking_team=self.get_offense_team(),
+            receiving_team=self.get_defense_team(),
+        )
+        self._log_kickoff(kickoff)
+        new_yl = self._kickoff_yard_line(kickoff)
+        self._change_possession(new_yl)
+
+        return result
+
     def _score_safety(self) -> None:
         """Score a safety — 2 points for the defense.
 
@@ -1782,14 +1930,18 @@ class Game:
                     self._handle_turnover(result)
                     return result
                 if result.is_touchdown or result.result == "TD":
-                    self._score_touchdown()
-                    kickoff = self._do_kickoff(
-                        kicking_team=self.get_offense_team(),
-                        receiving_team=self.get_defense_team(),
-                    )
-                    self._log_kickoff(kickoff)
-                    new_yl = self._kickoff_yard_line(kickoff)
-                    self._change_possession(new_yl)
+                    if offense_is_ai:
+                        self._score_touchdown()
+                        kickoff = self._do_kickoff(
+                            kicking_team=self.get_offense_team(),
+                            receiving_team=self.get_defense_team(),
+                        )
+                        self._log_kickoff(kickoff)
+                        new_yl = self._kickoff_yard_line(kickoff)
+                        self._change_possession(new_yl)
+                    else:
+                        # Human scored — pause so the player can choose PAT or 2-pt
+                        self._score_td_only()
                     return result
                 self._advance_down(result.yards_gained)
                 time_used = self._calculate_time(result)
@@ -1906,14 +2058,18 @@ class Game:
             return result
 
         if result.is_touchdown or result.result == "TD":
-            self._score_touchdown()
-            kickoff = self._do_kickoff(
-                kicking_team=self.get_offense_team(),
-                receiving_team=self.get_defense_team(),
-            )
-            self._log_kickoff(kickoff)
-            new_yl = self._kickoff_yard_line(kickoff)
-            self._change_possession(new_yl)
+            if offense_is_ai:
+                self._score_touchdown()
+                kickoff = self._do_kickoff(
+                    kicking_team=self.get_offense_team(),
+                    receiving_team=self.get_defense_team(),
+                )
+                self._log_kickoff(kickoff)
+                new_yl = self._kickoff_yard_line(kickoff)
+                self._change_possession(new_yl)
+            else:
+                # Human scored — pause so the player can choose PAT or 2-pt
+                self._score_td_only()
             return result
 
         if play_call.play_type == "PUNT":

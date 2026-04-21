@@ -46,6 +46,7 @@ interface UseGameEngineReturn {
   executeCoffinCorner: (deduction: number) => Promise<void>;
   executeOnsideKick: (onsideDefense?: boolean) => Promise<void>;
   executeSquibKick: () => Promise<void>;
+  executePATKick: () => Promise<void>;
   executeTwoPointConversion: (playType: string) => Promise<void>;
   activateBigPlayDefense: () => Promise<void>;
   declareTwoMinuteOffense: () => Promise<void>;
@@ -440,6 +441,26 @@ export function useGameEngine(): UseGameEngineReturn {
     }
   }, [gameId, addSignificantEvents]);
 
+  const executePATKick = useCallback(async () => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/pat-kick`);
+      setLastPlay(res.data.play_result);
+      setGameState(res.data.state);
+      addSignificantEvents(res.data.play_result, res.data.state);
+      try {
+        const pRes = await axios.get(`${API_BASE}/games/${gameId}/personnel`);
+        setPersonnel(pRes.data);
+      } catch { /* ok */ }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId, addSignificantEvents]);
+
   const executeTwoPointConversion = useCallback(async (playType: string) => {
     if (!gameId) return;
     setLoading(true);
@@ -514,6 +535,7 @@ export function useGameEngine(): UseGameEngineReturn {
     executeCoffinCorner,
     executeOnsideKick,
     executeSquibKick,
+    executePATKick,
     executeTwoPointConversion,
     activateBigPlayDefense,
     declareTwoMinuteOffense,

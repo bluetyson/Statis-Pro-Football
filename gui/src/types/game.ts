@@ -24,6 +24,7 @@ export interface GameState {
   penalty_yards?: Record<string, number>;
   turnovers?: Record<string, number>;
   player_stats?: Record<string, Record<string, number>>;
+  pending_extra_point?: boolean;
 }
 
 export interface PlayResult {
