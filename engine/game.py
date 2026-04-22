@@ -2225,8 +2225,11 @@ class Game:
         if def_formation_5e == DefensiveFormation.GOAL_LINE:
             try:
                 self.apply_defense_package(defense_side, "GOAL_LINE")
-            except Exception:
-                pass  # Roster may be too small; play proceeds with current personnel
+            except ValueError as pkg_err:
+                # Roster may not have enough players; proceed with current personnel
+                self.state.play_log.append(
+                    f"  NOTE: GOAL_LINE package could not be applied: {pkg_err}"
+                )
 
         # ── AI backs-blocking decision (offense AI only) ──────────────
         _PASS_PLAY_TYPES = {"SHORT_PASS", "LONG_PASS", "QUICK_PASS", "SCREEN"}

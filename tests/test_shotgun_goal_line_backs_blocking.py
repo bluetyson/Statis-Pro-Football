@@ -128,11 +128,8 @@ class TestShotgunBonus:
         shotgun_log = "\n".join(result_shotgun.debug_log or [])
         assert result_plain is not None
         assert result_shotgun is not None
-        # The shotgun path passes completion_modifier=1; verify it appears in the log
-        # (resolver logs "Strategy modifier=..., completion modifier=...")
-        assert "completion modifier" in shotgun_log.lower() or "completion_modifier" in shotgun_log.lower() or True, (
-            "Debug log present but completion modifier not explicitly flagged for zero-modifier case"
-        )
+        # The shotgun path passes completion_modifier=1; verify debug log is present
+        assert result_shotgun.debug_log, "Expected a debug log from the resolver on a shotgun pass"
 
     def test_play_action_blocked_in_shotgun(self):
         """PLAY_ACTION strategy must be stripped when formation is SHOTGUN."""
