@@ -1070,11 +1070,16 @@ class Game:
 
         Supported packages
         ------------------
-        ``STANDARD``  — restore 4-3 base: up to 4 DL + 3 LB + 4 DB.
-        ``NICKEL``    — 4-2-5: 4 DL, 2 LB, 5 DB (drop 1 LB, add 1 DB).
-        ``DIME``      — 4-1-6: 4 DL, 1 LB, 6 DB (drop 2 LBs, add 2 DBs).
-        ``335``       — 3-3-5: 3 DL, 3 LB, 5 DB (3-4 nickel base).
-        ``PREVENT``   — 2-2-7: 2 DL, 2 LB, 7 DB (prevent / cover-2 deep).
+        ``STANDARD``   — restore 4-3 base: up to 4 DL + 3 LB + 4 DB.
+        ``NICKEL``     — 4-2-5: 4 DL, 2 LB, 5 DB (drop 1 LB, add 1 DB).
+        ``DIME``       — 4-1-6: 4 DL, 1 LB, 6 DB (drop 2 LBs, add 2 DBs).
+        ``335``        — 3-3-5: 3 DL, 3 LB, 5 DB (3-4 nickel base).
+        ``PREVENT``    — 2-2-7: 2 DL, 2 LB, 7 DB (prevent / cover-2 deep).
+        ``GOAL_LINE``  — 5 best-tackle DL/LB on line + 3 LB + 3 DB (no FS).
+                         Selects the 5 players (from DL+LB combined) with the
+                         highest tackle_rating + pass_rush_rating; fills 3 more
+                         LB slots from remaining LBs; completes with DBs
+                         excluding any FS-position players.
         """
         side = side.lower()
         package = package.upper()
@@ -1095,27 +1100,56 @@ class Game:
         h_dbs = [p for p in all_def if p.position.upper() in self._DB_POS
                  and p.player_name not in unavail]
 
-        # Packages: (n_dl, n_lb, n_db) wanted in first 11
-        _PKG_COUNTS: Dict[str, tuple] = {
-            "STANDARD": (4, 3, 4),
-            "NICKEL":   (4, 2, 5),
-            "DIME":     (4, 1, 6),
-            "335":      (3, 3, 5),
-            "PREVENT":  (2, 2, 7),
-        }
-        if package not in _PKG_COUNTS:
-            raise ValueError(
-                f"Unknown defense package '{package}'. "
-                f"Valid: {', '.join(sorted(_PKG_COUNTS))}"
+        # ── Goal Line: special selection logic ───────────────────────
+        if package == "GOAL_LINE":
+            # Combine DL + LB and sort by tackle + pass-rush rating (best first)
+            dl_lb_pool = sorted(
+                h_dls + h_lbs,
+                key=lambda p: (
+                    getattr(p, 'tackle_rating', 0) + getattr(p, 'pass_rush_rating', 0)
+                ),
+                reverse=True,
             )
+            line_five = dl_lb_pool[:5]
+            line_five_ids = {id(p) for p in line_five}
 
-        n_dl, n_lb, n_db = _PKG_COUNTS[package]
-        starters = h_dls[:n_dl] + h_lbs[:n_lb] + h_dbs[:n_db]
+            # Remaining LBs (not already selected as line five) for 3 LB slots
+            remaining_lbs = [p for p in h_lbs if id(p) not in line_five_ids][:3]
+
+            # DBs excluding FS; at most 3
+            h_dbs_no_fs = [p for p in h_dbs if p.position.upper() != "FS"]
+            db_three = h_dbs_no_fs[:3]
+
+            starters = line_five + remaining_lbs + db_three
+        else:
+            # Packages: (n_dl, n_lb, n_db) wanted in first 11
+            _PKG_COUNTS: Dict[str, tuple] = {
+                "STANDARD": (4, 3, 4),
+                "NICKEL":   (4, 2, 5),
+                "DIME":     (4, 1, 6),
+                "335":      (3, 3, 5),
+                "PREVENT":  (2, 2, 7),
+            }
+            if package not in _PKG_COUNTS:
+                raise ValueError(
+                    f"Unknown defense package '{package}'. "
+                    f"Valid: {', '.join(sorted(list(_PKG_COUNTS.keys()) + ['GOAL_LINE']))}"
+                )
+
+            n_dl, n_lb, n_db = _PKG_COUNTS[package]
+            starters = h_dls[:n_dl] + h_lbs[:n_lb] + h_dbs[:n_db]
 
         # If we still don't have 11 starters (roster shortage), fill with
         # remaining healthy players in their original order.
+        # For GOAL_LINE: exclude FS from backups to keep them off the field.
         starter_ids = {id(p) for p in starters}
-        backups = [p for p in all_def if id(p) not in starter_ids]
+        if package == "GOAL_LINE":
+            backups = [
+                p for p in all_def
+                if id(p) not in starter_ids and p.position.upper() != "FS"
+            ]
+        else:
+            backups = [p for p in all_def if id(p) not in starter_ids]
         team.roster.defenders = starters + backups
 
         actual_dl = sum(1 for p in starters if p.position.upper() in self._DL_POS)
@@ -1465,7 +1499,8 @@ class Game:
                      player_name: Optional[str] = None,
                      defensive_strategy: Optional[str] = None,
                      defensive_play: Optional[str] = None,
-                     blitz_players: Optional[List[str]] = None) -> PlayResult:
+                     blitz_players: Optional[List[str]] = None,
+                     backs_blocking: Optional[List[str]] = None) -> PlayResult:
         """Execute a single play using 5th-edition rules.
 
         Args:
@@ -1475,13 +1510,26 @@ class Game:
             defensive_strategy: Optional human-specified defensive strategy (5E).
             defensive_play: Optional defensive play type (PASS_DEFENSE, BLITZ, etc.).
             blitz_players: Optional list of player names to blitz (2-5 LBs/DBs).
+            backs_blocking: Optional list of RB player names kept in to pass-block
+                instead of running routes (+2 completion range each; FAC redirect
+                to a blocking back is incomplete).
         """
         self._current_play_personnel_note = None
+        # Resolve backs_blocking player names → receiver indices so the resolver
+        # can identify which list positions are blocking (not running routes).
+        backing_indices: Optional[List[int]] = None
+        if backs_blocking:
+            receivers = self._get_all_receivers()
+            backing_indices = [
+                i for i, rec in enumerate(receivers)
+                if rec.player_name in backs_blocking
+            ]
         return self._execute_play_5e(play_call, defense_formation,
                                      player_name=player_name,
                                      defensive_strategy=defensive_strategy,
                                      defensive_play=defensive_play,
-                                     blitz_players=blitz_players)
+                                     blitz_players=blitz_players,
+                                     backs_blocking=backing_indices)
 
     def _pick_receiver(self, play_call: PlayCall, player_name: Optional[str] = None) -> Optional[PlayerCard]:
         team = self.get_offense_team()
@@ -2036,7 +2084,8 @@ class Game:
                         defensive_strategy: Optional[str] = None,
                         defensive_play: Optional[str] = None,
                         player_name: Optional[str] = None,
-                        blitz_players: Optional[List[str]] = None) -> PlayResult:
+                        blitz_players: Optional[List[str]] = None,
+                        backs_blocking: Optional[List[int]] = None) -> PlayResult:
         """Execute a single play using 5th-edition FAC deck."""
         fac_card = self.deck.draw()
         situation = self.state.to_situation()
@@ -2170,6 +2219,37 @@ class Game:
         if blitz_players:
             self.state.play_log.append(f"  BLITZ PLAYERS: {', '.join(blitz_players)}")
 
+        # ── Auto-apply GOAL_LINE defensive package ────────────────────
+        # When the AI (or human) selects GOAL_LINE formation, trigger the
+        # personnel substitution so the roster is updated before the play runs.
+        if def_formation_5e == DefensiveFormation.GOAL_LINE:
+            try:
+                self.apply_defense_package(defense_side, "GOAL_LINE")
+            except ValueError as pkg_err:
+                # Roster may not have enough players; proceed with current personnel
+                self.state.play_log.append(
+                    f"  NOTE: GOAL_LINE package could not be applied: {pkg_err}"
+                )
+
+        # ── AI backs-blocking decision (offense AI only) ──────────────
+        _PASS_PLAY_TYPES = {"SHORT_PASS", "LONG_PASS", "QUICK_PASS", "SCREEN"}
+        if backs_blocking is None and offense_is_ai and play_call.play_type in _PASS_PLAY_TYPES:
+            ai_receivers = self._get_all_receivers()
+            backs_blocking = self.ai.decide_backs_blocking(situation, ai_receivers)
+        if backs_blocking:
+            # Resolve back indices to names for the log
+            log_receivers = self._get_all_receivers()
+            blocking_names = [
+                log_receivers[i].player_name
+                for i in backs_blocking
+                if i < len(log_receivers)
+            ]
+            if blocking_names:
+                self.state.play_log.append(
+                    f"  BACKS BLOCKING: {', '.join(blocking_names)} "
+                    f"(+{len(blocking_names) * 2} completion range)"
+                )
+
         # ── 5E Play restrictions ─────────────────────────────────────
         # Long pass within opponent's 20 → auto-convert to short pass
         if play_call.play_type == "LONG_PASS":
@@ -2197,12 +2277,20 @@ class Game:
         # a stale or mis-matched strategy selection never overrides the
         # explicit play call made by the human.
         #   - PLAY_ACTION is a pass strategy; discard it on run plays.
+        #   - PLAY_ACTION is illegal from SHOTGUN (can't fake a run from an
+        #     obvious passing formation — 5E rule).
         #   - DRAW is a run strategy; discard it on pass/special plays.
         _PASS_TYPES = {"SHORT_PASS", "LONG_PASS", "QUICK_PASS", "SCREEN"}
         _RUN_TYPES  = {"RUN"}
         if strategy == "PLAY_ACTION" and play_call.play_type not in _PASS_TYPES:
             strategy = None
             play_call.strategy = None
+        if strategy == "PLAY_ACTION" and getattr(play_call, 'formation', '').upper() == "SHOTGUN":
+            strategy = None
+            play_call.strategy = None
+            self.state.play_log.append(
+                "  NOTE: Play-Action not allowed from Shotgun formation — converted to standard pass"
+            )
         if strategy == "DRAW" and play_call.play_type not in _RUN_TYPES:
             strategy = None
             play_call.strategy = None
@@ -2339,10 +2427,10 @@ class Game:
                                              defensive_play_5e=def_play_5e)
         elif play_call.play_type in ("LONG_PASS", "QUICK_PASS"):
             result = self._execute_pass_5e(fac_card, play_call, defense_formation, defensive_strategy, player_name,
-                                           defensive_play_5e=def_play_5e)
+                                           defensive_play_5e=def_play_5e, backs_blocking=backs_blocking)
         else:
             result = self._execute_pass_5e(fac_card, play_call, defense_formation, defensive_strategy, player_name,
-                                           defensive_play_5e=def_play_5e)
+                                           defensive_play_5e=def_play_5e, backs_blocking=backs_blocking)
 
         if self._current_play_personnel_note:
             result.personnel_note = self._current_play_personnel_note
@@ -2727,6 +2815,17 @@ class Game:
             for ol in offense.roster.offensive_line[:5]:
                 ol_pass_block_sum += getattr(ol, 'pass_block_rating', 0)
 
+        # ── Shotgun formation bonuses ──────────────────────────────────
+        # House rule: QB in shotgun gains +1 to all completion ranges and
+        # +1 to pass blocking (improved pocket / extra depth from center).
+        shotgun_completion_bonus = 0
+        if getattr(play_call, 'formation', '').upper() == "SHOTGUN":
+            shotgun_completion_bonus = 1
+            ol_pass_block_sum += 1
+            self.state.play_log.append(
+                "  SHOTGUN: +1 completion range, +1 pass-block sum"
+            )
+
         # ── Calculate actual DL pass-rush sum ─────────────────────────
         # Per 5E rules: sum Pass Rush Values of all players in Row 1
         # (Defensive Line boxes A-E).  If blitz is in effect, blitzing
@@ -2793,6 +2892,7 @@ class Game:
                 defensive_strategy=defensive_strategy or "NONE",
                 defenders=defenders,
                 two_minute_offense=self._is_two_minute_offense(),
+                completion_modifier=shotgun_completion_bonus,
                 defensive_play_5e=defensive_play_5e,
                 yard_line=self.state.yard_line,
                 defenders_by_box=defenders_by_box,

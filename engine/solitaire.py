@@ -389,6 +389,55 @@ class SolitaireAI:
 
     # ── 5th-Edition Solitaire Specific Rules ─────────────────────────
 
+    def decide_backs_blocking(self, situation: GameSituation,
+                              receivers: list) -> list:
+        """Decide which backs (if any) the AI keeps in to pass-block.
+
+        Per 5E rules, keeping a back in to block adds +2 to the QB's
+        completion range for each blocker, but the back cannot be targeted
+        and any FAC redirect to a blocking back is incomplete.
+
+        Returns a list of receiver-list indices for backs that will block
+        (empty list = no backs blocking).  Only BK-slot backs (indices 3
+        and 4 in the standard 5-receiver formation) are eligible.
+
+        Decision logic
+        --------------
+        Base chance to block one back: ~30 %.
+        Elevated to ~50 % on 3rd/4th & long (≥ 7 yards) or when protecting
+        a late-game lead (Q4, score_diff > 0, time < 2 min).
+        If blocking is chosen, randomly decide whether to use 1 or 2 backs
+        (second back only if it exists and a further coin-flip is heads).
+        """
+        # Identify BK-slot backs among the on-field receivers
+        eligible: list = []
+        for i, rec in enumerate(receivers):
+            slot = getattr(rec, '_formation_slot', None)
+            if slot in ("BK1", "BK2", "BK3"):
+                eligible.append(i)
+        if not eligible:
+            return []
+
+        # Determine blocking probability
+        late_game_lead = (
+            situation.quarter >= 4
+            and situation.score_diff > 0
+            and situation.time_remaining <= 120
+        )
+        long_yardage = (
+            situation.down >= 3 and situation.distance >= 7
+        )
+        block_chance = 0.5 if (long_yardage or late_game_lead) else 0.3
+
+        if random.random() >= block_chance:
+            return []
+
+        # Choose 1 back; upgrade to 2 backs 30 % of the time (if available)
+        blocking: list = [eligible[0]]
+        if len(eligible) >= 2 and random.random() < 0.3:
+            blocking.append(eligible[1])
+        return blocking
+
     def enforce_no_consecutive_screen_quick(self, play_call: PlayCall) -> PlayCall:
         """5E Solitaire Rule: No two screen/quick passes in succession.
 
