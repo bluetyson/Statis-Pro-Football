@@ -1504,8 +1504,8 @@ class Game:
         if rn == 12:
             result = self.resolver.resolve_punt_rn12(punter, self.deck)
             if result.result == "BLOCKED_PUNT":
-                new_yl = max(1, self.state.yard_line - 5)
-                self._change_possession(new_yl)
+                spot = max(1, self.state.yard_line - 5)
+                self._change_possession(100 - spot)
                 return result
             elif result.result == "PENALTY":
                 self._apply_penalty(result.penalty)
@@ -1524,8 +1524,8 @@ class Game:
         if Charts.check_blocked_punt(blocked_num, rn):
             result = PlayResult("PUNT", -5, "BLOCKED_PUNT",
                                 description=f"{punter.player_name}'s punt is BLOCKED!")
-            new_yl = max(1, self.state.yard_line - 5)
-            self._change_possession(new_yl)
+            spot = max(1, self.state.yard_line - 5)
+            self._change_possession(100 - spot)
             return result
 
         # Punt return using 5E team card tables
@@ -1573,6 +1573,30 @@ class Game:
 
     def _handle_turnover(self, result: PlayResult) -> None:
         if result.turnover_type == "INT":
+            if result.is_touchdown:
+                # Pick-six: intercepting team (currently defense) scores a TD.
+                # Swap possession so the intercepting team becomes the offense,
+                # score the TD, then handle PAT + kickoff just like a normal TD.
+                # yard_line=99 is a placeholder; scoring doesn't depend on it and
+                # it will be overridden by the kickoff (AI) or PAT flow (human).
+                self._change_possession(99)
+                scorer_is_ai = (self.solitaire_home if self.state.possession == "home"
+                                else self.solitaire_away)
+                if scorer_is_ai:
+                    self._score_touchdown()
+                    kickoff = self._do_kickoff(
+                        kicking_team=self.get_offense_team(),
+                        receiving_team=self.get_defense_team(),
+                    )
+                    self._log_kickoff(kickoff)
+                    new_yl = self._kickoff_yard_line(kickoff)
+                    self._change_possession(new_yl)
+                else:
+                    # Human scored the pick-six; sets pending_extra_point=True so
+                    # the player must call /pat-kick or /two-point-conversion next,
+                    # followed by the kickoff before the opponent gets the ball.
+                    self._score_td_only()
+                return
             if result.interception_point is not None:
                 new_yl = result.interception_point
             else:
