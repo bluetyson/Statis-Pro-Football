@@ -56,7 +56,7 @@ const SKILL_SLOT_LABELS: Record<string, string> = {
 // Formation packages
 const PACKAGES = [
   { key: 'STANDARD', label: 'Standard', desc: 'Auto-select from roster' },
-  { key: '2TE_1WR', label: '2-TE', desc: 'WR1→LE, WR2→FL, TE1→RE' },
+  { key: '2TE_1WR', label: '2-TE', desc: 'WR1→LE, TE1→RE, TE2→FL (two-tight-end set)' },
   { key: '3TE', label: '3-TE', desc: 'TE1→RE, TE2→LE, TE3→FL' },
   { key: 'JUMBO', label: 'Jumbo', desc: 'Heavy 3-TE blocking set' },
   { key: '4WR', label: '4-WR', desc: 'WR1→LE, WR2→FL, WR3→RE' },

@@ -85,6 +85,18 @@ class GameState:
     is_over: bool = False
     # 5E: Injury tracking - {player_name: plays_remaining}
     injuries: Dict[str, int] = field(default_factory=dict)
+    # 5E: Position injury protection flags (per team).
+    # When a starter is injured, their position is flagged so that a second
+    # injury to the same position is ignored for the rest of the game.
+    # The flag is cleared once the original injured player becomes eligible
+    # to return (their injury counter expires).
+    # Format: {"home": {"CB", "QB", ...}, "away": {"RB", ...}}
+    position_injury_flags: Dict[str, Set[str]] = field(
+        default_factory=lambda: {"home": set(), "away": set()}
+    )
+    # Maps injured player name → (team_side, position) so the position flag
+    # can be cleared when that player's injury counter expires.
+    _injured_starter_positions: Dict[str, tuple] = field(default_factory=dict)
     # 5E: Track last play's ball carrier for endurance
     last_ball_carrier: Optional[str] = None
     prev_ball_carrier: Optional[str] = None  # Two plays ago for endurance 2
@@ -233,6 +245,20 @@ class Game:
     def _is_player_unavailable(self, player: Optional[PlayerCard]) -> bool:
         return bool(player and self.state.injuries.get(player.player_name, 0) > 0)
 
+    def _find_player_side_and_pos(
+        self, player_name: str
+    ) -> Optional[tuple]:
+        """Return (team_side, position) for *player_name*, or None if not found.
+
+        Searches both teams' full rosters.  Used by the position-injury
+        protection logic to determine which team flag to set/clear.
+        """
+        for team, side in ((self.home_team, "home"), (self.away_team, "away")):
+            for card in team.roster.all_players():
+                if card.player_name == player_name:
+                    return (side, card.position.upper())
+        return None
+
     def _record_personnel_note(self, note: Optional[str]) -> None:
         if not note:
             return
@@ -350,7 +376,32 @@ class Game:
                 )
                 n_starters = _NUM_DEFAULT_STARTERS.get(pos, 1)
                 search_start = injured_idx + 1
-                if not has_slot_override and injured_idx < n_starters:
+                if has_slot_override:
+                    # In a package formation (2TE_1WR, 3TE/JUMBO, 3RB, …),
+                    # multiple players of the same position may be on the field
+                    # via explicit slot overrides.  Skip *all* of them so the
+                    # replacement is a true bench player rather than another
+                    # active starter who would then be double-assigned to two
+                    # formation slots.
+                    #
+                    # Example (3TE/JUMBO: RE=TE1, LE=TE2, FL=TE3):
+                    #   TE1 (idx=0) injured, has_slot_override=True.
+                    #   Old: search_start=1 → replacement=TE2 (on-field!)
+                    #        → override becomes RE=TE2 AND LE=TE2 (double-assign BUG).
+                    #   New: last_on_field_idx=2 → search_start=3 → TE4 fills RE,
+                    #        TE2 stays at LE, TE3 stays at FL — correct formation.
+                    on_field_names_for_pos = {
+                        pname for pname in on_field.values()
+                        if any(pl.player_name == pname for pl in players)
+                    }
+                    if len(on_field_names_for_pos) > 1:
+                        last_on_field_idx = max(
+                            (i for i, pl in enumerate(players)
+                             if pl.player_name in on_field_names_for_pos),
+                            default=injured_idx,
+                        )
+                        search_start = max(search_start, last_on_field_idx + 1)
+                elif injured_idx < n_starters:
                     search_start = max(search_start, n_starters)
 
                 replacement = None
@@ -400,6 +451,177 @@ class Game:
                         f"replaces {injured_player_name} ({pos}) at {slot}"
                     )
                 return  # each player belongs to one list only
+
+            # ── Defensive players ─────────────────────────────────────────────
+            # The injured player was not found in any offensive position list.
+            # Check the flat defenders roster (DL + LB + DB in depth-chart order).
+            #
+            # Replacement priority (to preserve on-field capability as closely
+            # as possible, especially important in season-long simulations):
+            #
+            #   DT / NT injured → ILB / MLB first (gap control / tackle),
+            #                     then OLB, then any healthy LB
+            #   DE / DL injured → OLB first (edge rusher role),
+            #                     then ILB / MLB, then any healthy LB
+            #   Any LB injured  → same-type LB, then any healthy LB;
+            #                     no DB fallback (LBs are not DB-qualified)
+            #   CB injured      → CB, then S / SS / FS;
+            #                     OLB emergency-only when healthy DBs drop below 3
+            #   S/SS/FS injured → S / SS / FS, then CB;
+            #                     OLB emergency-only when healthy DBs drop below 3
+            defenders = team.roster.defenders
+            def_injured_idx = next(
+                (i for i, p in enumerate(defenders)
+                 if p.player_name == injured_player_name),
+                None,
+            )
+            if def_injured_idx is None:
+                continue  # not on this team
+
+            injured_card = defenders[def_injured_idx]
+            injured_pos = injured_card.position.upper()
+
+            # Count healthy DBs remaining *after* this injury (for emergency rule)
+            healthy_dbs_after = [
+                p for i, p in enumerate(defenders)
+                if i != def_injured_idx
+                and not self._is_player_unavailable(p)
+                and p.position.upper() in self._DB_POS
+            ]
+
+            # Build candidates from the bench only (index ≥ n_on_field).
+            # Searching from n_on_field ensures we prefer bench call-ups over
+            # pulling another active starter off the field (which would just
+            # create a new empty slot elsewhere).
+            # Two-stage fallback: if no bench player of the preferred type
+            # exists (e.g. 11-man roster with no real bench), also consider
+            # other on-field players at index > def_injured_idx who are healthy
+            # and of the right position — they can shift roles as an emergency.
+            n_on_field = min(11, len(defenders))
+
+            def _def_bench(pos_filter):
+                """Return healthy defenders matching pos_filter.
+
+                Stage 1: true bench (index >= n_on_field).
+                Stage 2 (fallback): on-field player at index > def_injured_idx
+                        when no bench candidate of that type is available.
+                """
+                bench = [
+                    (i, p) for i, p in enumerate(defenders)
+                    if i >= n_on_field
+                    and not self._is_player_unavailable(p)
+                    and p.position.upper() in pos_filter
+                ]
+                if bench:
+                    return bench
+                # Fallback: on-field player that hasn't played yet in their slot
+                return [
+                    (i, p) for i, p in enumerate(defenders)
+                    if i > def_injured_idx
+                    and i < n_on_field
+                    and not self._is_player_unavailable(p)
+                    and p.position.upper() in pos_filter
+                ]
+
+            if injured_pos in self._DL_POS:
+                if injured_pos in ("DT", "NT"):
+                    # Interior DL → ILB/MLB (gap/tackle) before OLB
+                    primary = sorted(
+                        _def_bench({"ILB", "MLB"}),
+                        key=lambda ip: -(ip[1].tackle_rating + ip[1].pass_rush_rating),
+                    )
+                    secondary = sorted(
+                        _def_bench({"OLB"}),
+                        key=lambda ip: -ip[1].pass_rush_rating,
+                    )
+                else:
+                    # Edge DL (DE/DL) → OLB (edge rusher) before ILB/MLB
+                    primary = sorted(
+                        _def_bench({"OLB"}),
+                        key=lambda ip: -ip[1].pass_rush_rating,
+                    )
+                    secondary = sorted(
+                        _def_bench({"ILB", "MLB"}),
+                        key=lambda ip: -(ip[1].tackle_rating + ip[1].pass_rush_rating),
+                    )
+                # Also add any generic LB as tertiary
+                tertiary = _def_bench({"LB"})
+                candidates = primary + secondary + tertiary
+
+            elif injured_pos in self._LB_POS:
+                same_type = _def_bench({injured_pos})
+                other_lb = [
+                    ip for ip in _def_bench(self._LB_POS)
+                    if ip[1].position.upper() != injured_pos
+                ]
+                # No DB fallback for LBs
+                candidates = same_type + other_lb
+
+            elif injured_pos in self._DB_POS:
+                if injured_pos == "CB":
+                    same_type = sorted(
+                        _def_bench({"CB"}),
+                        key=lambda ip: -ip[1].pass_defense_rating,
+                    )
+                    other_db = sorted(
+                        _def_bench({"S", "SS", "FS", "DB"}),
+                        key=lambda ip: -ip[1].pass_defense_rating,
+                    )
+                else:
+                    same_type = sorted(
+                        _def_bench({"S", "SS", "FS"}),
+                        key=lambda ip: -ip[1].pass_defense_rating,
+                    )
+                    other_db = sorted(
+                        _def_bench({"CB", "DB"}),
+                        key=lambda ip: -ip[1].pass_defense_rating,
+                    )
+                # OLB may fill in as emergency coverage when fewer than 3 DBs remain
+                olb_emergency: list[tuple[int, PlayerCard]] = []
+                if len(healthy_dbs_after) < 3:
+                    olb_emergency = sorted(
+                        _def_bench({"OLB"}),
+                        key=lambda ip: -ip[1].pass_defense_rating,
+                    )
+                candidates = same_type + other_db + olb_emergency
+
+            else:
+                # Unknown defensive position — fall back to depth-chart order
+                candidates = [
+                    (i, p) for i, p in enumerate(defenders)
+                    if i > def_injured_idx and not self._is_player_unavailable(p)
+                ]
+
+            if not candidates:
+                return  # no replacement available — log and give up
+
+            def_replacement_idx, def_replacement = candidates[0]
+
+            # Swap: injured slides back, replacement moves into starter spot
+            defenders[def_injured_idx], defenders[def_replacement_idx] = (
+                defenders[def_replacement_idx], defenders[def_injured_idx]
+            )
+
+            # Determine whether this is a cross-position emergency sub
+            same_group = (
+                (injured_pos in self._DL_POS and def_replacement.position.upper() in self._DL_POS) or
+                (injured_pos in self._LB_POS and def_replacement.position.upper() in self._LB_POS) or
+                (injured_pos in self._DB_POS and def_replacement.position.upper() in self._DB_POS)
+            )
+            is_emergency = not same_group
+            prefix = "EMERGENCY " if is_emergency else ""
+            note = (
+                f"{prefix}Auto-sub at {injured_pos}: "
+                f"{def_replacement.player_name} ({def_replacement.position}) "
+                f"replaces injured {injured_player_name}"
+            )
+            self._record_personnel_note(note)
+            self.state.play_log.append(
+                f"  {prefix}DEF SUB: "
+                f"{def_replacement.player_name} ({def_replacement.position}) "
+                f"replaces {injured_player_name} ({injured_pos})"
+            )
+            return
 
     def validate_player_availability(self, player_name: str) -> PlayerCard:
         for player in self.get_offense_team().roster.all_players():
@@ -689,7 +911,7 @@ class Game:
         Supported packages
         ------------------
         ``STANDARD``  — clear all overrides (fall back to roster order).
-        ``2TE_1WR``   — WR1→LE, WR2→FL, TE1→RE (default with explicit mapping).
+        ``2TE_1WR``   — WR1→LE, TE1→RE, TE2→FL (two-tight-end set with one wide receiver).
         ``3TE``       — TE1→RE, TE2→LE, TE3→FL (three tight-end set).
         ``JUMBO``     — same as 3TE but logged as Jumbo package.
         ``4WR``       — WR1→LE, WR2→FL, WR3→RE, no TE on field.
@@ -753,14 +975,18 @@ class Game:
             else:
                 msg = f"PACKAGE: 4WR ({side}) — not enough WRs (need 3, have {len(wrs)})"
         elif package == "2TE_1WR":
-            # WR1→LE, WR2→FL, TE1→RE
+            # WR1→LE (split end on line), TE1→RE (primary TE on line),
+            # TE2→FL (second TE split off the line as flanker).
+            # This is the classic "double tight-end" or "two-TE" set used by
+            # power running teams.  It is distinct from the standard 2WR+1TE
+            # formation — both tight ends are active skill targets.
             new_overrides: Dict[str, str] = {}
             if wrs:
                 new_overrides["LE"] = wrs[0].player_name
-            if len(wrs) >= 2:
-                new_overrides["FL"] = wrs[1].player_name
             if tes:
                 new_overrides["RE"] = tes[0].player_name
+            if len(tes) >= 2:
+                new_overrides["FL"] = tes[1].player_name
             self._on_field_offense[side] = new_overrides
             assignments = ", ".join(f"{k}={v}" for k, v in new_overrides.items())
             msg = f"PACKAGE: 2TE_1WR ({side}) — {assignments}"
@@ -1657,12 +1883,32 @@ class Game:
         # ── Mandatory LE/RE fallback (7-man line-of-scrimmage rule) ───
         # If LE or RE is still None after normal auto-fill (e.g. all WRs/TEs
         # are injured), pull any remaining skill player as an emergency fill.
+        # When the only option is an RB, pick by ability grade:
+        #   LE (wide-receiver role) → best receiving RB (most pass_gain rows,
+        #       then lowest blocks so speed backs are preferred over blockers).
+        #   RE (tight-end / blocker role) → best blocking RB (blocks descending).
+        def _receiving_sort_key(p: PlayerCard) -> tuple:
+            # Count non-empty pass_gain rows (v1 == 0 indicates a blank/placeholder row
+            # with no real gain value on the card).
+            n_gain = sum(1 for r in p.pass_gain if r is not None and r.v1 != 0)
+            return (-n_gain, p.blocks)  # more rows and fewer blocks = better receiver
+
         if le is None:
-            avail_any = [p for p in (wrs + tes + rbs) if id(p) not in _assigned_ids()]
+            wrs_tes = [p for p in (wrs + tes) if id(p) not in _assigned_ids()]
+            rbs_recv = sorted(
+                [p for p in rbs if id(p) not in _assigned_ids()],
+                key=_receiving_sort_key,
+            )
+            avail_any = wrs_tes + rbs_recv
             if avail_any:
                 le = avail_any[0]
         if re is None:
-            avail_any = [p for p in (tes + wrs + rbs) if id(p) not in _assigned_ids()]
+            wrs_tes = [p for p in (tes + wrs) if id(p) not in _assigned_ids()]
+            rbs_block = sorted(
+                [p for p in rbs if id(p) not in _assigned_ids()],
+                key=lambda p: -p.blocks,  # higher blocks = better blocker
+            )
+            avail_any = wrs_tes + rbs_block
             if avail_any:
                 re = avail_any[0]
 
@@ -2029,15 +2275,44 @@ class Game:
             duration = result.z_card_event.get("injury_duration", 2)
             injured_player = result.rusher or result.receiver or result.passer
             if injured_player:
-                self.state.injuries[injured_player] = duration
-                result.injury_player = injured_player
-                result.injury_duration = duration
-                self.state.play_log.append(
-                    f"  ⚕ {injured_player} injured! Out for {duration} plays."
-                )
-                # Immediately swap injured player out of the starter slot so
-                # the formation grid and personnel views reflect the change.
-                self._immediate_injury_swap(injured_player)
+                # 5E position-injury protection:
+                # "If a position has already been hit by an injury, a second
+                # injury to that position is ignored."  Find the player's team
+                # and position, then check whether that position is currently
+                # flagged for that team.
+                side_pos = self._find_player_side_and_pos(injured_player)
+                if side_pos:
+                    p_side, p_pos = side_pos
+                    already_flagged = (
+                        p_pos in self.state.position_injury_flags.get(p_side, set())
+                    )
+                else:
+                    already_flagged = False
+                    p_side = None
+                    p_pos = None
+
+                if already_flagged:
+                    # Rule: ignore the second injury — the position is protected.
+                    self.state.play_log.append(
+                        f"  ⚕ Injury to {injured_player} ignored "
+                        f"(position {p_pos} already injured this game)."
+                    )
+                else:
+                    # Process the injury normally and set the position flag.
+                    self.state.injuries[injured_player] = duration
+                    result.injury_player = injured_player
+                    result.injury_duration = duration
+                    self.state.play_log.append(
+                        f"  ⚕ {injured_player} injured! Out for {duration} plays."
+                    )
+                    if p_side and p_pos:
+                        self.state.position_injury_flags[p_side].add(p_pos)
+                        self.state._injured_starter_positions[injured_player] = (
+                            p_side, p_pos
+                        )
+                    # Immediately swap injured player out of the starter slot so
+                    # the formation grid and personnel views reflect the change.
+                    self._immediate_injury_swap(injured_player)
 
         # ── 5E Z-card penalty resolution ─────────────────────────────
         if result.z_card_event and result.z_card_event.get("type") == "PENALTY":
@@ -2077,7 +2352,7 @@ class Game:
                 result.yards_gained, result.play_type
             )
 
-        # Tick injury counters
+        # Tick injury counters; clear position-injury flags when players return
         to_remove = []
         for name in list(self.state.injuries):
             self.state.injuries[name] -= 1
@@ -2086,6 +2361,12 @@ class Game:
                 self.state.play_log.append(f"  ⚕ {name} returns from injury.")
         for name in to_remove:
             del self.state.injuries[name]
+            # Clear the position-injury flag so future injuries at this
+            # position are enforced again (rule: protection ends when the
+            # originally injured player is eligible to return).
+            if name in self.state._injured_starter_positions:
+                clr_side, clr_pos = self.state._injured_starter_positions.pop(name)
+                self.state.position_injury_flags[clr_side].discard(clr_pos)
 
         # Track player stats
         self._track_play_stats(result)

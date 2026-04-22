@@ -1326,7 +1326,7 @@ def apply_formation_package(game_id: str, request: ApplyPackageRequest):
     Packages
     --------
     ``STANDARD``  — clear all overrides (roster-order auto-select).
-    ``2TE_1WR``   — WR1→LE, WR2→FL, TE1→RE.
+    ``2TE_1WR``   — WR1→LE, TE1→RE, TE2→FL (two-TE set, one wide receiver).
     ``3TE``       — TE1→RE, TE2→LE, TE3→FL (three-TE set).
     ``JUMBO``     — same as 3TE, logged as Jumbo.
     ``4WR``       — WR1→LE, WR2→FL, WR3→RE (four-wide, no TE).
