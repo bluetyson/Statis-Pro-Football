@@ -301,11 +301,33 @@ For detailed documentation, see the [docs/](docs/) directory:
 - **[5E Rules Audit](docs/5e-rules-audit.md)** — Complete mapping of all 146 5E rules to implementation
 - **[GUI Audit](docs/gui-audit.md)** — Tracking of 88 GUI features across 11 categories
 
+## Advanced Rules (Optional / House Rules)
+
+The following rules are implemented as optional extensions beyond the core 5th-edition rulebook:
+
+- **Shotgun Formation (Offense)** — When the QB declares Shotgun, he receives +1 to all
+  completion ranges and +1 to the offensive pass-block sum for all pass-rush checks on that
+  play.  Play-Action passes are **not allowed** from Shotgun (the defense cannot be fooled
+  by a run fake from an obvious passing formation).
+
+- **Goal Line Defensive Package** — Activating the GOAL_LINE package selects the 5 players
+  (from DL + LB combined) with the highest combined tackle + pass-rush ratings and places
+  them on the defensive line.  Three additional LBs fill the second wave.  The remaining 3
+  spots are filled by DBs, explicitly **excluding** any Free Safety (FS-position) players —
+  they are removed from the field for this package.  The total on-field unit is 5 + 3 + 3 = 11.
+
+- **Extra Pass Blocking (Backs in to Block)** — Before the snap on any pass play, the offense
+  may declare any or all of its backs as blockers.  Each blocking back adds +2 to the QB's
+  Completion Range but **cannot be targeted**; if the FAC redirects the pass to a blocking
+  back, the pass is **incomplete**.  The AI applies this decision situationally (base ~30 %
+  chance per pass play; rises to ~50 % on 3rd/4th & long or when protecting a late lead).
+  All blocking-back decisions are logged in the play log.
+
 ## Future Rules / Potential Extensions
 
 The following rules do not appear in the 5th-edition rulebook but may be added as optional house rules in a future release:
 
-- **Shotgun Formation (Offense)** — A pre-snap formation where the QB lines up several yards behind center. A potential house-rule implementation would apply a completion-range bonus on passing plays and a run-number penalty on rushing plays when the Shotgun is declared. No such rule exists in the current 5E rulebook; it would be an extra rule layered on top of the standard mechanics.
+- ~~**Shotgun Formation (Offense)**~~ — Now implemented as an advanced rule (see above).
 
 ## License
 

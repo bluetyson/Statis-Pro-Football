@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState, HumanPlayCall, PersonnelData } from '../types/game';
 import { OFFENSIVE_STRATEGIES } from '../types/game';
+import { BacksBlockingSelector } from './BacksBlockingSelector';
 
 interface HumanPlayCallerProps {
   state: GameState;
@@ -78,6 +79,7 @@ export function HumanPlayCaller({
   const [selectedDirection, setSelectedDirection] = useState<string>('MIDDLE');
   const [selectedStrategy, setSelectedStrategy] = useState<string>('NONE');
   const [selectedPlayer, setSelectedPlayer] = useState<string>('');
+  const [backsBlocking, setBacksBlocking] = useState<string[]>([]);
 
   const disabled = loading || state.is_over;
 
@@ -95,6 +97,7 @@ export function HumanPlayCaller({
   useEffect(() => {
     setSelectedStrategy('NONE');
     setSelectedDirection('MIDDLE');
+    setBacksBlocking([]);
   }, [selectedPlay]);
 
   const directions = isRunPlay ? RUN_DIRECTIONS : PASS_DIRECTIONS;
@@ -128,6 +131,11 @@ export function HumanPlayCaller({
   );
   const availableReceiverTargets = useMemo(
     () => receiverTargets.filter((p) => !p.injured),
+    [receiverTargets],
+  );
+  // RBs eligible to stay in and block (on-field BK-slot backs)
+  const backBlockers = useMemo(
+    () => receiverTargets.filter((p) => p.position === 'RB'),
     [receiverTargets],
   );
   const autoBallCarrier = useMemo(
@@ -205,6 +213,7 @@ export function HumanPlayCaller({
       formation: 'UNDER_CENTER',
       strategy: selectedStrategy !== 'NONE' ? selectedStrategy : undefined,
       player_name: selectedPlayer || undefined,
+      backs_blocking: backsBlocking.length > 0 ? backsBlocking : undefined,
     });
   };
 
@@ -376,6 +385,14 @@ export function HumanPlayCaller({
           )}
         </div>
       )}
+
+      {/* Backs in to Block selector (pass plays only) */}
+      <BacksBlockingSelector
+        backs={backBlockers}
+        isPassPlay={isPassPlay}
+        disabled={disabled}
+        onSelectionChange={setBacksBlocking}
+      />
 
       {/* Execute button */}
       <div className="action-buttons">

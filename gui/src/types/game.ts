@@ -205,6 +205,7 @@ export interface HumanPlayCall {
   strategy?: string;
   player_name?: string;  // Specific player to use (QB/RB/WR name)
   call_timeout?: boolean;  // Call timeout before play
+  backs_blocking?: string[];  // RB player names kept in to pass-block
 }
 
 export interface DefensivePlayCall {
