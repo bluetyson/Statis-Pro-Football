@@ -163,6 +163,7 @@ class HumanPlayCallRequest(BaseModel):
     formation: str = "UNDER_CENTER"  # UNDER_CENTER, SHOTGUN, I_FORM, TRIPS, etc.
     strategy: Optional[str] = None  # FLOP, SNEAK, DRAW, PLAY_ACTION (5E strategies)
     player_name: Optional[str] = None  # Specific player to use (QB/RB/WR name)
+    backs_blocking: Optional[List[str]] = None  # RB names kept in to pass-block (+2 comp range each)
 
 
 class DefensivePlayCallRequest(BaseModel):
@@ -331,7 +332,8 @@ def execute_human_play(game_id: str, request: HumanPlayCallRequest):
 
     result = game.execute_play(
         play_call=play_call,
-        player_name=request.player_name
+        player_name=request.player_name,
+        backs_blocking=request.backs_blocking or None,
     )
 
     return {
