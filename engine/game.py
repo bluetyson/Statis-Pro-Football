@@ -1307,6 +1307,30 @@ class Game:
             if result.is_touchdown:
                 stats[name]["receiving_tds"] += 1
 
+        # Track sack credit for defensive players
+        if result.result == "SACK" and result.sack_by:
+            for defender_name, credit in result.sack_by:
+                if defender_name not in stats:
+                    stats[defender_name] = {}
+                stats[defender_name].setdefault("sacks_given", 0.0)
+                stats[defender_name]["sacks_given"] += credit
+
+        # Track tackle credit for defensive players
+        if result.tackle_by:
+            for defender_name, credit in result.tackle_by:
+                if defender_name not in stats:
+                    stats[defender_name] = {}
+                stats[defender_name].setdefault("tackles", 0.0)
+                stats[defender_name]["tackles"] += credit
+
+        # Track defensive fumble recovery
+        if result.fumble_recovered_by:
+            name = result.fumble_recovered_by
+            if name not in stats:
+                stats[name] = {}
+            stats[name].setdefault("fumble_recoveries", 0)
+            stats[name]["fumble_recoveries"] += 1
+
     def _advance_down(self, yards: int) -> bool:
         """Advance down counter. Returns True if first down achieved."""
         self.state.yard_line = min(99, self.state.yard_line + yards)
@@ -3155,6 +3179,48 @@ class Game:
                 yds = s.get("receiving_yards", 0)
                 td = s.get("receiving_tds", 0)
                 lines.append(f"  {name:<24s} {rec:>3d} {yds:>5d} {td:>3d}")
+
+        # Defensive sacks by player
+        sackers = [
+            (name, s) for name, s in stats.items()
+            if s.get("sacks_given", 0) > 0
+        ]
+        if sackers:
+            lines.append("")
+            lines.append("SACKS                           No")
+            lines.append("-" * 50)
+            for name, s in sorted(sackers, key=lambda x: -x[1].get("sacks_given", 0)):
+                sk = s.get("sacks_given", 0)
+                # Display as integer when whole number, otherwise one decimal place
+                sk_str = f"{sk:.0f}" if sk == int(sk) else f"{sk:.1f}"
+                lines.append(f"  {name:<30s} {sk_str:>4s}")
+
+        # Tackles by player (defensive)
+        tacklers = [
+            (name, s) for name, s in stats.items()
+            if s.get("tackles", 0) > 0
+        ]
+        if tacklers:
+            lines.append("")
+            lines.append("TACKLES                         No")
+            lines.append("-" * 50)
+            for name, s in sorted(tacklers, key=lambda x: -x[1].get("tackles", 0)):
+                tk = s.get("tackles", 0)
+                tk_str = f"{tk:.0f}" if tk == int(tk) else f"{tk:.1f}"
+                lines.append(f"  {name:<30s} {tk_str:>4s}")
+
+        # Fumble recoveries (defensive)
+        fumble_rec = [
+            (name, s) for name, s in stats.items()
+            if s.get("fumble_recoveries", 0) > 0
+        ]
+        if fumble_rec:
+            lines.append("")
+            lines.append("FUMBLE RECOVERIES               No")
+            lines.append("-" * 50)
+            for name, s in sorted(fumble_rec, key=lambda x: -x[1].get("fumble_recoveries", 0)):
+                fr = s.get("fumble_recoveries", 0)
+                lines.append(f"  {name:<30s} {fr:>4d}")
 
         # Fumbles lost — tracked at team level
         if any(v > 0 for v in self.state.turnovers.values()):

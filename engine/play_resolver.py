@@ -33,7 +33,7 @@ resolution via effective_* helpers from ``fac_distributions``.
 """
 import random
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from .player_card import PlayerCard, RECEIVER_LETTERS
 from .fac_deck import FACCard, FACDeck
 from .charts import Charts
@@ -73,6 +73,9 @@ class PlayResult:
     interception_point: Optional[int] = None    # Yard line where INT occurred
     personnel_note: Optional[str] = None        # Auto-substitution / availability note
     box_assignments: Optional[Dict[str, str]] = None  # Box letter → player name for this play
+    sack_by: Optional[List[Tuple[str, float]]] = None  # [(player_name, credit)] — 1.0 full, 0.5 half
+    tackle_by: Optional[List[Tuple[str, float]]] = None  # [(player_name, credit)] — 1.0 full, 0.5 half
+    fumble_recovered_by: Optional[str] = None  # Name of defender who recovered fumble (if defense)
     debug_log: List[str] = field(default_factory=list)  # Step-by-step resolution log
 
 
@@ -1039,6 +1042,280 @@ class PlayResolver:
         """Blitzing players have a pass rush value of 2 regardless of printed value."""
         return 2
 
+    # ── Sack Credit Assignment ────────────────────────────────────────
+
+    @staticmethod
+    def assign_sack_credit(
+        defenders_by_box: Optional[Dict[str, "PlayerCard"]],
+        blitzer_names: Optional[List[str]],
+    ) -> List[Tuple[str, float]]:
+        """Assign sack credit to the defender(s) most responsible for the sack.
+
+        Algorithm (house rule):
+          1. Build a weighted candidate pool:
+             - Every occupied Row 1 box (A-E, the pass-rush line) contributes its
+               player with weight = player's ``pass_rush_rating``.  A player with a
+               high pass-rush rating is therefore more likely to be put on the LINE
+               (pass_rush_rating > 2 makes it worthwhile) and to receive credit.
+             - Each blitzing player (from ``blitzer_names``) contributes weight = 2
+               (the fixed blitz PR value per 5E rules).
+          2. Use ``random.choices`` to draw one box from the weighted pool.
+          3. Full sack (1.0) when one player occupies the drawn box; half sack
+             (0.5 each) when two players share it (possible per 5E rules where
+             Row 1 allows 0-2 per box).
+          4. If no candidates can be identified, return an empty list (sack credit
+             unassigned — QB's passer stat already records the sack suffered).
+        """
+        if not defenders_by_box:
+            return []
+
+        # Invert defenders_by_box so we can look up a player's box by name
+        name_to_box: Dict[str, str] = {
+            card.player_name: box
+            for box, card in defenders_by_box.items()
+        }
+
+        # Build {box: [player_card, ...]} supporting (future) two-player boxes
+        box_players: Dict[str, List["PlayerCard"]] = {}
+        # Row 1 (pass-rush line): boxes A-E
+        row1_boxes = ('A', 'B', 'C', 'D', 'E')
+        for box in row1_boxes:
+            card = defenders_by_box.get(box)
+            if card:
+                box_players.setdefault(box, []).append(card)
+
+        # Blitzers: each contributing to their own box with weight 2
+        if blitzer_names:
+            # Build a name→card map so we retrieve the blitzer's own card, not
+            # whoever else might occupy the same box (avoids misattribution).
+            name_to_card: Dict[str, "PlayerCard"] = {
+                card.player_name: card
+                for card in defenders_by_box.values()
+            }
+            for bname in blitzer_names:
+                box = name_to_box.get(bname)
+                blitzer_card = name_to_card.get(bname)
+                if box and box not in row1_boxes and blitzer_card:
+                    # Blitzer from Row 2/3: add their card to the pool
+                    box_players.setdefault(box, []).append(blitzer_card)
+
+        if not box_players:
+            # Fallback: assign to the highest-rated pass rusher in the whole defense.
+            # All sacks are made by someone — never leave credit unassigned.
+            if not defenders_by_box:
+                return []
+            best_pr = max(
+                getattr(c, 'pass_rush_rating', 0) for c in defenders_by_box.values()
+            )
+            top_rushers = [
+                c for c in defenders_by_box.values()
+                if getattr(c, 'pass_rush_rating', 0) == best_pr
+            ]
+            if len(top_rushers) == 1:
+                return [(top_rushers[0].player_name, 1.0)]
+            # Tie: half sack each (even if >2 — very rare)
+            credit = round(1.0 / len(top_rushers), 4)
+            return [(p.player_name, credit) for p in top_rushers]
+
+        # Weights: Row 1 players use pass_rush_rating; blitzers use 2
+        boxes = list(box_players.keys())
+        weights: List[float] = []
+        for box in boxes:
+            if box in row1_boxes:
+                # Weight = sum of pass_rush_rating of players in this box
+                w = sum(getattr(p, 'pass_rush_rating', 1) for p in box_players[box])
+            else:
+                # Blitz box: fixed weight of 2 per blitzing player
+                w = 2.0 * len(box_players[box])
+            weights.append(max(w, 1))  # Minimum weight of 1 to avoid zero-weight
+
+        drawn_box = random.choices(boxes, weights=weights, k=1)[0]
+        players_in_box = box_players[drawn_box]
+
+        if len(players_in_box) == 1:
+            return [(players_in_box[0].player_name, 1.0)]
+        else:
+            # Two players share the box → half sack each
+            return [(p.player_name, 0.5) for p in players_in_box[:2]]
+
+    # ── Tackle Credit Assignment ──────────────────────────────────────
+
+    # Box sets used for tackle weighting by play type.
+    # Row 1 = DL (A-E), Row 2 = LB (F-J), Row 3 = DB (K-O)
+    _TACKLE_WEIGHTS: Dict[str, Dict[str, float]] = {
+        # Inside run (IL/IR): DTs/NT in B/C/D most likely, then ILB/MLB in G/H/I
+        "INSIDE_RUN":  {'A': 4, 'B': 10, 'C': 8, 'D': 10, 'E': 4,
+                        'F': 5, 'G': 12, 'H': 15, 'I': 12, 'J': 5,
+                        'K': 2, 'L': 1, 'M': 1, 'N': 2, 'O': 2},
+        # Sweep (SL/SR): DE/OLB on edges most likely
+        "SWEEP":       {'A': 14, 'B': 4, 'C': 2, 'D': 4, 'E': 14,
+                        'F': 12, 'G': 3, 'H': 3, 'I': 3, 'J': 12,
+                        'K': 6, 'L': 2, 'M': 1, 'N': 2, 'O': 6},
+        # Short pass: mostly DBs/CBs; LBs second; occasional DL
+        "SHORT_PASS":  {'A': 2, 'B': 1, 'C': 1, 'D': 1, 'E': 2,
+                        'F': 7, 'G': 5, 'H': 5, 'I': 5, 'J': 7,
+                        'K': 18, 'L': 5, 'M': 10, 'N': 10, 'O': 18},
+        # Long pass: overwhelmingly DBs; FS (M) and CBs (K/O)
+        "LONG_PASS":   {'A': 1, 'B': 0, 'C': 0, 'D': 0, 'E': 1,
+                        'F': 3, 'G': 2, 'H': 2, 'I': 2, 'J': 3,
+                        'K': 22, 'L': 4, 'M': 18, 'N': 8, 'O': 22},
+        # Quick pass: more even — DB/LB/DL all possible
+        "QUICK_PASS":  {'A': 6, 'B': 4, 'C': 4, 'D': 4, 'E': 6,
+                        'F': 9, 'G': 7, 'H': 7, 'I': 7, 'J': 9,
+                        'K': 12, 'L': 3, 'M': 8, 'N': 8, 'O': 12},
+        # Screen pass: outside players (OLBs/DEs) and DBs
+        "SCREEN_PASS": {'A': 12, 'B': 3, 'C': 1, 'D': 3, 'E': 12,
+                        'F': 14, 'G': 3, 'H': 2, 'I': 3, 'J': 14,
+                        'K': 10, 'L': 3, 'M': 4, 'N': 4, 'O': 10},
+    }
+
+    @staticmethod
+    def _normalise_tackle_weight_key(play_type: str) -> str:
+        """Map a play_type string to a key in ``_TACKLE_WEIGHTS``.
+
+        Default is ``SHORT_PASS`` (conservative — covers unknown pass types
+        and most special-teams plays where DBs and LBs are most likely tacklers).
+        """
+        pt = play_type.upper()
+        if pt in ("IL", "IR", "INSIDE", "INSIDE_LEFT", "INSIDE_RIGHT",
+                  "MIDDLE", "END_AROUND_QB_SNEAK", "SNEAK"):
+            return "INSIDE_RUN"
+        if pt in ("SL", "SR", "SWEEP", "SWEEP_LEFT", "SWEEP_RIGHT"):
+            return "SWEEP"
+        if pt in ("LONG", "LONG_PASS"):
+            return "LONG_PASS"
+        if pt in ("SCREEN", "SCREEN_PASS"):
+            return "SCREEN_PASS"
+        if "QUICK" in pt:
+            return "QUICK_PASS"
+        # SHORT, SHORT_PASS, PASS, unknown play types → SHORT_PASS
+        return "SHORT_PASS"
+
+    @staticmethod
+    def assign_tackle_credit(
+        defenders_by_box: Optional[Dict[str, "PlayerCard"]],
+        play_type: str,
+        box_letters: Optional[List[str]] = None,
+        covering_defender_box: Optional[str] = None,
+    ) -> List[Tuple[str, float]]:
+        """Assign individual tackle credit on a play.
+
+        Algorithm (house rule):
+          1. **Direct box assignment** — if the blocking matchup identified
+             specific contested box(es) that are occupied, those player(s)
+             get the tackle.  One box + one player → full tackle (1.0).
+             One box + two players → half each (0.5).
+             Two boxes each with one player → half each (0.5).
+          2. **Covering defender priority** — for pass plays, if the covering
+             defender's box is known (``covering_defender_box``), that
+             defender is added to the pool with extra weight (×2).
+          3. **Play-type weighted fallback** — when no direct box assignment
+             is available (empty boxes, no matchup, special teams, etc.) a
+             weighted random draw over all occupied boxes is used.  Weights
+             are defined per-box and vary by play type so that, e.g.:
+               - Inside run: DTs (B/D) and ILB/MLB (G/H/I) are most likely
+               - Sweep: DEs (A/E) and OLBs (F/J) are most likely
+               - Long pass: CBs (K/O) and FS (M) are most likely
+               - Quick pass: more even across all rows
+          4. If no defenders are available, return an empty list.
+        """
+        if not defenders_by_box:
+            return []
+
+        row1 = {'A', 'B', 'C', 'D', 'E'}
+
+        # --- Step 1: direct box assignment from blocking matchup ---
+        if box_letters:
+            occupied = []
+            for bl in box_letters:
+                card = defenders_by_box.get(bl)
+                if card:
+                    occupied.append(card)
+            if occupied:
+                credit = round(1.0 / len(occupied), 4)
+                return [(p.player_name, credit) for p in occupied]
+
+        # --- Step 2: weighted random draw ---
+        # Normalise play_type to a key in _TACKLE_WEIGHTS
+        weight_key = PlayResolver._normalise_tackle_weight_key(play_type)
+        base_weights = PlayResolver._TACKLE_WEIGHTS[weight_key]
+
+        occupied_boxes = [
+            (box, card)
+            for box, card in defenders_by_box.items()
+            if card is not None
+        ]
+        if not occupied_boxes:
+            return []
+
+        boxes = [b for b, _ in occupied_boxes]
+        weights: List[float] = []
+        for box, _ in occupied_boxes:
+            w = float(base_weights.get(box, 1))
+            # Double the weight for the covering defender on pass plays
+            if covering_defender_box and box == covering_defender_box:
+                w *= 2.0
+            weights.append(max(w, 0.1))
+
+        drawn_box = random.choices(boxes, weights=weights, k=1)[0]
+        player = defenders_by_box[drawn_box]
+        return [(player.player_name, 1.0)]
+
+    # ── Fumble Recovery Assignment ────────────────────────────────────
+
+    @staticmethod
+    def assign_fumble_recovery(
+        defenders_by_box: Optional[Dict[str, "PlayerCard"]],
+        play_type: str,
+        tackle_by: Optional[List[Tuple[str, float]]] = None,
+    ) -> Optional[str]:
+        """Assign defensive fumble recovery credit to a specific player.
+
+        Called only when the defense has already been determined to recover
+        the fumble (``fumble_lost=True``).
+
+        Algorithm (house rule):
+          1. The tackler (from ``tackle_by``) is the most likely recoverer
+             — they're already in contact with the ball carrier.
+             If multiple tacklers, pick the one with the highest credit share
+             (or first in list on tie).
+          2. All other defenders are secondary candidates weighted by play
+             type (same distributions used for tackle assignment).
+          3. A single random draw decides the recoverer.  The tackler's
+             weight is doubled relative to play-type weight.
+
+        Returns the player_name of the recoverer, or None if no defenders
+        are available.
+        """
+        if not defenders_by_box:
+            return None
+
+        # Primary candidate: the tackler (if known)
+        tackler_name: Optional[str] = None
+        if tackle_by:
+            # Pick the tackler with highest credit (usually the only one)
+            tackler_name = max(tackle_by, key=lambda x: x[1])[0]
+
+        # Normalise play_type to a key in _TACKLE_WEIGHTS
+        weight_key = PlayResolver._normalise_tackle_weight_key(play_type)
+        base_weights = PlayResolver._TACKLE_WEIGHTS[weight_key]
+
+        occupied = [(box, card) for box, card in defenders_by_box.items() if card is not None]
+        if not occupied:
+            return None
+
+        boxes = [b for b, _ in occupied]
+        weights: List[float] = []
+        for box, card in occupied:
+            w = float(base_weights.get(box, 1))
+            # Double weight for the identified tackler
+            if tackler_name and card.player_name == tackler_name:
+                w *= 2.0
+            weights.append(max(w, 0.1))
+
+        drawn_box = random.choices(boxes, weights=weights, k=1)[0]
+        return defenders_by_box[drawn_box].player_name
+
     # ── Rule 9: Empty Box Completion Modifier ────────────────────────
 
     @staticmethod
@@ -1791,12 +2068,26 @@ class PlayResolver:
                 if pr_result == "SACK":
                     loss = -(pn // 3 + 1)
                     loss = max(loss, -8)
+                    sack_credits = self.assign_sack_credit(defenders_by_box, blitzer_names)
+                    if sack_credits:
+                        sacker_parts = [
+                            f"{name} ({credit:.1f})" if credit < 1.0 else name
+                            for name, credit in sack_credits
+                        ]
+                        sacker_str = ", ".join(sacker_parts)
+                        log.append(f"[SACK] Credit: {sacker_str}")
+                        desc = (f"{qb.player_name} sacked by {sacker_str}! "
+                                f"{abs(loss)} yard loss.")
+                    else:
+                        desc = (f"{qb.player_name} sacked on pass rush! "
+                                f"{abs(loss)} yard loss.")
                     r = PlayResult(
                         play_type="PASS", yards_gained=loss,
                         result="SACK",
-                        description=f"{qb.player_name} sacked on pass rush! {abs(loss)} yard loss.",
+                        description=desc,
                         passer=qb.player_name, z_card_event=z_event,
                         pass_number_used=pn,
+                        sack_by=sack_credits or None,
                     )
                     r.debug_log = log
                     return r
@@ -1844,11 +2135,25 @@ class PlayResolver:
             else:
                 loss = random.choice([-3, -4, -5, -6])
                 log.append(f"[P.RUSH] No QB pass_rush ranges, default sack {loss} yards")
+                sack_credits = self.assign_sack_credit(defenders_by_box, blitzer_names)
+                if sack_credits:
+                    sacker_parts = [
+                        f"{name} ({credit:.1f})" if credit < 1.0 else name
+                        for name, credit in sack_credits
+                    ]
+                    sacker_str = ", ".join(sacker_parts)
+                    log.append(f"[SACK] Credit: {sacker_str}")
+                    desc = (f"{qb.player_name} sacked by {sacker_str}! "
+                            f"{abs(loss)} yard loss.")
+                else:
+                    desc = (f"{qb.player_name} sacked on pass rush! "
+                            f"{abs(loss)} yard loss.")
                 r = PlayResult(
                     play_type="PASS", yards_gained=loss,
                     result="SACK",
-                    description=f"{qb.player_name} sacked on pass rush! {abs(loss)} yard loss.",
+                    description=desc,
                     passer=qb.player_name, z_card_event=z_event,
+                    sack_by=sack_credits or None,
                 )
                 r.debug_log = log
                 return r
@@ -2314,6 +2619,14 @@ class PlayResolver:
             desc = f"{qb.player_name} completes to {target_receiver.player_name} for {yards} yard{'s' if yards != 1 else ''}"
         log.append(f"[RESULT] {desc}")
 
+        # Assign tackle credit on completed pass (tackler brings down the receiver)
+        tackle_credits = self.assign_tackle_credit(
+            defenders_by_box, pass_type,
+            covering_defender_box=covering_defender_box,
+        )
+        if tackle_credits:
+            log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
+
         r = PlayResult(
             play_type="PASS", yards_gained=yards,
             result="TD" if is_td else "COMPLETE",
@@ -2323,6 +2636,7 @@ class PlayResolver:
             z_card_event=z_event,
             pass_number_used=pn,
             run_number_used=run_num,
+            tackle_by=tackle_credits or None,
         )
         r.debug_log = log
         return r
@@ -2810,12 +3124,18 @@ class PlayResolver:
             if is_oob and play_direction not in ("IL", "IR", "INSIDE", "MIDDLE", "LEFT"):
                 log.append(f"[OOB] Runner out of bounds ({play_direction})")
                 desc = f"{rusher.player_name} runs {play_direction} for {yards} yards, out of bounds"
+                tackle_credits = self.assign_tackle_credit(
+                    defenders_by_box, play_direction, box_letters or None,
+                )
+                if tackle_credits:
+                    log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
                 r = PlayResult(
                     play_type="RUN", yards_gained=yards,
                     result="OOB", out_of_bounds=True,
                     description=desc, rusher=rusher.player_name,
                     z_card_event=z_event,
                     run_number_used=used_run_num,
+                    tackle_by=tackle_credits or None,
                 )
                 r.debug_log = log
                 return r
@@ -2845,16 +3165,39 @@ class PlayResolver:
                 log.append(f"[FUMBLE] PN {fumble_pn} {'in' if fumble_lost else 'outside'} range 1-{adjusted_max} "
                             f"→ Recovery={recovery}")
 
+                # Assign tackle and fumble recovery credit
+                tackle_credits = self.assign_tackle_credit(
+                    defenders_by_box, play_direction, box_letters or None,
+                )
+                if tackle_credits:
+                    log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
+                fumble_recoverer: Optional[str] = None
+                if fumble_lost:
+                    fumble_recoverer = self.assign_fumble_recovery(
+                        defenders_by_box, play_direction, tackle_credits or None,
+                    )
+                    if fumble_recoverer:
+                        log.append(f"[FUMBLE RECOVERY] {fumble_recoverer} recovers the fumble!")
+
+                fumble_desc = (
+                    f"{rusher.player_name} fumbles at the end of the run! "
+                    f"{'Defense recovers!' if is_turnover else 'Offense recovers.'}"
+                )
+                if fumble_recoverer:
+                    fumble_desc = (
+                        f"{rusher.player_name} fumbles at the end of the run! "
+                        f"{fumble_recoverer} recovers for the defense!"
+                    )
+
                 r = PlayResult(
                     play_type="RUN", yards_gained=yards,
                     result="FUMBLE", turnover=is_turnover,
                     turnover_type="FUMBLE" if is_turnover else None,
-                    description=(
-                        f"{rusher.player_name} fumbles at the end of the run! "
-                        f"{'Defense recovers!' if is_turnover else 'Offense recovers.'}"
-                    ),
+                    description=fumble_desc,
                     rusher=rusher.player_name, z_card_event=z_event,
                     run_number_used=used_run_num,
+                    tackle_by=tackle_credits or None,
+                    fumble_recovered_by=fumble_recoverer,
                 )
                 r.debug_log = log
                 return r
@@ -2866,6 +3209,12 @@ class PlayResolver:
                 desc += f" for {yards} yard{'s' if yards != 1 else ''}"
             log.append(f"[RESULT] Final: {yards} yards, TD={is_td}")
 
+            tackle_credits = self.assign_tackle_credit(
+                defenders_by_box, play_direction, box_letters or None,
+            )
+            if tackle_credits:
+                log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
+
             r = PlayResult(
                 play_type="RUN", yards_gained=yards,
                 result="TD" if is_td else "GAIN",
@@ -2873,6 +3222,7 @@ class PlayResolver:
                 description=desc,
                 rusher=rusher.player_name, z_card_event=z_event,
                 run_number_used=used_run_num,
+                tackle_by=tackle_credits or None,
             )
             r.debug_log = log
             return r
@@ -2881,11 +3231,15 @@ class PlayResolver:
         yards = random.choices([-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8],
                                weights=[2, 3, 5, 8, 10, 12, 12, 10, 8, 5, 3])[0]
         log.append(f"[RUN] No rushing card data for {rusher.player_name}; fallback yards={yards}")
+        tackle_credits = self.assign_tackle_credit(defenders_by_box, play_direction)
+        if tackle_credits:
+            log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
         r = PlayResult(
             play_type="RUN", yards_gained=yards, result="GAIN",
             description=f"{rusher.player_name} runs for {yards} yards",
             rusher=rusher.player_name, z_card_event=z_event,
             run_number_used=used_run_num,
+            tackle_by=tackle_credits or None,
         )
         r.debug_log = log
         return r

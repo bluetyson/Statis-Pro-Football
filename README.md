@@ -323,11 +323,61 @@ The following rules are implemented as optional extensions beyond the core 5th-e
   chance per pass play; rises to ~50 % on 3rd/4th & long or when protecting a late lead).
   All blocking-back decisions are logged in the play log.
 
+- **Sack Credit Assignment** — When a sack results from a Pass Rush, individual credit is
+  assigned to the defender most responsible using a weighted random draw:
+  - **Pass-rush line** (Row 1, boxes A-E): each occupied DL box is a candidate weighted by
+    the player's `pass_rush_rating`.  Players with high pass-rush ratings (> 2) are
+    therefore the strongest contributors and are typically placed on the line.
+  - **Blitzers** (Row 2/3 boxes): any blitzing player is also a candidate with fixed weight 2
+    (their 5E blitz PR value).
+  - `random.choices` draws one box from the weighted pool.  If two players occupy that
+    box, each receives a **half sack** (0.5); otherwise the sole occupant gets a **full sack**.
+  - **Fallback**: if no weighted candidates are found, credit goes to the highest-rated pass
+    rusher in the whole defense.  Ties are split equally (half sack each, even if > 2 players).
+  - The sacker's name appears in the play log (e.g. "Josh Allen sacked by Myles Garrett! 6 yard loss.")
+    and in the end-of-game SACKS section of the boxscore.
+
+- **Tackle Credit Assignment** — Individual tackle credit is assigned on every run play and
+  completed pass.  The algorithm (house rule):
+  - **Direct box assignment**: when the blocking matchup on the FAC card identified a
+    specific defended box, that box's player(s) get the tackle.  Two players in a box →
+    half tackle each (0.5); two boxes each with one player → half tackle each.
+  - **Weighted random fallback**: when boxes are empty or the matchup is not box-based, a
+    weighted draw over all occupied defensive boxes is used.  Weights vary by play type:
+    - *Inside run*: DTs (B/C/D) and ILB/MLB (G/H/I) most likely.
+    - *Sweep*: DEs (A/E) and OLBs (F/J) most likely.
+    - *Long pass*: CBs (K/O) and FS (M) overwhelmingly likely; covering defender doubled.
+    - *Short pass*: mostly DBs and LBs; covering defender doubled.
+    - *Quick pass*: more even across all rows; covering defender doubled.
+    - *Screen*: outside players (OLBs F/J and DEs A/E) most likely.
+  - Tackle totals (whole and fractional) appear in the end-of-game TACKLES section of the
+    boxscore and are logged in the play log.
+
+- **Fumble Recovery Assignment** — When a fumble is recovered by the defense, a specific
+  player is selected as the recoverer:
+  - The identified tackler for that play is the most likely recoverer (their weight doubled).
+  - All other defenders are secondary candidates weighted by play type (same distribution
+    as tackle assignment — the nearest defenders are most likely to pick up the ball).
+  - The recoverer's name appears in the play description ("... [Name] recovers for the defense!")
+    and in the end-of-game FUMBLE RECOVERIES section of the boxscore.
+
 ## Future Rules / Potential Extensions
 
 The following rules do not appear in the 5th-edition rulebook but may be added as optional house rules in a future release:
 
 - ~~**Shotgun Formation (Offense)**~~ — Now implemented as an advanced rule (see above).
+
+- ~~**Sack Credit Assignment**~~ — Now implemented as an advanced rule (see above).
+
+- ~~**Tackle Credit Assignment**~~ — Now implemented as an advanced rule (see above).
+
+- ~~**Fumble Recovery Assignment**~~ — Now implemented as an advanced rule (see above).
+
+- **Special Teams Individual Credit** — Fumble recoveries, tackles, and blocks on kickoff/
+  punt returns could be assigned to individual special-teams personnel (backup roster players).
+  Currently special-teams fumble recoveries are team-level only; a future extension could
+  draw from the depth chart to assign individual credit consistent with how game-play
+  fumble recoveries are handled.
 
 ## License
 
