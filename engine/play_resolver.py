@@ -2516,10 +2516,14 @@ class PlayResolver:
             # Check if the covering defender's PDR caused this incompletion.
             # If the pass would have been complete without the PDR modifier,
             # credit the defender with a pass defensed.
+            #
+            # pass_defense_mod = -pdr (negative; PDR raises PN by pdr).
+            # Adding pass_defense_mod to pn removes the PDR's contribution:
+            #   pn_without_pdr = pn + pass_defense_mod = pn - pdr
             pass_defensed_by_name = None
             if covering_defender and pass_defense_mod < 0:
                 pdr_val = -pass_defense_mod  # PDR contribution to PN increase
-                pn_without_pdr = max(1, min(48, pn + pass_defense_mod))
+                pn_without_pdr = max(1, min(48, pn + pass_defense_mod))  # undo PDR: pn - pdr
                 if qb.passing_short or qb.passing_long or qb.passing_quick:
                     if qb.resolve_passing(pass_type, pn_without_pdr) == "COM":
                         pass_defensed_by_name = covering_defender.player_name
