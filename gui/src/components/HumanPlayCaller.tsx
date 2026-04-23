@@ -32,6 +32,7 @@ const PLAY_TYPES = [
   { value: 'PUNT', label: '🦵 Punt', color: '#6b7280' },
   { value: 'FG', label: '🥅 Field Goal', color: '#ef4444' },
   { value: 'KNEEL', label: '🧎 Kneel', color: '#374151' },
+  { value: 'SPIKE', label: '⚡ Spike', color: '#f97316' },
 ];
 
 const KICKOFF_TYPES = [
@@ -85,7 +86,7 @@ export function HumanPlayCaller({
 
   const isRunPlay = selectedPlay === 'RUN' || selectedPlay === 'END_AROUND';
   const isPassPlay = ['SHORT_PASS', 'LONG_PASS', 'QUICK_PASS', 'SCREEN'].includes(selectedPlay);
-  const isSpecialPlay = ['PUNT', 'FG', 'KNEEL'].includes(selectedPlay);
+  const isSpecialPlay = ['PUNT', 'FG', 'KNEEL', 'SPIKE'].includes(selectedPlay);
 
   // Reset strategy and direction whenever the play type changes.
   // Strategy reset: a previously-selected strategy (e.g. Play-Action Pass)

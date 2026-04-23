@@ -34,6 +34,9 @@ export default function App() {
     executeTwoPointConversion,
     activateBigPlayDefense,
     declareTwoMinuteOffense,
+    rescindTwoMinuteOffense,
+    declareNoHuddleOffense,
+    rescindNoHuddleOffense,
     downloadGameLog,
     resetError,
     isHumanTurn,
@@ -119,6 +122,9 @@ export default function App() {
                 onTwoPointConversion={executeTwoPointConversion}
                 onBigPlayDefense={activateBigPlayDefense}
                 onTwoMinuteOffense={declareTwoMinuteOffense}
+                onRescindTwoMinuteOffense={rescindTwoMinuteOffense}
+                onNoHuddleOffense={declareNoHuddleOffense}
+                onRescindNoHuddleOffense={rescindNoHuddleOffense}
                 onDownloadGameLog={downloadGameLog}
                 onNewGame={handleNewGame}
                 onRefreshPersonnel={fetchPersonnel}

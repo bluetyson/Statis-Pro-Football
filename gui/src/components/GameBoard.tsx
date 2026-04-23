@@ -135,6 +135,9 @@ interface GameBoardProps {
   onTwoPointConversion: (playType: string) => void;
   onBigPlayDefense: () => void;
   onTwoMinuteOffense: () => void;
+  onRescindTwoMinuteOffense: () => void;
+  onNoHuddleOffense: () => void;
+  onRescindNoHuddleOffense: () => void;
   onDownloadGameLog: () => void;
   onNewGame: () => void;
   onRefreshPersonnel?: () => void;
@@ -169,6 +172,9 @@ export function GameBoard({
   onTwoPointConversion,
   onBigPlayDefense,
   onTwoMinuteOffense,
+  onRescindTwoMinuteOffense,
+  onNoHuddleOffense,
+  onRescindNoHuddleOffense,
   onDownloadGameLog,
   onNewGame,
   onRefreshPersonnel,
@@ -323,18 +329,54 @@ export function GameBoard({
         </div>
       )}
 
-      {/* Two-Minute Offense & Big Play Defense buttons */}
+      {/* Two-Minute Offense, No-Huddle & Big Play Defense buttons */}
       {isInteractive && !state.is_over && (
-        <div className="tactical-actions" style={{ display: 'flex', gap: '8px', padding: '4px 12px' }}>
+        <div className="tactical-actions" style={{ display: 'flex', gap: '8px', padding: '4px 12px', flexWrap: 'wrap' }}>
+          {/* No-Huddle: available any time on human offense */}
+          {isHumanTurn && (
+            state.no_huddle_offense ? (
+              <button
+                className="btn btn-accent btn-sm"
+                onClick={onRescindNoHuddleOffense}
+                disabled={loading}
+                title="Rescind no-huddle offense (voluntarily)"
+                style={{ outline: '2px solid #f97316' }}
+              >
+                🏃 No-Huddle ON — Cancel
+              </button>
+            ) : (
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={onNoHuddleOffense}
+                disabled={loading}
+                title="Declare no-huddle offense: halves time for non-stopping plays; auto-rescinded when clock stops, injury, or sub"
+              >
+                🏃 No-Huddle Offense
+              </button>
+            )
+          )}
+          {/* Two-Minute: available when conditions allow */}
           {isHumanTurn && state.quarter >= 2 && state.time_remaining <= 180 && (
-            <button
-              className="btn btn-accent btn-sm"
-              onClick={onTwoMinuteOffense}
-              disabled={loading}
-              title="Declare two-minute offense: halved time, halved run yardage"
-            >
-              ⏱️ Two-Minute Offense
-            </button>
+            state.two_minute_offense ? (
+              <button
+                className="btn btn-accent btn-sm"
+                onClick={onRescindTwoMinuteOffense}
+                disabled={loading}
+                title="Rescind two-minute offense (voluntarily)"
+                style={{ outline: '2px solid #f59e0b' }}
+              >
+                ⏱️ Two-Min ON — Cancel
+              </button>
+            ) : (
+              <button
+                className="btn btn-accent btn-sm"
+                onClick={onTwoMinuteOffense}
+                disabled={loading}
+                title="Declare two-minute offense: halved time for all plays, halved run yardage"
+              >
+                ⏱️ Two-Minute Offense
+              </button>
+            )
           )}
           {isHumanOnDefense && (
             <button

@@ -177,6 +177,8 @@ class Game:
         self._last_play_time: int = 0
         # 5E: Manual two-minute offense declaration
         self._two_minute_declared: bool = False
+        # 5E: No-Huddle offense flag
+        self._no_huddle: bool = False
         # 5E: Big play defense state per team
         self._big_play_defense = {"home": BigPlayDefense(), "away": BigPlayDefense()}
         self._current_play_personnel_note: Optional[str] = None
@@ -225,6 +227,43 @@ class Game:
     def get_defense_team(self) -> Team:
         return self.away_team if self.state.possession == "home" else self.home_team
 
+    def _build_ol_by_position(self) -> Dict[str, PlayerCard]:
+        """Return a mapping of OL slot → PlayerCard for the current offense.
+
+        Keys: "LT", "LG", "CN" (center), "RG", "RT".
+        Respects any on-field OL substitution overrides.
+        """
+        offense = self.get_offense_team()
+        if not offense or not offense.roster:
+            return {}
+        side = self.state.possession
+        ol_overrides = self._on_field_ol.get(side, {})
+        ol_name_to_card: Dict[str, PlayerCard] = {
+            p.player_name: p for p in offense.roster.offensive_line
+        }
+        result: Dict[str, PlayerCard] = {}
+        _slot_map = {"LT": "LT", "LG": "LG", "C": "CN", "RG": "RG", "RT": "RT"}
+        # Apply overrides first
+        for slot, cn_slot in _slot_map.items():
+            name = ol_overrides.get(slot)
+            if name and name in ol_name_to_card:
+                result[cn_slot] = ol_name_to_card[name]
+        # Fill remaining from roster
+        for ol in offense.roster.offensive_line:
+            pos = getattr(ol, "position", "").upper()
+            if pos == "C":
+                if "CN" not in result:
+                    result["CN"] = ol
+            elif pos in ("LG", "RG", "LT", "RT"):
+                if pos not in result:
+                    result[pos] = ol
+            elif pos == "OL":
+                for slot in ("LT", "LG", "CN", "RG", "RT"):
+                    if slot not in result:
+                        result[slot] = ol
+                        break
+        return result
+
     def _build_defenders_by_box(self, defense: Team) -> Dict[str, PlayerCard]:
         """Build a mapping of box letter (A-O) → PlayerCard for current defenders.
 
@@ -246,6 +285,27 @@ class Game:
             if card:
                 box_to_defender[box] = card
         return box_to_defender
+
+    def _build_defenders_list_by_box(self, defense: Team) -> Dict[str, List[PlayerCard]]:
+        """Build a mapping of box letter → list of PlayerCards (supports double-staffed boxes).
+
+        Uses assign_defenders_to_boxes_multi so that extra DL beyond the five
+        Row-1 slots overflow into interior boxes B, D, C — enabling the
+        short-yardage crowding-bonus rule in resolve_sneak.
+        """
+        if not defense or not defense.roster:
+            return {}
+        defenders = list(defense.roster.defenders)[:11]
+        if not defenders:
+            return {}
+        multi_map = PlayResolver.assign_defenders_to_boxes_multi(defenders)
+        name_to_card = {d.player_name: d for d in defenders}
+        result: Dict[str, List[PlayerCard]] = {}
+        for box, names in multi_map.items():
+            cards = [name_to_card[n] for n in names if n in name_to_card]
+            if cards:
+                result[box] = cards
+        return result
 
     def _is_player_unavailable(self, player: Optional[PlayerCard]) -> bool:
         return bool(player and self.state.injuries.get(player.player_name, 0) > 0)
@@ -1284,6 +1344,13 @@ class Game:
         # Also reset consecutive-play counters since it's a new possession
         self.state.last_ball_carrier = None
         self.state.prev_ball_carrier = None
+        # 5E: two-minute and no-huddle are rescinded on possession change
+        if self._two_minute_declared:
+            self._two_minute_declared = False
+            self.state.play_log.append("  ⏱️ Two-minute offense rescinded (possession changed).")
+        if self._no_huddle:
+            self._no_huddle = False
+            self.state.play_log.append("  🏃 No-huddle offense rescinded (possession changed).")
 
     def _score_touchdown(self) -> None:
         if self.state.possession == "home":
@@ -1820,7 +1887,13 @@ class Game:
           * Field goal attempt           → 5 seconds
           * Touchback, XP, movement pen  → 0 seconds
           * Kneel                        → 40 seconds
+
+        Two-Minute Offense: all play times halved (min 1 s).
+        No-Huddle Offense: only non-clock-stopping play times halved;
+          clock-stopping plays use normal time and auto-rescind no-huddle.
         """
+        is_kicking = result.play_type in ("PUNT", "KICKOFF", "FG")
+
         if result.result in ("TOUCHBACK", "XP_GOOD", "XP_MISS"):
             time = self.TIME_ZERO
         elif result.play_type == "PUNT" or result.play_type == "KICKOFF":
@@ -1837,8 +1910,26 @@ class Game:
             time = self.TIME_CLOCK_STOP
         elif result.play_type == "KNEEL":
             time = self.TIME_KNEEL
+        elif result.play_type == "SPIKE" or result.strategy == "SPIKE":
+            time = self.TIME_CLOCK_STOP
         else:
             time = self.TIME_STANDARD_PLAY
+
+        # ── Two-Minute / No-Huddle time halving ───────────────────────
+        clock_stopping = (time <= self.TIME_CLOCK_STOP and time > self.TIME_ZERO)
+        if not is_kicking:
+            if self._is_two_minute_offense():
+                # Two-minute halves ALL play times (incl. clock-stopping)
+                if time > self.TIME_ZERO:
+                    time = max(1, time // 2)
+            elif self._no_huddle:
+                # No-huddle only halves non-clock-stopping play times
+                if not clock_stopping and time > self.TIME_ZERO:
+                    time = max(1, time // 2)
+                elif clock_stopping:
+                    # Clock-stopping play in no-huddle → auto-rescind
+                    self._rescind_no_huddle_offense(reason="clock stopped")
+
         # Track for timeout restriction rule
         self._last_play_time = time
         return time
@@ -2307,9 +2398,19 @@ class Game:
         elif strategy == "SNEAK":
             qb = self.get_qb(player_name)
             if qb:
-                result = self.resolver.resolve_sneak(qb, self.deck)
+                defense = self.get_defense_team()
+                ol_by_pos = self._build_ol_by_position()
+                def_list_by_box = self._build_defenders_list_by_box(defense)
+                result = self.resolver.resolve_sneak(
+                    qb, self.deck,
+                    ol_by_position=ol_by_pos,
+                    defenders_list_by_box=def_list_by_box,
+                )
                 self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
+                if hasattr(result, 'debug_log') and result.debug_log:
+                    for dl_entry in result.debug_log:
+                        self.state.play_log.append(f"    {dl_entry}")
                 self._advance_down(result.yards_gained)
                 self._advance_time(self.TIME_STANDARD_PLAY)
                 self._track_play_stats(result)
@@ -2419,6 +2520,10 @@ class Game:
         elif play_call.play_type == "KNEEL":
             result = PlayResult("KNEEL", -1, "KNEEL", description="QB kneels")
             self._advance_down(-1)
+        elif play_call.play_type == "SPIKE":
+            qb = self.get_qb(player_name) or self.get_qb()
+            spike_qb = qb if qb else PlayerCard("QB", "", "QB", 0)
+            result = self.resolver.resolve_spike(spike_qb)
         elif play_call.play_type == "RUN":
             result = self._execute_run_5e(fac_card, play_call, defense_formation, player_name,
                                           defensive_play_5e=def_play_5e)
@@ -2490,6 +2595,8 @@ class Game:
                     # Immediately swap injured player out of the starter slot so
                     # the formation grid and personnel views reflect the change.
                     self._immediate_injury_swap(injured_player)
+                    # 5E: injury auto-rescinds no-huddle offense
+                    self._rescind_no_huddle_offense(reason="injury")
 
         # ── 5E Z-card penalty resolution ─────────────────────────────
         if result.z_card_event and result.z_card_event.get("type") == "PENALTY":
@@ -2595,6 +2702,25 @@ class Game:
 
         if play_call.play_type == "KNEEL":
             self._advance_time(self.TIME_KNEEL)
+            return result
+
+        if play_call.play_type == "SPIKE":
+            # Retroactively halve the previous play's time (minimum 10 s).
+            prev_time = self._last_play_time
+            reduced = max(self.TIME_CLOCK_STOP, prev_time // 2)
+            refund = max(0, prev_time - reduced)
+            if refund > 0:
+                self.state.time_remaining += refund
+                self.state.play_log.append(
+                    f"  ⚡ QB Spike: previous play time halved "
+                    f"({prev_time}s → {reduced}s, +{refund}s restored to clock)"
+                )
+            # Spike is an incomplete pass — advances the down, no yardage change.
+            self._advance_down(0)
+            if self.state.down > 4:
+                self._turnover_on_downs()
+            self._last_play_time = self.TIME_CLOCK_STOP
+            self._advance_time(self.TIME_CLOCK_STOP)
             return result
 
         self._advance_down(result.yards_gained)
@@ -3280,3 +3406,35 @@ class Game:
         """Manually declare two-minute offense mode."""
         self._two_minute_declared = True
         self.state.play_log.append("⏱️ Two-minute offense declared!")
+
+    def rescind_two_minute_offense(self):
+        """Voluntarily rescind two-minute offense mode."""
+        self._two_minute_declared = False
+        self.state.play_log.append("⏱️ Two-minute offense rescinded.")
+
+    # ── No-Huddle Offense ───────────────────────────────────────────────
+
+    def declare_no_huddle_offense(self):
+        """Declare no-huddle offense.
+
+        5E rules: May be used at any time.  Halves time for non-clock-stopping
+        plays only.  Auto-rescinded when the clock stops, an injury occurs, a
+        substitution is made at the end of a play, or possession changes.
+        Never in effect on punt or kicking plays.
+        """
+        self._no_huddle = True
+        self.state.play_log.append("🏃 No-huddle offense declared!")
+
+    def _rescind_no_huddle_offense(self, reason: str = ""):
+        """Internal helper — clear no-huddle flag and log the reason."""
+        if self._no_huddle:
+            self._no_huddle = False
+            msg = "  🏃 No-huddle offense rescinded"
+            if reason:
+                msg += f" ({reason})"
+            msg += "."
+            self.state.play_log.append(msg)
+
+    def rescind_no_huddle_offense(self):
+        """Voluntarily rescind no-huddle offense."""
+        self._rescind_no_huddle_offense(reason="voluntarily rescinded")

@@ -25,6 +25,8 @@ export interface GameState {
   turnovers?: Record<string, number>;
   player_stats?: Record<string, Record<string, number>>;
   pending_extra_point?: boolean;
+  two_minute_offense?: boolean;
+  no_huddle_offense?: boolean;
 }
 
 export interface PlayResult {

@@ -510,6 +510,48 @@ export function useGameEngine(): UseGameEngineReturn {
     }
   }, [gameId]);
 
+  const rescindTwoMinuteOffense = useCallback(async () => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/rescind-two-minute-offense`);
+      setGameState(res.data.state);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  const declareNoHuddleOffense = useCallback(async () => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/no-huddle-offense`);
+      setGameState(res.data.state);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  const rescindNoHuddleOffense = useCallback(async () => {
+    if (!gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/games/${gameId}/rescind-no-huddle-offense`);
+      setGameState(res.data.state);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [gameId]);
+
   return {
     gameId,
     gameState,
@@ -539,6 +581,9 @@ export function useGameEngine(): UseGameEngineReturn {
     executeTwoPointConversion,
     activateBigPlayDefense,
     declareTwoMinuteOffense,
+    rescindTwoMinuteOffense,
+    declareNoHuddleOffense,
+    rescindNoHuddleOffense,
     downloadGameLog,
     resetError,
     isHumanTurn,

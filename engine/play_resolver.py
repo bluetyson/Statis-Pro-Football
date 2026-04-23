@@ -479,19 +479,123 @@ class PlayResolver:
             rusher=qb.player_name, strategy="FLOP",
         )
 
-    def resolve_sneak(self, qb: PlayerCard, deck: FACDeck) -> PlayResult:
+    def resolve_sneak(
+        self,
+        qb: PlayerCard,
+        deck: FACDeck,
+        ol_by_position: Optional[Dict[str, "PlayerCard"]] = None,
+        defenders_list_by_box: Optional[Dict[str, List["PlayerCard"]]] = None,
+    ) -> PlayResult:
         """Resolve a QB Sneak strategy.
 
-        5E Rules: Inside run to QB; flip FAC; even PN = +1 yard, odd PN = 0.
+        5E Rules: Inside run to QB; flip FAC.
+        Baseline: 24 out of 48 pass numbers succeed (gain 1 yard).
+
+        Interior blocking matchup rule:
+          offense_block = LG.run_block_rating + C.run_block_rating
+                          + RG.run_block_rating
+          defense_tackle = effective_tackle(B) + effective_tackle(C)
+                           + effective_tackle(D)
+          adjustment = offense_block - defense_tackle
+          success_count = clamp(24 + adjustment, 0, 48)
+          gain = 1 if PN <= success_count else 0
+
+        Double-box crowding bonus: when two defenders share an interior box
+        (B, C, or D) the effective tackle value = sum of their tackle_ratings
+        + 1 per additional player (e.g. DT[2] + LB[1] → 2+1+1 = 4).
+
+        When OL or defender data is unavailable the baseline (24 ranges) is used.
         """
         fac_card = deck.draw()
         pn = fac_card.pass_num_int or random.randint(1, 48)
-        yards = 1 if pn % 2 == 0 else 0
-        return PlayResult(
+
+        log: List[str] = []
+
+        # ── Interior blocking matchup ──────────────────────────────────
+        lg = (ol_by_position or {}).get("LG")
+        cn = (ol_by_position or {}).get("CN")
+        rg = (ol_by_position or {}).get("RG")
+
+        lg_val = getattr(lg, "run_block_rating", 0) if lg else 0
+        cn_val = getattr(cn, "run_block_rating", 0) if cn else 0
+        rg_val = getattr(rg, "run_block_rating", 0) if rg else 0
+        offense_block = lg_val + cn_val + rg_val
+
+        lg_name = lg.player_name if lg else "—"
+        cn_name = cn.player_name if cn else "—"
+        rg_name = rg.player_name if rg else "—"
+
+        def _box_tackle(box_key: str):
+            """Return (effective_tackle_value, display_string) for a box."""
+            players = (defenders_list_by_box or {}).get(box_key, [])
+            if not players:
+                return 0, "—"
+            base = sum(getattr(p, "tackle_rating", 0) for p in players)
+            bonus = len(players) - 1  # +1 crowding bonus per extra player
+            total = base + bonus
+            label = " & ".join(
+                f"{p.player_name}({getattr(p, 'tackle_rating', 0)})"
+                for p in players
+            )
+            if bonus:
+                label += f" +{bonus}crowd"
+            return total, label
+
+        b_val, b_label = _box_tackle("B")
+        c_val, c_label = _box_tackle("C")
+        d_val, d_label = _box_tackle("D")
+
+        defense_tackle = b_val + c_val + d_val
+        adjustment = offense_block - defense_tackle
+        success_count = max(0, min(48, 24 + adjustment))
+
+        log.append(
+            f"[Sneak] OL block: LG {lg_name}({lg_val}) + C {cn_name}({cn_val})"
+            f" + RG {rg_name}({rg_val}) = {offense_block}"
+        )
+        log.append(
+            f"[Sneak] DL tackle: B {b_label}({b_val}) + C {c_label}({c_val})"
+            f" + D {d_label}({d_val}) = {defense_tackle}"
+        )
+        if adjustment > 0:
+            log.append(
+                f"[Sneak] Offense +{adjustment} advantage → {success_count}/48 PNs gain 1 yd"
+            )
+        elif adjustment < 0:
+            log.append(
+                f"[Sneak] Defense +{-adjustment} advantage → {success_count}/48 PNs gain 1 yd"
+            )
+        else:
+            log.append(f"[Sneak] Even matchup → {success_count}/48 PNs gain 1 yd")
+        log.append(f"[Sneak] PN={pn} (success if PN ≤ {success_count})")
+
+        yards = 1 if pn <= success_count else 0
+        result = PlayResult(
             play_type="RUN", yards_gained=yards, result="GAIN",
             description=f"{qb.player_name} sneaks for {yards} yard{'s' if yards != 1 else ''} (Sneak)",
             rusher=qb.player_name, strategy="SNEAK",
             pass_number_used=pn,
+        )
+        result.debug_log = log
+        return result
+
+    def resolve_spike(self, qb: PlayerCard) -> PlayResult:
+        """Resolve a QB Spike play (intentional grounding to stop the clock).
+
+        5E Rules:
+          - Counts as an incomplete pass attempt (QB loses a down, no yards).
+          - Clock stops (10 seconds used, same as any incomplete pass).
+          - The PREVIOUS play's time is retroactively halved (min 10 seconds);
+            callers are responsible for applying the time refund before calling
+            _advance_time.
+        """
+        return PlayResult(
+            play_type="PASS",
+            yards_gained=0,
+            result="INCOMPLETE",
+            description=f"{qb.player_name} spikes the ball — clock stopped (Spike)",
+            passer=qb.player_name,
+            strategy="SPIKE",
         )
 
     def resolve_draw(self, fac_card: FACCard, deck: FACDeck,
@@ -3615,6 +3719,35 @@ class PlayResolver:
                     break
 
         return assignments
+
+    @staticmethod
+    def assign_defenders_to_boxes_multi(defenders: list) -> Dict[str, List[str]]:
+        """Like assign_default_display_boxes but returns box → list of player names.
+
+        Extra DL beyond the five Row-1 slots (A-E) overflow into the interior
+        boxes (B, D, C in that order), modelling a goal-line or short-yardage
+        stack where a second defender is packed into a gap.
+        """
+        primary: Dict[str, str] = PlayResolver.assign_default_display_boxes(defenders)
+        result: Dict[str, List[str]] = {}
+        for name, box in primary.items():
+            result.setdefault(box, []).append(name)
+
+        # Identify DL players not assigned to any box (overflow)
+        _DL_POSITIONS = {'DE', 'DT', 'DL', 'NT', 'EDGE'}
+        assigned_names = set(primary.keys())
+        overflow_dl = [
+            d for d in defenders
+            if getattr(d, 'position', '') in _DL_POSITIONS
+            and d.player_name not in assigned_names
+        ]
+        # Overflow DL go into inner line boxes B, D, C (gap-stuffing priority)
+        _OVERFLOW_BOXES = ['B', 'D', 'C']
+        for i, dl in enumerate(overflow_dl):
+            if i < len(_OVERFLOW_BOXES):
+                result.setdefault(_OVERFLOW_BOXES[i], []).append(dl.player_name)
+
+        return result
 
     # ── Pass Defense Box Assignments (5E) ────────────────────────────
 

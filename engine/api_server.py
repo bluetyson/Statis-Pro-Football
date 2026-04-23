@@ -158,7 +158,7 @@ class NewGameRequest(BaseModel):
 
 
 class HumanPlayCallRequest(BaseModel):
-    play_type: str  # RUN, SHORT_PASS, LONG_PASS, QUICK_PASS, SCREEN, PUNT, FG, KNEEL
+    play_type: str  # RUN, SHORT_PASS, LONG_PASS, QUICK_PASS, SCREEN, PUNT, FG, KNEEL, SPIKE
     direction: str = "MIDDLE"  # LEFT, RIGHT, MIDDLE, IL, IR, SL, SR, DEEP_LEFT, DEEP_RIGHT
     formation: str = "UNDER_CENTER"  # UNDER_CENTER, SHOTGUN, I_FORM, TRIPS, etc.
     strategy: Optional[str] = None  # FLOP, SNEAK, DRAW, PLAY_ACTION (5E strategies)
@@ -270,7 +270,7 @@ def new_game(request: NewGameRequest):
 
     return {
         "game_id": game_id,
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -278,7 +278,7 @@ def new_game(request: NewGameRequest):
 def get_game(game_id: str):
     """Get current game state."""
     game = _get_game(game_id)
-    return {"game_id": game_id, "state": _serialize_state(game.state)}
+    return {"game_id": game_id, "state": _serialize_state(game.state, game)}
 
 
 @app.post("/games/{game_id}/play")
@@ -299,7 +299,7 @@ def execute_play(game_id: str):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -339,7 +339,7 @@ def execute_human_play(game_id: str, request: HumanPlayCallRequest):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -422,7 +422,7 @@ def execute_human_defense(game_id: str, request: DefensivePlayCallRequest):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -446,7 +446,7 @@ def simulate_drive(game_id: str):
             "points_scored": drive.points_scored,
             "drive_log": drive.drive_log,
         },
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -466,7 +466,7 @@ def simulate_game(game_id: str):
             "home": state.score.home,
             "away": state.score.away,
         },
-        "state": _serialize_state(state),
+        "state": _serialize_state(state, game),
     }
 
 
@@ -642,9 +642,11 @@ def substitute_player(game_id: str, request: SubstitutionRequest):
     game.state.play_log.append(
         f"OL SUB: {request.player_in} replaces {request.player_out} at {out_slot}"
     )
+    # 5E: substitution rescinds no-huddle offense
+    game._rescind_no_huddle_offense(reason="substitution")
     return {
         "message": f"{request.player_in} now starting at {pos} (OL)",
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
     pos_map = {
@@ -720,10 +722,12 @@ def substitute_player(game_id: str, request: SubstitutionRequest):
     game.state.play_log.append(
         f"SUB: {request.player_in} replaces {request.player_out} at {pos} ({out_slot} slot)"
     )
+    # 5E: substitution rescinds no-huddle offense
+    game._rescind_no_huddle_offense(reason="substitution")
 
     return {
         "message": f"{request.player_in} now starting at {pos}",
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -796,7 +800,7 @@ def _get_game(game_id: str) -> Game:
     return game
 
 
-def _serialize_state(state: GameState) -> dict:
+def _serialize_state(state: GameState, game=None) -> dict:
     return {
         "home_team": state.home_team,
         "away_team": state.away_team,
@@ -817,6 +821,8 @@ def _serialize_state(state: GameState) -> dict:
         "turnovers": state.turnovers,
         "player_stats": state.player_stats,
         "pending_extra_point": state.pending_extra_point,
+        "two_minute_offense": bool(game._is_two_minute_offense()) if game else False,
+        "no_huddle_offense": bool(getattr(game, '_no_huddle', False)) if game else False,
     }
 
 
@@ -836,7 +842,7 @@ def execute_onside_kick(game_id: str, request: OnsideKickRequest):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -850,7 +856,7 @@ def execute_squib_kick(game_id: str):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -876,7 +882,7 @@ def call_timeout(game_id: str, team: str = "possession"):
     return {
         "game_id": game_id,
         "message": f"Timeout called by {team}",
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -900,7 +906,7 @@ def execute_fake_punt(game_id: str):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -914,7 +920,7 @@ def execute_fake_fg(game_id: str):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -929,7 +935,7 @@ def execute_coffin_corner(game_id: str, request: CoffinCornerRequest):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -943,7 +949,7 @@ def execute_all_out_punt_rush(game_id: str):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -973,7 +979,7 @@ def execute_two_point_conversion(game_id: str, request: TwoPointConversionReques
         "game_id": game_id,
         "result": result_desc,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -997,7 +1003,7 @@ def execute_pat_kick(game_id: str):
     return {
         "game_id": game_id,
         "play_result": _serialize_play_result(result),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -1027,7 +1033,7 @@ def activate_big_play_defense(game_id: str, request: BigPlayDefenseRequest):
     return {
         "game_id": game_id,
         "message": f"Big Play Defense activated for {team}",
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -1045,7 +1051,62 @@ def declare_two_minute_offense(game_id: str):
         "game_id": game_id,
         "message": "Two-minute offense declared",
         "two_minute_offense": True,
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
+    }
+
+
+@app.post("/games/{game_id}/rescind-two-minute-offense")
+def rescind_two_minute_offense(game_id: str):
+    """Voluntarily rescind two-minute offense mode."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+
+    game.rescind_two_minute_offense()
+    return {
+        "game_id": game_id,
+        "message": "Two-minute offense rescinded",
+        "two_minute_offense": False,
+        "state": _serialize_state(game.state, game),
+    }
+
+
+# ─── No-Huddle Offense Endpoints ────────────────────────────────────────────
+
+@app.post("/games/{game_id}/no-huddle-offense")
+def declare_no_huddle_offense(game_id: str):
+    """Declare no-huddle offense mode.
+
+    No-huddle may be used at any time.  It halves clock time for non-stopping
+    plays only.  It is auto-rescinded when the clock stops, an injury occurs,
+    a substitution is made, or possession changes.
+    """
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+
+    game.declare_no_huddle_offense()
+    return {
+        "game_id": game_id,
+        "message": "No-huddle offense declared",
+        "no_huddle_offense": True,
+        "state": _serialize_state(game.state, game),
+    }
+
+
+@app.post("/games/{game_id}/rescind-no-huddle-offense")
+def rescind_no_huddle_offense(game_id: str):
+    """Voluntarily rescind no-huddle offense mode."""
+    game = _get_game(game_id)
+    if game.state.is_over:
+        raise HTTPException(status_code=400, detail="Game is over")
+
+    game.rescind_no_huddle_offense()
+    return {
+        "game_id": game_id,
+        "message": "No-huddle offense rescinded",
+        "no_huddle_offense": False,
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -1162,7 +1223,7 @@ def set_starting_lineup(game_id: str, request: StartingLineupRequest):
     return {
         "message": f"Lineup updated: {'; '.join(changes_made)}" if changes_made else "No changes made",
         "changes": changes_made,
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -1263,7 +1324,7 @@ def change_player_position(game_id: str, request: PositionChangeRequest):
                     "old_position": old_pos,
                     "new_position": new_pos,
                     "penalty_note": "Out-of-position penalty may apply (-1 to relevant ratings)",
-                    "state": _serialize_state(game.state),
+                    "state": _serialize_state(game.state, game),
                 }
 
     raise HTTPException(status_code=404, detail=f"Player '{request.player_name}' not found")
@@ -1306,7 +1367,7 @@ def set_field_slot(game_id: str, request: SetFieldSlotRequest):
     return {
         "message": msg,
         "on_field_assignments": game.get_field_assignments(side),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -1346,7 +1407,7 @@ def apply_formation_package(game_id: str, request: ApplyPackageRequest):
         "message": msg,
         "package": request.package.upper(),
         "on_field_assignments": game.get_field_assignments(side),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -1380,7 +1441,7 @@ def apply_defense_package(game_id: str, request: ApplyDefensePackageRequest):
     return {
         "message": msg,
         "package": request.package.upper(),
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
@@ -1442,7 +1503,7 @@ def substitute_defense_player(game_id: str, request: SubstitutionRequest):
 
     return {
         "message": f"{request.player_in} now starting at {pos} on defense",
-        "state": _serialize_state(game.state),
+        "state": _serialize_state(game.state, game),
     }
 
 
