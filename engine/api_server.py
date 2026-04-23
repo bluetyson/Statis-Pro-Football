@@ -642,7 +642,7 @@ def substitute_player(game_id: str, request: SubstitutionRequest):
     game.state.play_log.append(
         f"OL SUB: {request.player_in} replaces {request.player_out} at {out_slot}"
     )
-    # 5E: substitution rescends no-huddle offense
+    # 5E: substitution rescinds no-huddle offense
     game._rescind_no_huddle_offense(reason="substitution")
     return {
         "message": f"{request.player_in} now starting at {pos} (OL)",
@@ -722,7 +722,7 @@ def substitute_player(game_id: str, request: SubstitutionRequest):
     game.state.play_log.append(
         f"SUB: {request.player_in} replaces {request.player_out} at {pos} ({out_slot} slot)"
     )
-    # 5E: substitution rescends no-huddle offense
+    # 5E: substitution rescinds no-huddle offense
     game._rescind_no_huddle_offense(reason="substitution")
 
     return {
