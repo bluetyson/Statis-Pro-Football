@@ -160,12 +160,97 @@ class TestOffensiveStrategies:
         assert result.result == "GAIN"
 
     def test_sneak_gives_0_or_1(self):
-        """Sneak gives 0 (odd PN) or 1 (even PN) yard."""
+        """Sneak gives 0 or 1 yard (threshold-based on PN)."""
         deck = FACDeck(seed=42)
         result = self.resolver.resolve_sneak(self.qb, deck)
         assert result.yards_gained in (0, 1)
         assert result.strategy == "SNEAK"
         assert result.play_type == "RUN"
+
+    def test_sneak_defense_advantage_reduces_success_range(self):
+        """Defense interior advantage reduces number of PNs that gain 1 yard."""
+        from engine.player_card import PlayerCard
+        # Build OL with run_block_rating: LG=1, C=2, RG=2 → sum=5
+        lg = PlayerCard("LG Player", "TST", "LG", 60)
+        lg.run_block_rating = 1
+        cn = PlayerCard("C Player", "TST", "C", 61)
+        cn.run_block_rating = 2
+        rg = PlayerCard("RG Player", "TST", "RG", 62)
+        rg.run_block_rating = 2
+        # Build defenders in boxes B/C/D with tackle_rating: 2+3+4=9 → defense sum=9
+        box_b = PlayerCard("DT-B", "TST", "DT", 71)
+        box_b.tackle_rating = 2
+        box_c = PlayerCard("NT-C", "TST", "NT", 72)
+        box_c.tackle_rating = 3
+        box_d = PlayerCard("DT-D", "TST", "DT", 73)
+        box_d.tackle_rating = 4
+        # adjustment = 5 - 9 = -4 → success_count = 24 - 4 = 20
+        ol_by_pos = {"LG": lg, "CN": cn, "RG": rg}
+        def_by_box = {"B": box_b, "C": box_c, "D": box_d}
+        # Use a deck that will produce PN=21 (should fail with success_count=20)
+        # We'll test the calculation directly via a fixed PN
+        import unittest.mock as mock
+        fac_card_mock = mock.MagicMock()
+        fac_card_mock.pass_num_int = 21
+        deck = FACDeck(seed=42)
+        with mock.patch.object(deck, "draw", return_value=fac_card_mock):
+            result = self.resolver.resolve_sneak(
+                self.qb, deck,
+                ol_by_position=ol_by_pos,
+                defenders_by_box=def_by_box,
+            )
+        assert result.yards_gained == 0, "PN=21 should fail when success_count=20"
+        assert "[Sneak] Defense +4 advantage" in " ".join(result.debug_log)
+
+    def test_sneak_offense_advantage_increases_success_range(self):
+        """Offense interior advantage increases number of PNs that gain 1 yard."""
+        from engine.player_card import PlayerCard
+        import unittest.mock as mock
+        # OL: LG=4, C=4, RG=4 → sum=12; DL: B=0, C=0, D=0 → sum=0
+        # adjustment = 12 → success_count = min(48, 24+12) = 36
+        lg = PlayerCard("LG Player", "TST", "LG", 60)
+        lg.run_block_rating = 4
+        cn = PlayerCard("C Player", "TST", "C", 61)
+        cn.run_block_rating = 4
+        rg = PlayerCard("RG Player", "TST", "RG", 62)
+        rg.run_block_rating = 4
+        box_b = PlayerCard("DT-B", "TST", "DT", 71)
+        box_b.tackle_rating = 0
+        box_c = PlayerCard("NT-C", "TST", "NT", 72)
+        box_c.tackle_rating = 0
+        box_d = PlayerCard("DT-D", "TST", "DT", 73)
+        box_d.tackle_rating = 0
+        ol_by_pos = {"LG": lg, "CN": cn, "RG": rg}
+        def_by_box = {"B": box_b, "C": box_c, "D": box_d}
+        # PN=35 should gain 1 with success_count=36
+        fac_card_mock = mock.MagicMock()
+        fac_card_mock.pass_num_int = 35
+        deck = FACDeck(seed=42)
+        with mock.patch.object(deck, "draw", return_value=fac_card_mock):
+            result = self.resolver.resolve_sneak(
+                self.qb, deck,
+                ol_by_position=ol_by_pos,
+                defenders_by_box=def_by_box,
+            )
+        assert result.yards_gained == 1, "PN=35 should gain with success_count=36"
+        assert "[Sneak] Offense +12 advantage" in " ".join(result.debug_log)
+
+    def test_sneak_missing_ol_or_def_uses_baseline(self):
+        """When OL/defender data absent, baseline 24/48 applies."""
+        from engine.player_card import PlayerCard
+        import unittest.mock as mock
+        # PN=25 with no context: success_count=24, should give 0 yards
+        fac_card_mock = mock.MagicMock()
+        fac_card_mock.pass_num_int = 25
+        deck = FACDeck(seed=42)
+        with mock.patch.object(deck, "draw", return_value=fac_card_mock):
+            result = self.resolver.resolve_sneak(self.qb, deck)
+        assert result.yards_gained == 0
+        # PN=24 should give 1 yard
+        fac_card_mock.pass_num_int = 24
+        with mock.patch.object(deck, "draw", return_value=fac_card_mock):
+            result = self.resolver.resolve_sneak(self.qb, deck)
+        assert result.yards_gained == 1
 
     def test_draw_modifies_run_number(self):
         """Draw play applies RN modifier to Run Number before card lookup."""

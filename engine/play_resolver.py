@@ -479,20 +479,93 @@ class PlayResolver:
             rusher=qb.player_name, strategy="FLOP",
         )
 
-    def resolve_sneak(self, qb: PlayerCard, deck: FACDeck) -> PlayResult:
+    def resolve_sneak(
+        self,
+        qb: PlayerCard,
+        deck: FACDeck,
+        ol_by_position: Optional[Dict[str, "PlayerCard"]] = None,
+        defenders_by_box: Optional[Dict[str, "PlayerCard"]] = None,
+    ) -> PlayResult:
         """Resolve a QB Sneak strategy.
 
-        5E Rules: Inside run to QB; flip FAC; even PN = +1 yard, odd PN = 0.
+        5E Rules: Inside run to QB; flip FAC.
+        Baseline: even PN (1-48) = +1 yard, odd PN = 0 yards (24 out of 48
+        pass numbers succeed).
+
+        Interior blocking matchup rule:
+          offense_block = LG.run_block_rating + C.run_block_rating
+                          + RG.run_block_rating
+          defense_tackle = box_B.tackle_rating + box_C.tackle_rating
+                           + box_D.tackle_rating
+          adjustment = offense_block - defense_tackle
+          success_count = clamp(24 + adjustment, 0, 48)
+          gain = 1 if PN <= success_count else 0
+
+        When OL or defender data is unavailable the baseline (24 ranges) is used.
         """
         fac_card = deck.draw()
         pn = fac_card.pass_num_int or random.randint(1, 48)
-        yards = 1 if pn % 2 == 0 else 0
-        return PlayResult(
+
+        log: List[str] = []
+
+        # ── Interior blocking matchup ──────────────────────────────────
+        lg = (ol_by_position or {}).get("LG")
+        cn = (ol_by_position or {}).get("CN")
+        rg = (ol_by_position or {}).get("RG")
+
+        box_b = (defenders_by_box or {}).get("B")
+        box_c = (defenders_by_box or {}).get("C")
+        box_d = (defenders_by_box or {}).get("D")
+
+        lg_val = getattr(lg, "run_block_rating", 0) if lg else 0
+        cn_val = getattr(cn, "run_block_rating", 0) if cn else 0
+        rg_val = getattr(rg, "run_block_rating", 0) if rg else 0
+
+        b_val = getattr(box_b, "tackle_rating", 0) if box_b else 0
+        c_val = getattr(box_c, "tackle_rating", 0) if box_c else 0
+        d_val = getattr(box_d, "tackle_rating", 0) if box_d else 0
+
+        offense_block = lg_val + cn_val + rg_val
+        defense_tackle = b_val + c_val + d_val
+        adjustment = offense_block - defense_tackle
+        success_count = max(0, min(48, 24 + adjustment))
+
+        lg_name = lg.player_name if lg else "—"
+        cn_name = cn.player_name if cn else "—"
+        rg_name = rg.player_name if rg else "—"
+        b_name = box_b.player_name if box_b else "—"
+        c_name = box_c.player_name if box_c else "—"
+        d_name = box_d.player_name if box_d else "—"
+
+        log.append(
+            f"[Sneak] OL block: LG {lg_name}({lg_val}) + C {cn_name}({cn_val})"
+            f" + RG {rg_name}({rg_val}) = {offense_block}"
+        )
+        log.append(
+            f"[Sneak] DL tackle: B {b_name}({b_val}) + C {c_name}({c_val})"
+            f" + D {d_name}({d_val}) = {defense_tackle}"
+        )
+        if adjustment > 0:
+            log.append(
+                f"[Sneak] Offense +{adjustment} advantage → {success_count}/48 PNs gain 1 yd"
+            )
+        elif adjustment < 0:
+            log.append(
+                f"[Sneak] Defense +{-adjustment} advantage → {success_count}/48 PNs gain 1 yd"
+            )
+        else:
+            log.append(f"[Sneak] Even matchup → {success_count}/48 PNs gain 1 yd")
+        log.append(f"[Sneak] PN={pn} (success if PN ≤ {success_count})")
+
+        yards = 1 if pn <= success_count else 0
+        result = PlayResult(
             play_type="RUN", yards_gained=yards, result="GAIN",
             description=f"{qb.player_name} sneaks for {yards} yard{'s' if yards != 1 else ''} (Sneak)",
             rusher=qb.player_name, strategy="SNEAK",
             pass_number_used=pn,
         )
+        result.debug_log = log
+        return result
 
     def resolve_draw(self, fac_card: FACCard, deck: FACDeck,
                      rusher: PlayerCard, defense_formation: str,

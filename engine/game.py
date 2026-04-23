@@ -225,6 +225,43 @@ class Game:
     def get_defense_team(self) -> Team:
         return self.away_team if self.state.possession == "home" else self.home_team
 
+    def _build_ol_by_position(self) -> Dict[str, PlayerCard]:
+        """Return a mapping of OL slot → PlayerCard for the current offense.
+
+        Keys: "LT", "LG", "CN" (center), "RG", "RT".
+        Respects any on-field OL substitution overrides.
+        """
+        offense = self.get_offense_team()
+        if not offense or not offense.roster:
+            return {}
+        side = self.state.possession
+        ol_overrides = self._on_field_ol.get(side, {})
+        ol_name_to_card: Dict[str, PlayerCard] = {
+            p.player_name: p for p in offense.roster.offensive_line
+        }
+        result: Dict[str, PlayerCard] = {}
+        _slot_map = {"LT": "LT", "LG": "LG", "C": "CN", "RG": "RG", "RT": "RT"}
+        # Apply overrides first
+        for slot, cn_slot in _slot_map.items():
+            name = ol_overrides.get(slot)
+            if name and name in ol_name_to_card:
+                result[cn_slot] = ol_name_to_card[name]
+        # Fill remaining from roster
+        for ol in offense.roster.offensive_line:
+            pos = getattr(ol, "position", "").upper()
+            if pos == "C":
+                if "CN" not in result:
+                    result["CN"] = ol
+            elif pos in ("LG", "RG", "LT", "RT"):
+                if pos not in result:
+                    result[pos] = ol
+            elif pos == "OL":
+                for slot in ("LT", "LG", "CN", "RG", "RT"):
+                    if slot not in result:
+                        result[slot] = ol
+                        break
+        return result
+
     def _build_defenders_by_box(self, defense: Team) -> Dict[str, PlayerCard]:
         """Build a mapping of box letter (A-O) → PlayerCard for current defenders.
 
@@ -2307,9 +2344,19 @@ class Game:
         elif strategy == "SNEAK":
             qb = self.get_qb(player_name)
             if qb:
-                result = self.resolver.resolve_sneak(qb, self.deck)
+                defense = self.get_defense_team()
+                ol_by_pos = self._build_ol_by_position()
+                def_by_box = self._build_defenders_by_box(defense)
+                result = self.resolver.resolve_sneak(
+                    qb, self.deck,
+                    ol_by_position=ol_by_pos,
+                    defenders_by_box=def_by_box,
+                )
                 self._apply_current_personnel_note(result)
                 self.state.play_log.append(f"  → {result.description}")
+                if hasattr(result, 'debug_log') and result.debug_log:
+                    for dl_entry in result.debug_log:
+                        self.state.play_log.append(f"    {dl_entry}")
                 self._advance_down(result.yards_gained)
                 self._advance_time(self.TIME_STANDARD_PLAY)
                 self._track_play_stats(result)
