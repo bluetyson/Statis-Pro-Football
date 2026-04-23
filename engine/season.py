@@ -518,7 +518,6 @@ class Season:
 
         # Collect new injuries during simulation (play-by-play)
         new_injuries: Dict[str, int] = {}
-        _orig_execute = game._execute_play_5e.__func__ if hasattr(game._execute_play_5e, '__func__') else None
 
         # Simulate the full game
         final_state = game.simulate_game()
