@@ -83,14 +83,25 @@ class PassRanges:
       Complete  if 1 <= PN <= com_max
       Incomplete if com_max < PN <= inc_max
       Intercepted if inc_max < PN <= 48
+
+    The PN drawn from the FAC card never changes.  Coverage and defensive
+    play modifiers shift the completion boundary (com_max) only — the INT
+    threshold (inc_max) is a fixed property of the QB card.
     """
     com_max: int = 30     # PNs 1 through com_max → complete
     inc_max: int = 47     # PNs com_max+1 through inc_max → incomplete
     # PNs inc_max+1 through 48 → interception (may be empty if inc_max == 48)
 
-    def resolve(self, pn: int) -> str:
-        """Return 'COM', 'INC', or 'INT' for the given pass number."""
-        if pn <= self.com_max:
+    def resolve(self, pn: int, completion_modifier: int = 0) -> str:
+        """Return 'COM', 'INC', or 'INT' for the given pass number.
+
+        completion_modifier shifts the completion boundary only.
+        Positive = wider COM range (easier to complete).
+        Negative = narrower COM range (harder to complete).
+        The INT threshold (inc_max) is never affected.
+        """
+        effective_com_max = self.com_max + completion_modifier
+        if pn <= effective_com_max:
             return "COM"
         if pn <= self.inc_max:
             return "INC"
@@ -297,20 +308,24 @@ class PlayerCard:
             return self.pass_gain[idx]
         return ThreeValueRow()
 
-    def resolve_passing(self, pass_type: str, pn: int) -> str:
+    def resolve_passing(self, pass_type: str, pn: int, completion_modifier: int = 0) -> str:
         """Resolve a pass number against this QB's passing ranges.
+
+        The PN is the raw FAC card value and is never modified.
+        completion_modifier shifts the completion boundary (com_max) only;
+        positive = easier to complete, negative = harder.
 
         Returns 'COM', 'INC', or 'INT'.
         """
         if pass_type == "QUICK" and self.passing_quick:
-            return self.passing_quick.resolve(pn)
+            return self.passing_quick.resolve(pn, completion_modifier)
         if pass_type == "SHORT" and self.passing_short:
-            return self.passing_short.resolve(pn)
+            return self.passing_short.resolve(pn, completion_modifier)
         if pass_type == "LONG" and self.passing_long:
-            return self.passing_long.resolve(pn)
+            return self.passing_long.resolve(pn, completion_modifier)
         # Fallback to short
         if self.passing_short:
-            return self.passing_short.resolve(pn)
+            return self.passing_short.resolve(pn, completion_modifier)
         return "INC"
 
     def to_dict(self) -> dict:

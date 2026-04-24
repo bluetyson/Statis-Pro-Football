@@ -71,6 +71,7 @@ class PlayResult:
     defensive_play: Optional[str] = None        # DefensivePlay value used
     bv_tv_result: Optional[Dict[str, Any]] = None  # BV vs TV battle details
     interception_point: Optional[int] = None    # Yard line where INT occurred
+    interception_return_yards: int = 0          # Yards gained on interception return
     personnel_note: Optional[str] = None        # Auto-substitution / availability note
     box_assignments: Optional[Dict[str, str]] = None  # Box letter → player name for this play
     sack_by: Optional[List[Tuple[str, float]]] = None  # [(player_name, credit)] — 1.0 full, 0.5 half
@@ -2317,24 +2318,27 @@ class PlayResolver:
         total_completion_mod = (completion_modifier + defense_play_comp_mod
                                 + backs_blocking_mod + empty_box_mod
                                 + pass_defense_mod + applied_endurance_mod)
-        completion_adjustment = -total_completion_mod  # +5 completion → -5 to PN
 
         # Coverage penalties (double/triple/two-minute) are always <= 0.
-        # Negative strategy_modifier → increase PN (harder to complete).
         coverage_penalty = -strategy_modifier if strategy_modifier < 0 else 0
 
-        total_pn_adjustment = completion_adjustment + coverage_penalty
-        
+        # pass_completion_modifier is applied to the QB card's com_max boundary
+        # for this play only.  The PN drawn from the FAC card is NEVER changed;
+        # the INT threshold (inc_max) is also fixed and never shifts.
+        #   positive mod → wider COM range (easier to complete)
+        #   negative mod → narrower COM range (harder to complete)
+        pass_completion_modifier = total_completion_mod - coverage_penalty
+
         if strategy_modifier != 0 or total_completion_mod != 0:
             log.append(f"[QB CARD] Strategy modifier={strategy_modifier}, completion modifier={total_completion_mod}")
-        if total_pn_adjustment != 0:
-            old_pn = pn
-            pn = max(1, min(48, pn + total_pn_adjustment))
-            log.append(f"[QB CARD] PN adjusted from {old_pn} to {pn} (total adjustment {total_pn_adjustment:+d})")
+        if pass_completion_modifier != 0:
+            log.append(f"[QB CARD] Completion range shift: {pass_completion_modifier:+d} (PN={pn} unchanged)")
 
         # Check authentic range-based passing first
         if qb.passing_short or qb.passing_long or qb.passing_quick:
-            qb_result = qb.resolve_passing(pass_type, pn)
+            # Pass completion_modifier to shift com_max only; PN and INT threshold
+            # (inc_max) are never changed.
+            qb_result = qb.resolve_passing(pass_type, pn, completion_modifier=pass_completion_modifier)
             log.append(f"[QB CARD] Authentic passing ranges → result={qb_result}")
         else:
             # Legacy: fall back to old slot-based columns
@@ -2405,6 +2409,7 @@ class PlayResolver:
                 pass_number_used=pn,
                 run_number_used=rn_for_poi,
                 interception_point=poi,
+                interception_return_yards=0 if int_td else int_yards,
             )
             r.debug_log = log
             return r
@@ -2464,6 +2469,7 @@ class PlayResolver:
                             pass_number_used=pn,
                             run_number_used=rn_for_ret,
                             interception_point=poi,
+                            interception_return_yards=0 if int_td else int_yards,
                         )
                         r.debug_log = log
                         return r
@@ -2491,6 +2497,7 @@ class PlayResolver:
                             pass_number_used=pn,
                             run_number_used=rn_for_ret,
                             interception_point=poi,
+                            interception_return_yards=0 if int_td else int_yards,
                         )
                         r.debug_log = log
                         return r
@@ -2519,6 +2526,7 @@ class PlayResolver:
                         pass_number_used=pn,
                         run_number_used=rn_for_ret,
                         interception_point=poi,
+                        interception_return_yards=0 if int_td else int_yards,
                     )
                     r.debug_log = log
                     return r
@@ -2526,22 +2534,22 @@ class PlayResolver:
             # If the pass would have been complete without the PDR modifier,
             # credit the defender with a pass defensed.
             #
-            # pass_defense_mod = -pdr (negative; PDR raises PN by pdr).
-            # Adding pass_defense_mod to pn removes the PDR's contribution:
-            #   pn_without_pdr = pn + pass_defense_mod = pn - pdr
+            # pass_defense_mod = -pdr (negative; PDR lowers the com_max).
+            # Without PDR, the completion modifier would be pdr higher.
             pass_defensed_by_name = None
             if covering_defender and pass_defense_mod < 0:
-                pdr_val = -pass_defense_mod  # PDR contribution to PN increase
-                pn_without_pdr = max(1, min(48, pn + pass_defense_mod))  # undo PDR: pn - pdr
+                pdr_val = -pass_defense_mod  # PDR contribution to com_max reduction
+                mod_without_pdr = pass_completion_modifier - pass_defense_mod  # undo PDR
                 if qb.passing_short or qb.passing_long or qb.passing_quick:
-                    if qb.resolve_passing(pass_type, pn_without_pdr) == "COM":
+                    if qb.resolve_passing(pass_type, pn, completion_modifier=mod_without_pdr) == "COM":
                         pass_defensed_by_name = covering_defender.player_name
                         log.append(f"[PD] Pass defensed by {covering_defender.player_name}: "
-                                   f"PN {pn_without_pdr} (no PDR) → COM, PDR={pdr_val} raised PN to {pn}")
+                                   f"PN={pn} without PDR ({mod_without_pdr:+d} range) → COM, "
+                                   f"PDR={pdr_val} narrowed range to {pass_completion_modifier:+d}")
 
             # Check if double/triple coverage caused this incompletion.
             # strategy_modifier is -7 (double) or -15 (triple); coverage_penalty
-            # is the PN increase that was already applied.  If removing that
+            # is the com_max reduction already applied.  If removing that
             # contribution restores a completion, credit the coverage defender.
             #
             # Attribution priority:
@@ -2551,9 +2559,9 @@ class PlayResolver:
             #     credit (Box L extra DB if present, otherwise FS in Box M).
             if pass_defensed_by_name is None and strategy_modifier < 0:
                 coverage_pen_val = -strategy_modifier  # 7 for double, 15 for triple
-                pn_without_coverage = max(1, min(48, pn - coverage_pen_val))
+                mod_without_coverage = pass_completion_modifier + coverage_pen_val  # undo coverage
                 if qb.passing_short or qb.passing_long or qb.passing_quick:
-                    if qb.resolve_passing(pass_type, pn_without_coverage) == "COM":
+                    if qb.resolve_passing(pass_type, pn, completion_modifier=mod_without_coverage) == "COM":
                         if strategy_modifier == -15 and triple_coverage_defender_name:
                             # Triple coverage was the decisive factor — credit the
                             # third DB (second Box L extra DB who joined the coverage).
@@ -2561,8 +2569,8 @@ class PlayResolver:
                             log.append(
                                 f"[PD] triple coverage pass defensed by "
                                 f"{triple_coverage_defender_name} (third DB / Box L): "
-                                f"PN {pn_without_coverage} (no triple coverage) → COM, "
-                                f"triple coverage raised PN to {pn}"
+                                f"PN={pn} without triple coverage ({mod_without_coverage:+d} range) → COM, "
+                                f"triple coverage narrowed range to {pass_completion_modifier:+d}"
                             )
                         else:
                             # Double coverage (or triple without a specific third DB)
@@ -2576,8 +2584,8 @@ class PlayResolver:
                                 log.append(
                                     f"[PD] {cov_label} coverage pass defensed by "
                                     f"{coverage_defender.player_name} (box {cov_box}): "
-                                    f"PN {pn_without_coverage} (no coverage) → COM, "
-                                    f"coverage raised PN to {pn}"
+                                    f"PN={pn} without coverage ({mod_without_coverage:+d} range) → COM, "
+                                    f"coverage narrowed range to {pass_completion_modifier:+d}"
                                 )
 
             inc_desc = f"{qb.player_name} pass incomplete to {actual_receiver.player_name}"
@@ -2765,6 +2773,7 @@ class PlayResolver:
                 passer=qb.player_name, receiver=actual_receiver.player_name,
                 z_card_event=z_event,
                 interception_point=poi,
+                interception_return_yards=0 if int_td else int_yards,
             )
 
         # Screen complete — Rule 4: use RB's rushing N column for yards
