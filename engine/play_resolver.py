@@ -2530,6 +2530,30 @@ class PlayResolver:
                         log.append(f"[PD] Pass defensed by {covering_defender.player_name}: "
                                    f"PN {pn_without_pdr} (no PDR) → COM, PDR={pdr_val} raised PN to {pn}")
 
+            # Check if double/triple coverage caused this incompletion.
+            # strategy_modifier is -7 (double) or -15 (triple); coverage_penalty
+            # is the PN increase that was already applied.  If removing that
+            # contribution restores a completion, credit the coverage defender.
+            if pass_defensed_by_name is None and strategy_modifier < 0:
+                coverage_pen_val = -strategy_modifier  # 7 for double, 15 for triple
+                pn_without_coverage = max(1, min(48, pn - coverage_pen_val))
+                if qb.passing_short or qb.passing_long or qb.passing_quick:
+                    if qb.resolve_passing(pass_type, pn_without_coverage) == "COM":
+                        # Coverage was decisive — find the additional coverage defender.
+                        # The double/triple team defender is typically the FS (box M).
+                        cov_box = double_coverage_defender_box or 'M'
+                        coverage_defender = (defenders_by_box.get(cov_box)
+                                             if defenders_by_box else None)
+                        if coverage_defender:
+                            pass_defensed_by_name = coverage_defender.player_name
+                            cov_label = "double" if strategy_modifier == -7 else "triple"
+                            log.append(
+                                f"[PD] {cov_label} coverage pass defensed by "
+                                f"{coverage_defender.player_name} (box {cov_box}): "
+                                f"PN {pn_without_coverage} (no coverage) → COM, "
+                                f"coverage raised PN to {pn}"
+                            )
+
             inc_desc = f"{qb.player_name} pass incomplete to {actual_receiver.player_name}"
             if pass_defensed_by_name:
                 inc_desc += f" — pass defensed by {pass_defensed_by_name}"

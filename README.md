@@ -89,6 +89,65 @@ python engine/data/generate_2025_5e_data.py
 python engine/data/generate_2025_data.py
 ```
 
+### Simulate a Full Season
+
+A built-in schedule for 2025 is included. To simulate:
+
+```bash
+# Simulate all 17 weeks and print final standings + stat leaders
+python scripts/simulate_season.py --standings --leaders
+
+# Simulate only the first 4 weeks with a fixed random seed
+python scripts/simulate_season.py --weeks 1-4 --seed 42 --standings
+
+# Simulate without writing per-game JSON logs
+python scripts/simulate_season.py --no-logs
+```
+
+Or from Python:
+
+```python
+from engine.season import Season
+
+season = Season.load(year=2025)       # uses bundled 2025 schedule
+stats = season.simulate(progress=True)
+print(stats.standings_text())
+print(stats.player_stats_text(stat_key="passing_yards", label="Passing Yards"))
+```
+
+Per-game replay logs are written to `season_logs/2025/weekNN_AWAY_at_HOME.json`.
+
+#### Downloading Real NFL Schedules
+
+To simulate a real past or current season (e.g. 2024) with authentic matchups,
+download the schedule from the free [nflverse](https://github.com/nflverse) dataset:
+
+```bash
+# Download the 2024 regular-season schedule (no extra dependencies needed)
+python scripts/download_schedule.py --year 2024
+
+# Preview without saving
+python scripts/download_schedule.py --year 2024 --dry-run
+
+# Save to a custom directory
+python scripts/download_schedule.py --year 2024 --outdir /path/to/schedules
+```
+
+Optionally install [nfl-data-py](https://pypi.org/project/nfl-data-py/) for an
+alternative fetch path:
+
+```bash
+pip install nfl-data-py
+python scripts/download_schedule.py --year 2024 --use-nfl-data-py
+```
+
+The downloaded file is saved as `engine/data/schedules/2024_schedule.json` and is
+immediately available to `Season.load(year=2024)`. nflverse covers all seasons
+from 1999 onward, including future scheduled games.
+
+Team abbreviation differences between nflverse and this project are handled
+automatically (e.g. `JAC→JAX`, `WAS→WSH`).
+
 ### Run Tests
 
 ```bash
