@@ -1142,7 +1142,7 @@ class PlayResolver:
 
     # ── Tackle Credit Assignment ──────────────────────────────────────
 
-    # Box sets used for tackle weighting by play type.
+    # Box sets used for tackle weighting by play type (fallback when no RN).
     # Row 1 = DL (A-E), Row 2 = LB (F-J), Row 3 = DB (K-O)
     _TACKLE_WEIGHTS: Dict[str, Dict[str, float]] = {
         # Inside run (IL/IR): DTs/NT in B/C/D most likely, then ILB/MLB in G/H/I
@@ -1170,6 +1170,94 @@ class PlayResolver:
                         'F': 14, 'G': 3, 'H': 2, 'I': 3, 'J': 14,
                         'K': 10, 'L': 3, 'M': 4, 'N': 4, 'O': 10},
     }
+
+    # RN-based tackle table: maps each play-type key to a list indexed 0–11
+    # (corresponding to RN 1–12).  Each entry is one of:
+    #   • A single box letter ("A"–"O")  → that box's occupant gets the tackle.
+    #   • A list of 2 box letters        → flip FAC PN: 1-24 first, 25-48 second.
+    #   • A list of 3 box letters        → flip FAC PN: 1-16 first, 17-32 second,
+    #                                       33-48 third.
+    #   • "DEF"                          → the covering defender (pass plays) or
+    #                                       nearest best tackler (run plays).
+    # "S" in the original design chart (Quick RN 4) is treated as "DEF".
+    # Screen and Sweep share the same column per the source table.
+    _RN_TACKLE_TABLE: Dict[str, List] = {
+        #          RN: 1    2          3        4       5      6      7      8          9    10     11         12
+        "INSIDE_RUN":  ['E', 'N',       'M',     'J',    'H',   'I',   'G',   'F',       'B',  'C',  'D',       'A'],
+        "SWEEP":       ['E', 'B',       'C',     'D',    'J',   'F',   'H',   ['K','O'], 'I',  'J',  ['N','M'], 'A'],
+        "SCREEN_PASS": ['E', 'B',       'C',     'D',    'J',   'F',   'H',   ['K','O'], 'I',  'J',  ['N','M'], 'A'],
+        "QUICK_PASS":  ['N', 'K',       'O',     'DEF',  'DEF', 'DEF', 'DEF', 'H',       'G',  'I',  'F',       'J'],
+        "SHORT_PASS":  ['N', ['G','H','I'], ['F','J'], 'L', 'DEF', 'DEF', 'DEF', 'M',   'O',  'O',  'K',       'K'],
+        "LONG_PASS":   ['N', 'L',       'L',     'M',    'DEF', 'DEF', 'DEF', 'M',       'O',  'O',  'K',       'K'],
+    }
+
+    # Grid coordinates (column, row) for each box.
+    # Column 1-5 left-to-right, Row 1 = DL, Row 2 = LB, Row 3 = DB.
+    _BOX_COORDS: Dict[str, tuple] = {
+        'A': (1, 1), 'B': (2, 1), 'C': (3, 1), 'D': (4, 1), 'E': (5, 1),
+        'F': (1, 2), 'G': (2, 2), 'H': (3, 2), 'I': (4, 2), 'J': (5, 2),
+        'K': (1, 3), 'L': (2, 3), 'M': (3, 3), 'N': (4, 3), 'O': (5, 3),
+    }
+
+    @staticmethod
+    def _nearest_best_tacklers(
+        target_box: str,
+        defenders_by_box: Dict[str, "PlayerCard"],
+        defenders_by_box_multi: Optional[Dict[str, List["PlayerCard"]]] = None,
+    ) -> List[Tuple[str, float]]:
+        """Find the nearest occupied box(es) to *target_box* and return tackle credit.
+
+        Uses Manhattan distance on the 5×3 box grid.  Among all boxes at the
+        minimum distance, the player(s) with the highest tackle_rating win.
+        If multiple players share the top rating they split credit equally.
+        This implements the "best tackler nearest – if tied a half each" rule
+        for empty-box run-play fallback.
+        """
+        coords = PlayResolver._BOX_COORDS
+        if target_box not in coords:
+            # Unknown box — fall back to any occupied box
+            occupied = [(box, card) for box, card in defenders_by_box.items() if card is not None]
+            if not occupied:
+                return []
+            first_card = occupied[0][1]
+            return [(first_card.player_name, 1.0)]
+
+        tc, tr = coords[target_box]
+
+        # Build (distance, box, players_list) tuples for all occupied boxes
+        candidates: List[Tuple[int, str, List["PlayerCard"]]] = []
+        for box, card in defenders_by_box.items():
+            if card is None or box not in coords:
+                continue
+            bc, br = coords[box]
+            dist = abs(bc - tc) + abs(br - tr)
+            # Get all players in this box (use multi-map if available)
+            if defenders_by_box_multi:
+                players = defenders_by_box_multi.get(box, [card])
+            else:
+                players = [card]
+            candidates.append((dist, box, players))
+
+        if not candidates:
+            return []
+
+        min_dist = min(d for d, _, _ in candidates)
+        nearest = [(box, players) for d, box, players in candidates if d == min_dist]
+
+        # Flatten players at nearest distance
+        flat_players: List["PlayerCard"] = []
+        for _, players in nearest:
+            flat_players.extend(players)
+
+        if not flat_players:
+            return []
+
+        # Pick player(s) with the highest tackle_rating
+        max_tr = max(getattr(p, 'tackle_rating', 0) or 0 for p in flat_players)
+        top = [p for p in flat_players if (getattr(p, 'tackle_rating', 0) or 0) == max_tr]
+
+        credit = round(1.0 / len(top), 4)
+        return [(p.player_name, credit) for p in top]
 
     @staticmethod
     def _normalise_tackle_weight_key(play_type: str) -> str:
@@ -1199,32 +1287,37 @@ class PlayResolver:
         play_type: str,
         box_letters: Optional[List[str]] = None,
         covering_defender_box: Optional[str] = None,
+        rn: Optional[int] = None,
+        deck: Optional["FACDeck"] = None,
+        defenders_by_box_multi: Optional[Dict[str, List["PlayerCard"]]] = None,
     ) -> List[Tuple[str, float]]:
         """Assign individual tackle credit on a play.
 
-        Algorithm (house rule):
+        Algorithm:
           1. **Direct box assignment** — if the blocking matchup identified
              specific contested box(es) that are occupied, those player(s)
              get the tackle.  One box + one player → full tackle (1.0).
              One box + two players → half each (0.5).
              Two boxes each with one player → half each (0.5).
-          2. **Covering defender priority** — for pass plays, if the covering
-             defender's box is known (``covering_defender_box``), that
-             defender is added to the pool with extra weight (×2).
-          3. **Play-type weighted fallback** — when no direct box assignment
-             is available (empty boxes, no matchup, special teams, etc.) a
-             weighted random draw over all occupied boxes is used.  Weights
-             are defined per-box and vary by play type so that, e.g.:
-               - Inside run: DTs (B/D) and ILB/MLB (G/H/I) are most likely
-               - Sweep: DEs (A/E) and OLBs (F/J) are most likely
-               - Long pass: CBs (K/O) and FS (M) are most likely
-               - Quick pass: more even across all rows
+          2. **RN table lookup** (when *rn* is provided, 1–12) — the RN is
+             used to look up the primary tackler box(es) from ``_RN_TACKLE_TABLE``:
+             • Single box → occupant(s) of that box get credit.
+             • Two boxes  → flip FAC PN (or random 1–48): 1–24 first, 25–48 second.
+             • Three boxes → PN: 1–16 first, 17–32 second, 33–48 third.
+             • "DEF" entry → use the covering-defender box (pass plays) or the
+               nearest best-tackle box (run plays).
+             If the resolved box is unoccupied:
+             • Run play  → nearest occupied box by grid distance; best
+               tackle_rating wins; ties → half each.
+             • Pass play → covering defender, or weighted-random fallback.
+             If 2 or more players share the resolved box → half each
+             (requires *defenders_by_box_multi*; otherwise assumes 1 per box).
+          3. **Weighted-random fallback** — used when *rn* is None or the RN
+             table produces no result.  Weights vary by play type.
           4. If no defenders are available, return an empty list.
         """
         if not defenders_by_box:
             return []
-
-        row1 = {'A', 'B', 'C', 'D', 'E'}
 
         # --- Step 1: direct box assignment from blocking matchup ---
         if box_letters:
@@ -1237,9 +1330,60 @@ class PlayResolver:
                 credit = round(1.0 / len(occupied), 4)
                 return [(p.player_name, credit) for p in occupied]
 
-        # --- Step 2: weighted random draw ---
-        # Normalise play_type to a key in _TACKLE_WEIGHTS
+        # Normalise play_type
         weight_key = PlayResolver._normalise_tackle_weight_key(play_type)
+        is_pass = weight_key in ("QUICK_PASS", "SHORT_PASS", "LONG_PASS", "SCREEN_PASS")
+
+        # --- Step 2: RN table lookup ---
+        if rn is not None and 1 <= rn <= 12 and weight_key in PlayResolver._RN_TACKLE_TABLE:
+            table = PlayResolver._RN_TACKLE_TABLE[weight_key]
+            entry = table[rn - 1]
+
+            # Resolve multi-box entry via a PN flip
+            if isinstance(entry, list):
+                # Draw a PN to pick which box
+                if deck is not None:
+                    pn_card = deck.draw()
+                    pn = pn_card.pass_num_int or random.randint(1, 48)
+                else:
+                    pn = random.randint(1, 48)
+                if len(entry) == 2:
+                    chosen_box = entry[0] if pn <= 24 else entry[1]
+                else:  # 3 options
+                    chosen_box = entry[0] if pn <= 16 else (entry[1] if pn <= 32 else entry[2])
+            elif entry == "DEF":
+                chosen_box = covering_defender_box  # may be None
+            else:
+                chosen_box = entry  # single box letter
+
+            # Resolve the chosen box → players
+            if chosen_box and chosen_box in defenders_by_box and defenders_by_box[chosen_box]:
+                # Get all players in the box (multi-map if available)
+                if defenders_by_box_multi and chosen_box in defenders_by_box_multi:
+                    box_players = defenders_by_box_multi[chosen_box]
+                else:
+                    box_players = [defenders_by_box[chosen_box]]
+                credit = round(1.0 / len(box_players), 4)
+                return [(p.player_name, credit) for p in box_players]
+
+            # Box is unoccupied (or DEF with no covering defender)
+            if is_pass:
+                # Pass: try covering defender box first
+                if covering_defender_box and defenders_by_box.get(covering_defender_box):
+                    player = defenders_by_box[covering_defender_box]
+                    return [(player.player_name, 1.0)]
+                # No covering defender — fall through to weighted random
+            else:
+                # Run: nearest best tackler
+                if chosen_box:
+                    result = PlayResolver._nearest_best_tacklers(
+                        chosen_box, defenders_by_box, defenders_by_box_multi
+                    )
+                    if result:
+                        return result
+                # No valid target — fall through to weighted random
+
+        # --- Step 3: weighted random draw (fallback) ---
         base_weights = PlayResolver._TACKLE_WEIGHTS[weight_key]
 
         occupied_boxes = [
@@ -2703,6 +2847,7 @@ class PlayResolver:
         tackle_credits = self.assign_tackle_credit(
             defenders_by_box, pass_type,
             covering_defender_box=covering_defender_box,
+            rn=run_num, deck=deck,
         )
         if tackle_credits:
             log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
@@ -3207,6 +3352,7 @@ class PlayResolver:
                 desc = f"{rusher.player_name} runs {play_direction} for {yards} yards, out of bounds"
                 tackle_credits = self.assign_tackle_credit(
                     defenders_by_box, play_direction, box_letters or None,
+                    rn=used_run_num, deck=deck,
                 )
                 if tackle_credits:
                     log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
@@ -3249,6 +3395,7 @@ class PlayResolver:
                 # Assign tackle and fumble recovery credit
                 tackle_credits = self.assign_tackle_credit(
                     defenders_by_box, play_direction, box_letters or None,
+                    rn=used_run_num, deck=deck,
                 )
                 if tackle_credits:
                     log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
@@ -3292,6 +3439,7 @@ class PlayResolver:
 
             tackle_credits = self.assign_tackle_credit(
                 defenders_by_box, play_direction, box_letters or None,
+                rn=used_run_num, deck=deck,
             )
             if tackle_credits:
                 log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
@@ -3312,7 +3460,8 @@ class PlayResolver:
         yards = random.choices([-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8],
                                weights=[2, 3, 5, 8, 10, 12, 12, 10, 8, 5, 3])[0]
         log.append(f"[RUN] No rushing card data for {rusher.player_name}; fallback yards={yards}")
-        tackle_credits = self.assign_tackle_credit(defenders_by_box, play_direction)
+        tackle_credits = self.assign_tackle_credit(defenders_by_box, play_direction,
+                                                     rn=used_run_num, deck=deck)
         if tackle_credits:
             log.append(f"[TACKLE] Credit: {', '.join(f'{n}({c:.1f})' for n,c in tackle_credits)}")
         r = PlayResult(

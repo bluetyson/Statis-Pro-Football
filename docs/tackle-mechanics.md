@@ -30,19 +30,53 @@ If the blocking-matchup resolution identified a specific contested box (or boxes
 | 1 box, 2 players | Half tackle each (0.5) |
 | 2 boxes, 1 player each | Half tackle each (0.5) |
 
-### Step 2 — Covering Defender Priority (Pass Plays)
+### Step 2 — RN Table Lookup (primary random path)
 
-When the covering defender's box is known (the defender matched to the targeted receiver), that box receives **double weight** in the random draw pool.
+When no direct box assignment applies, the **Run Number (RN)** drawn from the FAC card (1–12) is used to look up the primary tackler box from the table below.
+
+- **Single box entry** — the occupant(s) of that box get the tackle.
+- **Two-box entry** (e.g. `K O`) — flip a FAC card for its PN:
+  - PN 1–24 → first box; PN 25–48 → second box.
+- **Three-box entry** (e.g. `G H I`) — flip a FAC card for its PN:
+  - PN 1–16 → first; PN 17–32 → second; PN 33–48 → third.
+- **DEF entry** — the covering defender's box is used (pass plays).
+
+**If the resolved box is unoccupied:**
+- *Run play* — nearest occupied box by grid distance; among ties, the player with the highest tackle_rating wins; if still tied, half a tackle each.
+- *Pass play* — use the covering defender; if none, fall back to weighted-random draw.
+
+**Multiple players in the resolved box** — all share equally (half a tackle each for 2 players; a third each for 3 players, etc.).
 
 ### Step 3 — Play-Type Weighted Random Draw (Fallback)
 
-When no direct box is available (no matchup, empty boxes, special teams, etc.), a **weighted random draw** over all occupied boxes is used.  One box is drawn; the player in it gets a full tackle (1.0).
-
-Weights vary by play type (see tables below).  A higher weight means that box's defender is more likely to make the tackle.
+When no RN is available (Z-card draws, special teams, etc.), a **weighted random draw** over all occupied boxes is used.  Weights vary by play type (see tables below).
 
 ---
 
-## Weight Tables by Play Type
+## RN Tackle Table
+
+| RN | Inside | Sweep | Screen | Quick | Short | Long |
+|----|--------|-------|--------|-------|-------|------|
+| 1  | E | E | E | N | N | N |
+| 2  | N | B | B | K | G H I | L |
+| 3  | M | C | C | O | F J | L |
+| 4  | J | D | D | DEF | L | M |
+| 5  | H | J | J | DEF | DEF | DEF |
+| 6  | I | F | F | DEF | DEF | DEF |
+| 7  | G | H | H | DEF | DEF | DEF |
+| 8  | F | K O | K O | H | M | M |
+| 9  | B | I | I | G | O | O |
+| 10 | C | J | J | I | O | O |
+| 11 | D | N M | N M | F | K | K |
+| 12 | A | A | A | J | K | K |
+
+> **Note:** The original design chart had "S" for Quick RN 4; this is implemented as "DEF" (the covering defender).
+
+---
+
+## Weight Tables by Play Type (Weighted-Random Fallback)
+
+These weights are used only when no RN is available.  A higher weight means that box's defender is more likely to make the tackle.
 
 ### INSIDE_RUN (IL / IR / Sneak / End-Around)
 
@@ -199,7 +233,9 @@ Outside containment — OLBs (F/J) and DEs (A/E) are first; DBs second; interior
 
 ## Adjusting the Tables
 
-To change who makes tackles, edit `PlayResolver._TACKLE_WEIGHTS` in `engine/play_resolver.py`.  Each key corresponds to the play-type categories above.  Increase a box's weight to make that position more likely to make the tackle; decrease (or set to 0) to make them less likely.
+**Primary table (RN-based):** edit `PlayResolver._RN_TACKLE_TABLE` in `engine/play_resolver.py`.  Each inner list has 12 entries (index 0 = RN 1, index 11 = RN 12).  Change a single box letter, swap two-box entries for single-box entries, or add "DEF" to alter who typically makes the tackle for each RN value.
 
-**Example — reducing DL tackles on quick passes:**  
-Change QUICK_PASS weights for B/C/D from 4 to 1–2 and add the difference to G/H/I (ILBs).
+**Fallback table (weighted-random):** edit `PlayResolver._TACKLE_WEIGHTS`.  This is only used when no RN is available (Z-card draws, special teams, etc.).  Increase a box's weight to make that position more likely; decrease (or set to 0) to make them less likely.
+
+**Example — swapping Inside RN 1 from E (DE) to H (MLB):**
+Change `_RN_TACKLE_TABLE["INSIDE_RUN"][0]` from `'E'` to `'H'`.
