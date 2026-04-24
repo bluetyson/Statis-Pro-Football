@@ -2342,10 +2342,9 @@ class PlayResolver:
             qb_result = qb.resolve_passing(pass_type, pn)
             log.append(f"[QB CARD] Authentic passing ranges → result={qb_result}")
             # Coverage/defense modifiers only shift the completion range; they must
-            # never move a PN into the INT zone.  If the adjusted PN triggered INT
-            # but the raw PN would not have been INT (i.e. it was in the INC range
-            # on the QB card), downgrade the result to INC.
-            if qb_result == "INT" and pn != raw_pn:
+            # never move a PN into the INT zone.  The INT threshold is fixed on the
+            # QB card and is always evaluated against the raw (unmodified) PN.
+            if qb_result == "INT":
                 raw_result = qb.resolve_passing(pass_type, raw_pn)
                 if raw_result != "INT":
                     qb_result = "INC"
@@ -2420,7 +2419,7 @@ class PlayResolver:
                 ),
                 passer=qb.player_name, receiver=actual_receiver.player_name,
                 z_card_event=z_event,
-                pass_number_used=pn,
+                pass_number_used=raw_pn,
                 run_number_used=rn_for_poi,
                 interception_point=poi,
                 interception_return_yards=0 if int_td else int_yards,
@@ -2480,7 +2479,7 @@ class PlayResolver:
                             ),
                             passer=qb.player_name, receiver=actual_receiver.player_name,
                             z_card_event=z_event,
-                            pass_number_used=pn,
+                            pass_number_used=raw_pn,
                             run_number_used=rn_for_ret,
                             interception_point=poi,
                             interception_return_yards=0 if int_td else int_yards,
@@ -2508,7 +2507,7 @@ class PlayResolver:
                             ),
                             passer=qb.player_name, receiver=actual_receiver.player_name,
                             z_card_event=z_event,
-                            pass_number_used=pn,
+                            pass_number_used=raw_pn,
                             run_number_used=rn_for_ret,
                             interception_point=poi,
                             interception_return_yards=0 if int_td else int_yards,
