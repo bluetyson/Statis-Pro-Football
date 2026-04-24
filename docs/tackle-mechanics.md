@@ -233,7 +233,20 @@ Outside containment — OLBs (F/J) and DEs (A/E) are first; DBs second; interior
 
 ---
 
-## Adjusting the Tables
+## Fumble Recovery
+
+When the defense recovers a fumble, `assign_fumble_recovery()` picks the specific defender who scoops up the ball.
+
+### Algorithm
+
+1. **RN table lookup** — a **fresh** RN is drawn from the deck (independent of all earlier draws) and looked up in `_RN_TACKLE_TABLE` for the current play type, exactly as tackle credit is resolved.  Multi-box entries use an additional PN flip; `DEF` entries fall through to the weighted-random fallback.
+2. **Weighted-random fallback** — if the resolved box is unoccupied, or the play type is not in the RN table, the engine uses the `_TACKLE_WEIGHTS` weighted-random draw.  If a tackler was already identified for this play, their box weight is doubled (they're already in contact with the ball).
+
+### Design rationale
+
+Using the same RN table for both tackle credit and fumble recovery is intentional.  The position that was most likely to make the tackle is also the most likely position to be near a loose ball.  The two draws are always independent (separate card draws from the deck) so neither result is correlated with the play's yardage outcome.
+
+
 
 **Primary table (RN-based):** edit `PlayResolver._RN_TACKLE_TABLE` in `engine/play_resolver.py`.  Each inner list has 12 entries (index 0 = RN 1, index 11 = RN 12).  Change a single box letter, swap two-box entries for single-box entries, or add "DEF" to alter who typically makes the tackle for each RN value.
 

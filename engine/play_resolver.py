@@ -1434,21 +1434,27 @@ class PlayResolver:
         defenders_by_box: Optional[Dict[str, "PlayerCard"]],
         play_type: str,
         tackle_by: Optional[List[Tuple[str, float]]] = None,
+        deck: Optional["FACDeck"] = None,
     ) -> Optional[str]:
         """Assign defensive fumble recovery credit to a specific player.
 
         Called only when the defense has already been determined to recover
         the fumble (``fumble_lost=True``).
 
-        Algorithm (house rule):
-          1. The tackler (from ``tackle_by``) is the most likely recoverer
-             — they're already in contact with the ball carrier.
-             If multiple tacklers, pick the one with the highest credit share
-             (or first in list on tie).
-          2. All other defenders are secondary candidates weighted by play
-             type (same distributions used for tackle assignment).
-          3. A single random draw decides the recoverer.  The tackler's
-             weight is doubled relative to play-type weight.
+        Algorithm:
+          1. **RN table lookup** — draw a **fresh** run number from *deck*
+             (or ``random.randint(1, 12)`` when no deck is available) and use
+             ``_RN_TACKLE_TABLE`` to resolve which defender box the ball
+             bounced to.  This is the same table used for tackle credit so the
+             position distributions are realistic (box positions that are
+             already near the ball carrier are more likely to recover).
+             Multi-box entries are resolved by an additional PN flip.
+             ``DEF`` entries fall back to Step 2.
+          2. **Weighted-random fallback** — used if the resolved box is
+             unoccupied, or the play type is not in the RN table.  All
+             occupied boxes are weighted by play type (same distributions as
+             tackle assignment).  If a tackler is known (``tackle_by``), their
+             box weight is doubled — they're already in contact with the ball.
 
         Returns the player_name of the recoverer, or None if no defenders
         are available.
@@ -1456,14 +1462,44 @@ class PlayResolver:
         if not defenders_by_box:
             return None
 
-        # Primary candidate: the tackler (if known)
+        # Primary candidate: the tackler (if known) — used in fallback weighting
         tackler_name: Optional[str] = None
         if tackle_by:
-            # Pick the tackler with highest credit (usually the only one)
             tackler_name = max(tackle_by, key=lambda x: x[1])[0]
 
-        # Normalise play_type to a key in _TACKLE_WEIGHTS
         weight_key = PlayResolver._normalise_tackle_weight_key(play_type)
+
+        # --- Step 1: RN table lookup (same table as tackle credit) ---
+        if weight_key in PlayResolver._RN_TACKLE_TABLE:
+            if deck is not None:
+                rn_card = deck.draw()
+                fumble_rn = rn_card.run_num_int or random.randint(1, 12)
+                fumble_rn = max(1, min(12, fumble_rn))
+            else:
+                fumble_rn = random.randint(1, 12)
+
+            table = PlayResolver._RN_TACKLE_TABLE[weight_key]
+            entry = table[fumble_rn - 1]
+
+            if isinstance(entry, list):
+                if deck is not None:
+                    pn_card = deck.draw()
+                    pn = pn_card.pass_num_int or random.randint(1, 48)
+                else:
+                    pn = random.randint(1, 48)
+                if len(entry) == 2:
+                    chosen_box = entry[0] if pn <= 24 else entry[1]
+                else:
+                    chosen_box = entry[0] if pn <= 16 else (entry[1] if pn <= 32 else entry[2])
+            elif entry == "DEF":
+                chosen_box = None  # fall through to weighted random
+            else:
+                chosen_box = entry
+
+            if chosen_box and chosen_box in defenders_by_box and defenders_by_box[chosen_box]:
+                return defenders_by_box[chosen_box].player_name
+
+        # --- Step 2: weighted-random fallback ---
         base_weights = PlayResolver._TACKLE_WEIGHTS[weight_key]
 
         occupied = [(box, card) for box, card in defenders_by_box.items() if card is not None]
@@ -1474,7 +1510,6 @@ class PlayResolver:
         weights: List[float] = []
         for box, card in occupied:
             w = float(base_weights.get(box, 1))
-            # Double weight for the identified tackler
             if tackler_name and card.player_name == tackler_name:
                 w *= 2.0
             weights.append(max(w, 0.1))
@@ -3423,6 +3458,7 @@ class PlayResolver:
                 if fumble_lost:
                     fumble_recoverer = self.assign_fumble_recovery(
                         defenders_by_box, play_direction, tackle_credits or None,
+                        deck=deck,
                     )
                     if fumble_recoverer:
                         log.append(f"[FUMBLE RECOVERY] {fumble_recoverer} recovers the fumble!")
