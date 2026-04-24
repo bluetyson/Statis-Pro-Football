@@ -2385,10 +2385,10 @@ class PlayResolver:
             rn_for_poi = fac_card.run_num_int or random.randint(1, 12)
             poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_poi, yard_line)
             int_yards, int_td = Charts.roll_int_return()
-            # Check if return goes into opposing end zone
-            if not int_td and poi - int_yards <= 0:
+            # Check if return goes into opposing end zone (poi = yards from own end zone)
+            if not int_td and poi + int_yards >= 100:
                 int_td = True
-                int_yards = poi
+                int_yards = 100 - poi
             log.append(f"[INT] Interception! RN={rn_for_poi}, pass_type={pass_type}")
             log.append(f"[INT] Point of interception: {poi}-yard line (from yard_line={yard_line})")
             log.append(f"[INT] Return yards={int_yards}, TD={int_td}")
@@ -2444,10 +2444,10 @@ class PlayResolver:
                         defender_pos = getattr(int_check_defender, 'position', 'DB')
                         poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_ret, yard_line)
                         int_yards, int_td = Charts.roll_int_return_5e(rn_for_ret, defender_pos)
-                        # Check if return goes into opposing end zone
-                        if not int_td and poi - int_yards <= 0:
+                        # Check if return goes into opposing end zone (poi = yards from own end zone)
+                        if not int_td and poi + int_yards >= 100:
                             int_td = True
-                            int_yards = poi
+                            int_yards = 100 - poi
                         log.append(f"[INC→INT] PN {pn} in intercept range [{int_range}-48]! INT by {int_check_defender.player_name} ({defender_pos})!")
                         log.append(f"[INC→INT] Point of interception: {poi}-yard line (RN={rn_for_ret}, pass_type={pass_type})")
                         log.append(f"[INC→INT] Return: {int_yards} yards (5E table, position={defender_pos}), TD={int_td}")
@@ -2472,9 +2472,9 @@ class PlayResolver:
                         rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
                         poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_ret, yard_line)
                         int_yards, int_td = Charts.roll_int_return()
-                        if not int_td and poi - int_yards <= 0:
+                        if not int_td and poi + int_yards >= 100:
                             int_td = True
-                            int_yards = poi
+                            int_yards = 100 - poi
                         log.append(f"[INC→INT] PN {pn} in legacy range [{int_range[0]}-{int_range[1]}]! INT by {int_check_defender.player_name}!")
                         log.append(f"[INC→INT] Point of interception: {poi}-yard line (RN={rn_for_ret}, pass_type={pass_type})")
                         log.append(f"[INC→INT] Return: {int_yards} yards, TD={int_td}")
@@ -2501,9 +2501,9 @@ class PlayResolver:
                     rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
                     poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_ret, yard_line)
                     int_yards, int_td = Charts.roll_int_return()
-                    if not int_td and poi - int_yards <= 0:
+                    if not int_td and poi + int_yards >= 100:
                         int_td = True
-                        int_yards = poi
+                        int_yards = 100 - poi
                     log.append(f"[INC→INT] PN 48 special: intercepted at {poi}-yard line")
                     log.append(f"[INC→INT] Return: {int_yards} yards, TD={int_td}")
                     r = PlayResult(
@@ -2751,9 +2751,9 @@ class PlayResolver:
             rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
             poi = PlayResolver.calculate_point_of_interception("SCREEN", rn_for_ret, yard_line)
             int_yards, int_td = Charts.roll_int_return()
-            if not int_td and poi - int_yards <= 0:
+            if not int_td and poi + int_yards >= 100:
                 int_td = True
-                int_yards = poi
+                int_yards = 100 - poi
             return PlayResult(
                 play_type="PASS", yards_gained=0,
                 result="INT", turnover=True, turnover_type="INT",
@@ -4101,13 +4101,31 @@ class PlayResolver:
                     assignments[ilb.player_name] = lb_inner[lb_idx]
                     lb_idx += 1
 
-        # Fill generic LBs to first empty Row 2 box
-        for p in generic_lbs + olbs[2:] + ilbs + mlbs[1:]:
-            if p.player_name not in assignments:
-                for box in ['F', 'G', 'H', 'I', 'J']:
-                    if box not in assignments.values():
-                        assignments[p.player_name] = box
-                        break
+        # Fill generic LBs using the standard formation box pattern:
+        # 3 LBs → F, H, J (4-3 pattern: edges + middle)
+        # 4 LBs → F, G, I, J (3-4 pattern: edges + inner)
+        # 5 or other → F, G, H, I, J (all five slots)
+        all_lb_boxes = ['F', 'G', 'H', 'I', 'J']
+        unassigned_lbs = [p for p in generic_lbs + olbs[2:] + ilbs + mlbs[1:]
+                          if p.player_name not in assignments]
+        remaining_boxes = [b for b in all_lb_boxes if b not in assignments.values()]
+        if unassigned_lbs:
+            n = len(unassigned_lbs)
+            if n <= 3 and len(remaining_boxes) >= 3:
+                # 4-3 pattern: F (ROLB), H (MLB), J (LOLB)
+                pattern_boxes = [b for b in ['F', 'H', 'J'] if b not in assignments.values()]
+                # If pattern boxes cover all unassigned LBs, use them; otherwise
+                # fall back to all available boxes (e.g., some slots already taken).
+                if len(pattern_boxes) >= n:
+                    remaining_boxes = pattern_boxes
+            elif n == 4 and len(remaining_boxes) >= 4:
+                # 3-4 pattern: F (ROLB), G (RILB), I (LILB), J (LOLB)
+                pattern_boxes = [b for b in ['F', 'G', 'I', 'J'] if b not in assignments.values()]
+                if len(pattern_boxes) >= n:
+                    remaining_boxes = pattern_boxes
+            for i, p in enumerate(unassigned_lbs):
+                if i < len(remaining_boxes):
+                    assignments[p.player_name] = remaining_boxes[i]
 
         # Row 3: DBs to boxes K-O following position rules
         # CB→K/O, FS→M, SS→N, any DB→L

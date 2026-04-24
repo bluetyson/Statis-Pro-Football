@@ -830,7 +830,9 @@ class TestAuthenticPassResolution:
                 card, deck, self.qb, self.wr1, self.receivers, "SHORT",
                 yard_line=9,
             )
-            if result.is_touchdown:
+            # Only flag completion TDs as impossible; INT return TDs are valid
+            # (the interceptor at the offense's 9-yd line is near the end zone).
+            if result.is_touchdown and result.result != "INT":
                 td_count += 1
         # No completions of ~5-15 yards from the 9-yard line should be a TD
         assert td_count == 0, f"Got {td_count} impossible TDs from own 9-yard line"
