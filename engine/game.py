@@ -1797,7 +1797,7 @@ class Game:
                     self._score_td_only()
                 return
             if result.interception_point is not None:
-                new_yl = result.interception_point
+                new_yl = min(99, result.interception_point + result.interception_return_yards)
             else:
                 new_yl = random.randint(20, 45)
             self._change_possession(new_yl)

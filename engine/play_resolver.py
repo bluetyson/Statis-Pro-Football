@@ -71,6 +71,7 @@ class PlayResult:
     defensive_play: Optional[str] = None        # DefensivePlay value used
     bv_tv_result: Optional[Dict[str, Any]] = None  # BV vs TV battle details
     interception_point: Optional[int] = None    # Yard line where INT occurred
+    interception_return_yards: int = 0          # Yards gained on interception return
     personnel_note: Optional[str] = None        # Auto-substitution / availability note
     box_assignments: Optional[Dict[str, str]] = None  # Box letter → player name for this play
     sack_by: Optional[List[Tuple[str, float]]] = None  # [(player_name, credit)] — 1.0 full, 0.5 half
@@ -2234,6 +2235,10 @@ class PlayResolver:
         pn = fac_card.pass_num_int
         if pn is None:
             pn = random.randint(1, 48)
+        # raw_pn is the unmodified FAC card roll.  Coverage/defense adjustments
+        # shift the completion range (com_max) only — they never change whether a
+        # PN is in the INT range, which is fixed on the QB card.
+        raw_pn = pn
         log.append(f"[QB CARD] PN={pn}, pass_type={pass_type}")
 
         # Apply defensive strategy modifiers (5E Rule 12-13)
@@ -2336,6 +2341,19 @@ class PlayResolver:
         if qb.passing_short or qb.passing_long or qb.passing_quick:
             qb_result = qb.resolve_passing(pass_type, pn)
             log.append(f"[QB CARD] Authentic passing ranges → result={qb_result}")
+            # Coverage/defense modifiers only shift the completion range; they must
+            # never move a PN into the INT zone.  If the adjusted PN triggered INT
+            # but the raw PN would not have been INT (i.e. it was in the INC range
+            # on the QB card), downgrade the result to INC.
+            if qb_result == "INT" and pn != raw_pn:
+                raw_result = qb.resolve_passing(pass_type, raw_pn)
+                if raw_result != "INT":
+                    qb_result = "INC"
+                    log.append(
+                        f"[QB CARD] Adjusted PN {pn} would be INT, but raw PN {raw_pn} "
+                        f"is {raw_result} — downgraded to INC "
+                        f"(coverage adjustments shift completion range only, not INT threshold)"
+                    )
         else:
             # Legacy: fall back to old slot-based columns
             if pass_type == "LONG":
@@ -2405,6 +2423,7 @@ class PlayResolver:
                 pass_number_used=pn,
                 run_number_used=rn_for_poi,
                 interception_point=poi,
+                interception_return_yards=0 if int_td else int_yards,
             )
             r.debug_log = log
             return r
@@ -2439,7 +2458,7 @@ class PlayResolver:
                 int_range = int_check_defender.intercept_range
                 log.append(f"[INC] Defender {int_check_defender.player_name} intercept range = {int_range}")
                 if isinstance(int_range, int) and int_range <= 48:
-                    if int_range <= pn <= 48:
+                    if int_range <= raw_pn <= 48:
                         rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
                         defender_pos = getattr(int_check_defender, 'position', 'DB')
                         poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_ret, yard_line)
@@ -2448,7 +2467,7 @@ class PlayResolver:
                         if not int_td and poi + int_yards >= 100:
                             int_td = True
                             int_yards = 100 - poi
-                        log.append(f"[INC→INT] PN {pn} in intercept range [{int_range}-48]! INT by {int_check_defender.player_name} ({defender_pos})!")
+                        log.append(f"[INC→INT] PN {raw_pn} in intercept range [{int_range}-48]! INT by {int_check_defender.player_name} ({defender_pos})!")
                         log.append(f"[INC→INT] Point of interception: {poi}-yard line (RN={rn_for_ret}, pass_type={pass_type})")
                         log.append(f"[INC→INT] Return: {int_yards} yards (5E table, position={defender_pos}), TD={int_td}")
                         r = PlayResult(
@@ -2464,18 +2483,19 @@ class PlayResolver:
                             pass_number_used=pn,
                             run_number_used=rn_for_ret,
                             interception_point=poi,
+                            interception_return_yards=0 if int_td else int_yards,
                         )
                         r.debug_log = log
                         return r
                 elif isinstance(int_range, (list, tuple)) and len(int_range) == 2:
-                    if int_range[0] <= pn <= int_range[1]:
+                    if int_range[0] <= raw_pn <= int_range[1]:
                         rn_for_ret = fac_card.run_num_int or random.randint(1, 12)
                         poi = PlayResolver.calculate_point_of_interception(pass_type, rn_for_ret, yard_line)
                         int_yards, int_td = Charts.roll_int_return()
                         if not int_td and poi + int_yards >= 100:
                             int_td = True
                             int_yards = 100 - poi
-                        log.append(f"[INC→INT] PN {pn} in legacy range [{int_range[0]}-{int_range[1]}]! INT by {int_check_defender.player_name}!")
+                        log.append(f"[INC→INT] PN {raw_pn} in legacy range [{int_range[0]}-{int_range[1]}]! INT by {int_check_defender.player_name}!")
                         log.append(f"[INC→INT] Point of interception: {poi}-yard line (RN={rn_for_ret}, pass_type={pass_type})")
                         log.append(f"[INC→INT] Return: {int_yards} yards, TD={int_td}")
                         r = PlayResult(
@@ -2491,10 +2511,11 @@ class PlayResolver:
                             pass_number_used=pn,
                             run_number_used=rn_for_ret,
                             interception_point=poi,
+                            interception_return_yards=0 if int_td else int_yards,
                         )
                         r.debug_log = log
                         return r
-            if pn == 48:
+            if raw_pn == 48:
                 new_pn = random.randint(1, 48)
                 log.append(f"[INC] PN=48 special check: new PN={new_pn}")
                 if new_pn <= 24:
@@ -2519,6 +2540,7 @@ class PlayResolver:
                         pass_number_used=pn,
                         run_number_used=rn_for_ret,
                         interception_point=poi,
+                        interception_return_yards=0 if int_td else int_yards,
                     )
                     r.debug_log = log
                     return r
@@ -2765,6 +2787,7 @@ class PlayResolver:
                 passer=qb.player_name, receiver=actual_receiver.player_name,
                 z_card_event=z_event,
                 interception_point=poi,
+                interception_return_yards=0 if int_td else int_yards,
             )
 
         # Screen complete — Rule 4: use RB's rushing N column for yards
