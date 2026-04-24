@@ -76,6 +76,7 @@ class PlayResult:
     sack_by: Optional[List[Tuple[str, float]]] = None  # [(player_name, credit)] — 1.0 full, 0.5 half
     tackle_by: Optional[List[Tuple[str, float]]] = None  # [(player_name, credit)] — 1.0 full, 0.5 half
     fumble_recovered_by: Optional[str] = None  # Name of defender who recovered fumble (if defense)
+    pass_defensed_by: Optional[str] = None      # Defender credited with a pass defensed
     debug_log: List[str] = field(default_factory=list)  # Step-by-step resolution log
 
 
@@ -1888,7 +1889,8 @@ class PlayResolver:
                         backs_blocking: Optional[List[int]] = None,
                         double_coverage_defender_box: Optional[str] = None,
                         blitzer_names: Optional[List[str]] = None,
-                        endurance_modifier: int = 0) -> PlayResult:
+                        endurance_modifier: int = 0,
+                        triple_coverage_defender_name: Optional[str] = None) -> PlayResult:
         """Resolve a pass play using 5th-edition FAC card mechanics.
 
         Parameters
@@ -1932,12 +1934,19 @@ class PlayResolver:
             The original box letter of the defender who moved to double
             cover a receiver.  If an INC→INT check fires in this box,
             the interception is suppressed because the defender is away.
+            Defaults to 'L' (Box L extra DB) when Box L is occupied,
+            otherwise 'M' (FS).
         blitzer_names : Optional[List[str]]
             Names of blitzing players for debug logging.
         endurance_modifier : int
             Completion range modifier from receiver endurance violation.
             Only applied when the FAC's actual receiver matches the
             intended target; ignored on check-offs per 5E rules.
+        triple_coverage_defender_name : Optional[str]
+            The player name of the "third DB" who moved from Box L to
+            apply triple coverage.  When triple coverage (-15) is the
+            decisive factor causing an incompletion, this player is
+            credited with a pass defensed instead of the double-teamer.
         """
         # ── Handle Z card ────────────────────────────────────────────
         if fac_card.is_z_card:
@@ -1952,7 +1961,7 @@ class PlayResolver:
                 two_minute_offense, completion_modifier, defensive_play_5e,
                 yard_line, defenders_by_box, backs_blocking,
                 double_coverage_defender_box, blitzer_names,
-                endurance_modifier,
+                endurance_modifier, triple_coverage_defender_name,
             )
 
         return self._resolve_pass_inner_5e(
@@ -1963,7 +1972,7 @@ class PlayResolver:
             two_minute_offense, completion_modifier, defensive_play_5e,
             yard_line, defenders_by_box, backs_blocking,
             double_coverage_defender_box, blitzer_names,
-            endurance_modifier,
+            endurance_modifier, triple_coverage_defender_name,
         )
 
     def _resolve_pass_inner_5e(self, fac_card: FACCard, deck: FACDeck,
@@ -1986,7 +1995,8 @@ class PlayResolver:
                                backs_blocking: Optional[List[int]] = None,
                                double_coverage_defender_box: Optional[str] = None,
                                blitzer_names: Optional[List[str]] = None,
-                               endurance_modifier: int = 0) -> PlayResult:
+                               endurance_modifier: int = 0,
+                               triple_coverage_defender_name: Optional[str] = None) -> PlayResult:
         """Inner pass resolution after Z-card handling.
 
         Authentic 5E resolution:
@@ -2512,12 +2522,74 @@ class PlayResolver:
                     )
                     r.debug_log = log
                     return r
+            # Check if the covering defender's PDR caused this incompletion.
+            # If the pass would have been complete without the PDR modifier,
+            # credit the defender with a pass defensed.
+            #
+            # pass_defense_mod = -pdr (negative; PDR raises PN by pdr).
+            # Adding pass_defense_mod to pn removes the PDR's contribution:
+            #   pn_without_pdr = pn + pass_defense_mod = pn - pdr
+            pass_defensed_by_name = None
+            if covering_defender and pass_defense_mod < 0:
+                pdr_val = -pass_defense_mod  # PDR contribution to PN increase
+                pn_without_pdr = max(1, min(48, pn + pass_defense_mod))  # undo PDR: pn - pdr
+                if qb.passing_short or qb.passing_long or qb.passing_quick:
+                    if qb.resolve_passing(pass_type, pn_without_pdr) == "COM":
+                        pass_defensed_by_name = covering_defender.player_name
+                        log.append(f"[PD] Pass defensed by {covering_defender.player_name}: "
+                                   f"PN {pn_without_pdr} (no PDR) → COM, PDR={pdr_val} raised PN to {pn}")
+
+            # Check if double/triple coverage caused this incompletion.
+            # strategy_modifier is -7 (double) or -15 (triple); coverage_penalty
+            # is the PN increase that was already applied.  If removing that
+            # contribution restores a completion, credit the coverage defender.
+            #
+            # Attribution priority:
+            #   triple coverage (-15) → triple_coverage_defender_name (third DB
+            #     from Box L) gets credit when the full -15 was decisive.
+            #   double coverage (-7) → double_coverage_defender_box player gets
+            #     credit (Box L extra DB if present, otherwise FS in Box M).
+            if pass_defensed_by_name is None and strategy_modifier < 0:
+                coverage_pen_val = -strategy_modifier  # 7 for double, 15 for triple
+                pn_without_coverage = max(1, min(48, pn - coverage_pen_val))
+                if qb.passing_short or qb.passing_long or qb.passing_quick:
+                    if qb.resolve_passing(pass_type, pn_without_coverage) == "COM":
+                        if strategy_modifier == -15 and triple_coverage_defender_name:
+                            # Triple coverage was the decisive factor — credit the
+                            # third DB (second Box L extra DB who joined the coverage).
+                            pass_defensed_by_name = triple_coverage_defender_name
+                            log.append(
+                                f"[PD] triple coverage pass defensed by "
+                                f"{triple_coverage_defender_name} (third DB / Box L): "
+                                f"PN {pn_without_coverage} (no triple coverage) → COM, "
+                                f"triple coverage raised PN to {pn}"
+                            )
+                        else:
+                            # Double coverage (or triple without a specific third DB)
+                            # — credit the double-teamer (Box L extra DB or FS box M).
+                            cov_box = double_coverage_defender_box or 'M'
+                            coverage_defender = (defenders_by_box.get(cov_box)
+                                                 if defenders_by_box else None)
+                            if coverage_defender:
+                                pass_defensed_by_name = coverage_defender.player_name
+                                cov_label = "double" if strategy_modifier == -7 else "triple"
+                                log.append(
+                                    f"[PD] {cov_label} coverage pass defensed by "
+                                    f"{coverage_defender.player_name} (box {cov_box}): "
+                                    f"PN {pn_without_coverage} (no coverage) → COM, "
+                                    f"coverage raised PN to {pn}"
+                                )
+
+            inc_desc = f"{qb.player_name} pass incomplete to {actual_receiver.player_name}"
+            if pass_defensed_by_name:
+                inc_desc += f" — pass defensed by {pass_defensed_by_name}"
             r = PlayResult(
                 play_type="PASS", yards_gained=0, result="INCOMPLETE",
-                description=f"{qb.player_name} pass incomplete to {actual_receiver.player_name}",
+                description=inc_desc,
                 passer=qb.player_name, receiver=actual_receiver.player_name,
                 z_card_event=z_event,
                 pass_number_used=pn,
+                pass_defensed_by=pass_defensed_by_name,
             )
             r.debug_log = log
             return r

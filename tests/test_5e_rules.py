@@ -2648,3 +2648,431 @@ class TestDoubleCoverageINTSuppression:
         )
         assert result.result == "INCOMPLETE", \
             f"INT should be suppressed when covering defender away, got {result.result}"
+
+
+# ─── Pass Defensed Stat Tests ────────────────────────────────────────────
+
+
+class TestPassDefensedStat:
+    """Test that a covering defender is credited with a pass defensed when
+    their pass_defense_rating causes a pass to be incomplete."""
+
+    def _make_fac_card(self, pn=29, rn=6):
+        from engine.fac_deck import FACCard
+        return FACCard(
+            card_number=1, run_number=str(rn), pass_number=str(pn),
+            sweep_left="A", inside_left="B", sweep_right="C", inside_right="D",
+            quick_kick="Orig", short_pass="Orig", long_pass="Orig",
+            screen="Com", end_run="OK", z_result="NONE", solo="P",
+        )
+
+    def _make_qb(self, com_max=32):
+        from engine.player_card import PlayerCard, PassRanges
+        qb = PlayerCard("Test QB", "KC", "QB", 15, "A")
+        qb.passing_short = PassRanges(com_max=com_max, inc_max=47)
+        qb.passing_quick = PassRanges(com_max=com_max, inc_max=47)
+        qb.passing_long = PassRanges(com_max=com_max - 5, inc_max=47)
+        return qb
+
+    def _make_receivers(self, n=5):
+        from engine.player_card import PlayerCard, ThreeValueRow
+        slot_names = ["FL", "LE", "RE", "BK1", "BK2", "BK3"]
+        recs = []
+        for i in range(n):
+            r = PlayerCard(f"WR{i}", "KC", "WR", 80 + i, "B")
+            r.pass_gain = [ThreeValueRow(v1=5, v2=8, v3=15) for _ in range(12)]
+            r._formation_slot = slot_names[i] if i < len(slot_names) else f"BK{i}"
+            recs.append(r)
+        return recs
+
+    def test_pdr_caused_incomplete_credits_pass_defensed(self):
+        """PDR=4, com_max=32, PN=29: without PDR it would be COM → pass defensed credited.
+
+        Example from the rules: pass defense of 4, completion range of 32, PN=29.
+        Without PDR: PN 29 ≤ 32 → complete.
+        With PDR=4: PN adjusted to 33 > 32 → incomplete → pass defensed by defender.
+        """
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=32)
+        recs = self._make_receivers(5)
+        # FL (recs[0]) is covered by box O
+        cb = PlayerCard("Elite CB", "DAL", "CB", 24, "A", pass_defense_rating=4)
+        defenders_by_box = {"O": cb}
+        fac = self._make_fac_card(pn=29)  # PN=29 ≤ 32 would complete without PDR
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+        )
+        assert result.result == "INCOMPLETE"
+        assert result.pass_defensed_by == "Elite CB", (
+            f"Expected pass_defensed_by='Elite CB', got {result.pass_defensed_by!r}"
+        )
+        assert "pass defensed by Elite CB" in result.description
+
+    def test_pdr_not_causal_no_pass_defensed(self):
+        """When pass is incomplete even without PDR, no pass defensed credited.
+
+        com_max=25, PDR=4, PN=35: without PDR PN=35 > 25 → still INC.
+        PDR is not the deciding factor → no pass defensed credit.
+        """
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=25)
+        recs = self._make_receivers(5)
+        cb = PlayerCard("CB", "DAL", "CB", 24, "A", pass_defense_rating=4)
+        defenders_by_box = {"O": cb}
+        fac = self._make_fac_card(pn=35)  # PN=35 > 25 even without PDR → no PD
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defenders_by_box=defenders_by_box,
+        )
+        assert result.result in ("INCOMPLETE", "INT")
+        assert result.pass_defensed_by is None
+
+    def test_no_covering_defender_no_pass_defensed(self):
+        """No defender in coverage box → no pass defensed."""
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=30)
+        recs = self._make_receivers(5)
+        fac = self._make_fac_card(pn=35)  # INC
+        deck = FACDeck()
+        random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+        )
+        assert result.result in ("INCOMPLETE", "INT")
+        assert result.pass_defensed_by is None
+
+    def test_pass_defensed_tracked_in_player_stats(self):
+        """game._track_play_stats correctly increments passes_defensed."""
+        from engine.game import Game
+        home = Team.load("KC", "2025_5e")
+        away = Team.load("DAL", "2025_5e")
+        game = Game(home, away, use_5e=True, seed=42)
+        # Inject a fake PlayResult with pass_defensed_by set
+        fake_result = PlayResult(
+            play_type="PASS", yards_gained=0, result="INCOMPLETE",
+            description="QB pass incomplete — pass defensed by Elite CB",
+            passer="Patrick Mahomes", receiver="Travis Kelce",
+            pass_defensed_by="Elite CB",
+        )
+        game.state.possession = "away"
+        game._track_play_stats(fake_result)
+        stats = game.state.player_stats
+        assert "Elite CB" in stats
+        assert stats["Elite CB"].get("passes_defensed", 0) == 1
+
+    # ── helpers for coverage tests ───────────────────────────────────
+
+    @staticmethod
+    def _make_coverage_defenders(n_row2: int, n_row3: int,
+                                 fs_box: str = 'M',
+                                 add_o_box_defender: bool = True) -> tuple:
+        """Return (defenders_list, defenders_by_box) satisfying Rule 12/13 row counts.
+
+        - index 0 is the primary (skipped in row counts).
+        - Indices 1..n_row2 fill row-2 slots (indices 1-3 in the list).
+        - Indices n_row2+1.. fill row-3 slots (indices 4+).
+        - A zero-PDR FS occupies fs_box in defenders_by_box.
+        - When add_o_box_defender=True a zero-PDR CB occupies box O, which is
+          the coverage box for FL receivers, preventing the empty-box +5 bonus.
+        """
+        from engine.player_card import PlayerCard
+        defenders = []
+        dbb: dict = {}
+        primary = PlayerCard("Primary", "DAL", "CB", 20, "B")
+        primary.pass_defense_rating = 0
+        defenders.append(primary)
+        for i in range(1, 1 + n_row2 + n_row3):
+            pos = "CB" if i <= n_row2 else "S"
+            d = PlayerCard(f"Defender{i}", "DAL", pos, 20 + i, "B")
+            d.pass_defense_rating = 0
+            defenders.append(d)
+        fs = PlayerCard("Free Safety", "DAL", "FS", 29, "B")
+        fs.pass_defense_rating = 0
+        dbb[fs_box] = fs
+        if add_o_box_defender:
+            # Fills the FL receiver's coverage box (O) with a zero-PDR CB.
+            cb_o = PlayerCard("CB_O", "DAL", "CB", 31, "B")
+            cb_o.pass_defense_rating = 0
+            dbb["O"] = cb_o
+        return defenders, dbb
+
+    # ── double/triple coverage PD tests ──────────────────────────────
+
+    def test_double_coverage_caused_incomplete_credits_double_teamer(self):
+        """Double coverage (-7) causes incompletion → FS (box M) gets pass defensed.
+
+        Defender in box O (PDR=0) covers the FL receiver so no empty-box bonus.
+        resolve_double_coverage: 5 defenders → row2_count=3, row3_count=1 → -7.
+
+        PN arithmetic:
+          raw PN=29, pass_defense_mod=0, coverage_penalty=7 → adjusted PN=36.
+          36 > 32 (com_max) → INC.
+          pn_without_coverage = 36 - 7 = 29 ≤ 32 → COM → FS gets PD credit.
+        """
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=32)
+        recs = self._make_receivers(5)
+        # 1 primary + 3 row2 + 1 row3 = 5 defenders; row2+row3=4 ≥ 4 → -7
+        defenders, defenders_by_box = self._make_coverage_defenders(
+            n_row2=3, n_row3=1, add_o_box_defender=True
+        )
+        fac = self._make_fac_card(pn=29)
+        deck = FACDeck()
+        import random; random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defensive_strategy="DOUBLE_COVERAGE",
+            defenders=defenders,
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='M',
+        )
+        assert result.result == "INCOMPLETE", (
+            f"Expected INCOMPLETE, got {result.result}\nDebug: {result.debug_log}"
+        )
+        assert result.pass_defensed_by == "Free Safety", (
+            f"Expected 'Free Safety', got {result.pass_defensed_by!r}\n"
+            f"Debug: {result.debug_log}"
+        )
+        assert "pass defensed by Free Safety" in result.description
+
+    def test_double_coverage_not_causal_no_pd_credit(self):
+        """Double coverage (+7 PN) but pass INC even without it → no PD credit.
+
+        com_max=20, raw PN=29 → 29 > 20 regardless of coverage modifier.
+        pn_without_coverage = (29+7) - 7 = 29 > 20 → still INC → no credit.
+        """
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=20)
+        recs = self._make_receivers(5)
+        defenders, defenders_by_box = self._make_coverage_defenders(
+            n_row2=3, n_row3=1, add_o_box_defender=True
+        )
+        fac = self._make_fac_card(pn=29)
+        deck = FACDeck()
+        import random; random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defensive_strategy="DOUBLE_COVERAGE",
+            defenders=defenders,
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='M',
+        )
+        assert result.result in ("INCOMPLETE", "INT")
+        assert result.pass_defensed_by is None, (
+            f"Expected no PD credit, got {result.pass_defensed_by!r}"
+        )
+
+    def test_triple_coverage_caused_incomplete_credits_triple_teamer(self):
+        """Triple coverage (-15) causes incompletion → box-M FS gets pass defensed.
+
+        resolve_triple_coverage: row2_count>=2 and row3_count>=6.
+          10 defenders: 1 primary + 3 row2 + 6 row3 → row2=3>=2, row3=6>=6 → -15.
+
+        PN arithmetic (O-box defender eliminates empty-box bonus):
+          raw PN=25, pass_defense_mod=0, coverage_penalty=15 → adjusted PN=40.
+          40 > 32 → INC.
+          pn_without_coverage = 40 - 15 = 25 ≤ 32 → COM → FS gets PD credit.
+        """
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=32)
+        recs = self._make_receivers(5)
+        # 1 primary + 3 row2 + 6 row3 = 10 defenders; row2=3>=2, row3=6>=6 → -15
+        defenders, defenders_by_box = self._make_coverage_defenders(
+            n_row2=3, n_row3=6, add_o_box_defender=True
+        )
+        fac = self._make_fac_card(pn=25)
+        deck = FACDeck()
+        import random; random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defensive_strategy="TRIPLE_COVERAGE",
+            defenders=defenders,
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='M',
+        )
+        assert result.result == "INCOMPLETE", (
+            f"Expected INCOMPLETE, got {result.result}\nDebug: {result.debug_log}"
+        )
+        assert result.pass_defensed_by == "Free Safety", (
+            f"Expected 'Free Safety', got {result.pass_defensed_by!r}\n"
+            f"Debug: {result.debug_log}"
+        )
+        assert "pass defensed by Free Safety" in result.description
+
+    def test_primary_pdr_takes_priority_over_double_coverage_pd(self):
+        """Primary defender's PDR is checked first; double-coverage check is skipped
+        when pass_defensed_by_name is already set.
+
+        PN arithmetic: com_max=32, PDR=4 on box-O CB, raw PN=25, double coverage.
+          pass_defense_mod=-4, coverage_penalty=7.
+          adjusted PN = 25 + 4 + 7 = 36 > 32 → INC.
+          pn_without_pdr = 36 - 4 = 32 ≤ 32 → COM → Elite CB credited first.
+          (double-coverage check skipped because pass_defensed_by_name already set)
+        """
+        from engine.player_card import PlayerCard
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=32)
+        recs = self._make_receivers(5)
+        # Enough defenders for double coverage; NO O-box defender here
+        defenders, defenders_by_box = self._make_coverage_defenders(
+            n_row2=3, n_row3=1, add_o_box_defender=False
+        )
+        # Primary CB with PDR=4 covers FL receiver (box O)
+        cb = PlayerCard("Elite CB", "DAL", "CB", 24, "A", pass_defense_rating=4)
+        defenders_by_box["O"] = cb
+
+        fac = self._make_fac_card(pn=25)
+        deck = FACDeck()
+        import random; random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defensive_strategy="DOUBLE_COVERAGE",
+            defenders=defenders,
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='M',
+        )
+        assert result.result == "INCOMPLETE"
+        assert result.pass_defensed_by == "Elite CB", (
+            f"Expected 'Elite CB' (primary PDR), got {result.pass_defensed_by!r}\n"
+            f"Debug: {result.debug_log}"
+        )
+
+
+    def test_double_coverage_from_box_l_credits_box_l_defender(self):
+        """When Box L has an extra DB and they double-cover, Box L gets PD credit.
+
+        double_coverage_defender_box='L' tells the resolver that the Box L extra
+        DB (not the FS) is the double-teamer.
+
+        PN arithmetic: com_max=32, raw PN=29, coverage_penalty=7 → adj PN=36 > 32.
+          pn_without_coverage = 36 - 7 = 29 ≤ 32 → COM → Box L defender credited.
+        """
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=32)
+        recs = self._make_receivers(5)
+        # Enough defenders for double coverage (-7)
+        defenders, defenders_by_box = self._make_coverage_defenders(
+            n_row2=3, n_row3=1, add_o_box_defender=True
+        )
+        # Add an extra DB in Box L (the double-teamer)
+        from engine.player_card import PlayerCard
+        extra_db = PlayerCard("Nickel CB", "DAL", "CB", 35, "B")
+        extra_db.pass_defense_rating = 0
+        defenders_by_box["L"] = extra_db
+
+        fac = self._make_fac_card(pn=29)
+        deck = FACDeck()
+        import random; random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defensive_strategy="DOUBLE_COVERAGE",
+            defenders=defenders,
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='L',   # Box L extra DB is the double-teamer
+        )
+        assert result.result == "INCOMPLETE", (
+            f"Expected INCOMPLETE, got {result.result}\nDebug: {result.debug_log}"
+        )
+        assert result.pass_defensed_by == "Nickel CB", (
+            f"Expected 'Nickel CB' (Box L extra DB), got {result.pass_defensed_by!r}\n"
+            f"Debug: {result.debug_log}"
+        )
+        assert "pass defensed by Nickel CB" in result.description
+
+    def test_triple_coverage_third_db_gets_pd_credit(self):
+        """Triple coverage with triple_coverage_defender_name → third DB gets PD.
+
+        When triple_coverage_defender_name is provided and triple coverage (-15)
+        was the decisive factor, the third DB (not the double-teamer) is credited.
+
+        PN arithmetic: com_max=32, raw PN=22, coverage_penalty=15 → adj PN=37.
+          37 > 32 → INC.
+          pn_without_coverage = 37 - 15 = 22 ≤ 32 → COM → third DB credited.
+        """
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=32)
+        recs = self._make_receivers(5)
+        # 10 defenders: row2=3>=2, row3=6>=6 → resolve_triple_coverage → -15
+        defenders, defenders_by_box = self._make_coverage_defenders(
+            n_row2=3, n_row3=6, add_o_box_defender=True
+        )
+        # Add Box L extra DB (double-teamer)
+        from engine.player_card import PlayerCard
+        extra_db1 = PlayerCard("Nickel CB", "DAL", "CB", 35, "B")
+        extra_db1.pass_defense_rating = 0
+        defenders_by_box["L"] = extra_db1
+
+        fac = self._make_fac_card(pn=22)   # raw 22 ≤ 32 → COM without coverage
+        deck = FACDeck()
+        import random; random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defensive_strategy="TRIPLE_COVERAGE",
+            defenders=defenders,
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='L',       # Box L = double-teamer
+            triple_coverage_defender_name="Dime DB",  # second extra DB (triple-teamer)
+        )
+        assert result.result == "INCOMPLETE", (
+            f"Expected INCOMPLETE, got {result.result}\nDebug: {result.debug_log}"
+        )
+        assert result.pass_defensed_by == "Dime DB", (
+            f"Expected 'Dime DB' (third DB / triple-teamer), "
+            f"got {result.pass_defensed_by!r}\nDebug: {result.debug_log}"
+        )
+        assert "pass defensed by Dime DB" in result.description
+
+    def test_triple_coverage_falls_back_to_double_teamer_when_no_third_db(self):
+        """Triple coverage (-15) with no triple_coverage_defender_name → falls
+        back to crediting the double-teamer (double_coverage_defender_box).
+
+        This covers the case where only one extra DB exists (no second Box L DB).
+        PN arithmetic: com_max=32, raw PN=25, coverage_penalty=15 → adj PN=40.
+          pn_without_coverage = 25 ≤ 32 → COM → double-teamer (box L) credited.
+        """
+        resolver = PlayResolver()
+        qb = self._make_qb(com_max=32)
+        recs = self._make_receivers(5)
+        defenders, defenders_by_box = self._make_coverage_defenders(
+            n_row2=3, n_row3=6, add_o_box_defender=True
+        )
+        from engine.player_card import PlayerCard
+        extra_db = PlayerCard("Nickel CB", "DAL", "CB", 35, "B")
+        extra_db.pass_defense_rating = 0
+        defenders_by_box["L"] = extra_db
+
+        fac = self._make_fac_card(pn=25)
+        deck = FACDeck()
+        import random; random.seed(42)
+        result = resolver.resolve_pass_5e(
+            fac, deck, qb, recs[0], recs,
+            pass_type="SHORT",
+            defensive_strategy="TRIPLE_COVERAGE",
+            defenders=defenders,
+            defenders_by_box=defenders_by_box,
+            double_coverage_defender_box='L',
+            # triple_coverage_defender_name omitted → falls back to double-teamer
+        )
+        assert result.result == "INCOMPLETE", (
+            f"Expected INCOMPLETE, got {result.result}\nDebug: {result.debug_log}"
+        )
+        assert result.pass_defensed_by == "Nickel CB", (
+            f"Expected 'Nickel CB' (fallback to double-teamer), "
+            f"got {result.pass_defensed_by!r}\nDebug: {result.debug_log}"
+        )

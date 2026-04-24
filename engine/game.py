@@ -1323,6 +1323,14 @@ class Game:
                 stats[defender_name].setdefault("tackles", 0.0)
                 stats[defender_name]["tackles"] += credit
 
+        # Track pass defensed credit for covering defender
+        if result.pass_defensed_by:
+            name = result.pass_defensed_by
+            if name not in stats:
+                stats[name] = {}
+            stats[name].setdefault("passes_defensed", 0)
+            stats[name]["passes_defensed"] += 1
+
         # Track defensive fumble recovery
         if result.fumble_recovered_by:
             name = result.fumble_recovered_by
@@ -3006,13 +3014,33 @@ class Game:
                     dl_pass_rush_sum += 2  # Blitzing player PR = 2
                     blitzing_names.append(defenders_by_box[box_letter].player_name)
 
-        # Determine which defender (if any) moved for double coverage.
-        # If double coverage is active, the FS (box M) typically leaves
-        # their assignment to double-cover the targeted receiver.
+        # Determine which defender (if any) moved for double/triple coverage.
+        # Priority: Box L extra DB moved to cover (if present), otherwise FS
+        # in Box M is the default double-teamer.
+        # For triple coverage, find a second extra DB (not assigned to any
+        # standard coverage box) as the "third DB" who provides the third layer.
         double_coverage_defender_box: Optional[str] = None
-        if defensive_strategy in ("DOUBLE_COVERAGE", "ALT_DOUBLE_COVERAGE"):
-            # The FS (box M) is the default double-coverage defender
-            double_coverage_defender_box = 'M'
+        triple_coverage_defender_name: Optional[str] = None
+        if defensive_strategy in ("DOUBLE_COVERAGE", "ALT_DOUBLE_COVERAGE",
+                                  "TRIPLE_COVERAGE"):
+            # If Box L has an extra DB, they're the one who moved to cover;
+            # otherwise the FS (Box M) is the default double-teamer.
+            if 'L' in defenders_by_box:
+                double_coverage_defender_box = 'L'
+            else:
+                double_coverage_defender_box = 'M'
+
+        if defensive_strategy == "TRIPLE_COVERAGE":
+            # Find the "third DB" — a second extra DB not assigned to any box.
+            # DBs in the standard coverage boxes (K, L, M, N, O) are already
+            # accounted for; any DB outside those boxes is the triple-teamer.
+            assigned_names = {d.player_name for d in defenders_by_box.values()}
+            db_positions = {'CB', 'S', 'SS', 'FS', 'DB'}
+            for d in defenders:
+                if (getattr(d, 'position', '') in db_positions
+                        and d.player_name not in assigned_names):
+                    triple_coverage_defender_name = d.player_name
+                    break
 
         if play_call.play_type == "LONG_PASS":
             pass_type = "LONG"
@@ -3050,6 +3078,7 @@ class Game:
                 double_coverage_defender_box=double_coverage_defender_box,
                 blitzer_names=blitzing_names or None,
                 endurance_modifier=endurance_comp_penalty,
+                triple_coverage_defender_name=triple_coverage_defender_name,
             )
             result.defense_formation = def_formation
             return result
@@ -3221,6 +3250,19 @@ class Game:
             for name, s in sorted(fumble_rec, key=lambda x: -x[1].get("fumble_recoveries", 0)):
                 fr = s.get("fumble_recoveries", 0)
                 lines.append(f"  {name:<30s} {fr:>4d}")
+
+        # Passes defensed (defensive)
+        pd_players = [
+            (name, s) for name, s in stats.items()
+            if s.get("passes_defensed", 0) > 0
+        ]
+        if pd_players:
+            lines.append("")
+            lines.append("PASSES DEFENSED                 No")
+            lines.append("-" * 50)
+            for name, s in sorted(pd_players, key=lambda x: -x[1].get("passes_defensed", 0)):
+                pd = s.get("passes_defensed", 0)
+                lines.append(f"  {name:<30s} {pd:>4d}")
 
         # Fumbles lost — tracked at team level
         if any(v > 0 for v in self.state.turnovers.values()):
