@@ -30,19 +30,55 @@ If the blocking-matchup resolution identified a specific contested box (or boxes
 | 1 box, 2 players | Half tackle each (0.5) |
 | 2 boxes, 1 player each | Half tackle each (0.5) |
 
-### Step 2 — Covering Defender Priority (Pass Plays)
+### Step 2 — RN Table Lookup (primary random path)
 
-When the covering defender's box is known (the defender matched to the targeted receiver), that box receives **double weight** in the random draw pool.
+When no direct box assignment applies, a **fresh Run Number (RN) is drawn from the deck** specifically for tackle resolution (1–12).  This draw is intentionally **independent** of the FAC card used to determine the play result (yards, outcome), so tackle credit is never tied to or correlated with the play's own RN.
+
+The fresh RN is looked up in the table below:
+
+- **Single box entry** — the occupant(s) of that box get the tackle.
+- **Two-box entry** (e.g. `K O`) — flip a FAC card for its PN:
+  - PN 1–24 → first box; PN 25–48 → second box.
+- **Three-box entry** (e.g. `G H I`) — flip a FAC card for its PN:
+  - PN 1–16 → first; PN 17–32 → second; PN 33–48 → third.
+- **DEF entry** — the covering defender's box is used (pass plays); M (FS) is the intended default for Quick RN 4.
+
+**If the resolved box is unoccupied:**
+- *Run play* — nearest occupied box by grid distance; among ties, the player with the highest tackle_rating wins; if still tied, half a tackle each.
+- *Pass play* — use the covering defender; if none, fall back to weighted-random draw.
+
+**Multiple players in the resolved box** — all share equally (half a tackle each for 2 players; a third each for 3 players, etc.).
 
 ### Step 3 — Play-Type Weighted Random Draw (Fallback)
 
-When no direct box is available (no matchup, empty boxes, special teams, etc.), a **weighted random draw** over all occupied boxes is used.  One box is drawn; the player in it gets a full tackle (1.0).
-
-Weights vary by play type (see tables below).  A higher weight means that box's defender is more likely to make the tackle.
+Only used when the RN table produces no result (unknown play type, no defenders in resolved box and no valid fallback).  A **weighted random draw** over all occupied boxes is performed.  Weights vary by play type (see tables below).
 
 ---
 
-## Weight Tables by Play Type
+## RN Tackle Table
+
+| RN | Inside | Sweep | Screen | Quick | Short | Long |
+|----|--------|-------|--------|-------|-------|------|
+| 1  | E | E | E | N | N | N |
+| 2  | N | B | B | K | G H I | L |
+| 3  | M | C | C | O | F J | L |
+| 4  | J | D | D | DEF | L | M |
+| 5  | H | J | J | DEF | DEF | DEF |
+| 6  | I | F | F | DEF | DEF | DEF |
+| 7  | G | H | H | DEF | DEF | DEF |
+| 8  | F | K O | K O | H | M | M |
+| 9  | B | I | I | G | O | O |
+| 10 | C | J | J | I | O | O |
+| 11 | D | N M | N M | F | K | K |
+| 12 | A | A | A | J | K | K |
+
+> **Note:** The original design chart had "S" for Quick RN 4; this is implemented as "DEF" (the covering defender).
+
+---
+
+## Weight Tables by Play Type (Weighted-Random Fallback)
+
+These weights are used only when no RN is available.  A higher weight means that box's defender is more likely to make the tackle.
 
 ### INSIDE_RUN (IL / IR / Sneak / End-Around)
 
@@ -197,9 +233,24 @@ Outside containment — OLBs (F/J) and DEs (A/E) are first; DBs second; interior
 
 ---
 
-## Adjusting the Tables
+## Fumble Recovery
 
-To change who makes tackles, edit `PlayResolver._TACKLE_WEIGHTS` in `engine/play_resolver.py`.  Each key corresponds to the play-type categories above.  Increase a box's weight to make that position more likely to make the tackle; decrease (or set to 0) to make them less likely.
+When the defense recovers a fumble, `assign_fumble_recovery()` picks the specific defender who scoops up the ball.
 
-**Example — reducing DL tackles on quick passes:**  
-Change QUICK_PASS weights for B/C/D from 4 to 1–2 and add the difference to G/H/I (ILBs).
+### Algorithm
+
+1. **RN table lookup** — a **fresh** RN is drawn from the deck (independent of all earlier draws) and looked up in `_RN_TACKLE_TABLE` for the current play type, exactly as tackle credit is resolved.  Multi-box entries use an additional PN flip; `DEF` entries fall through to the weighted-random fallback.
+2. **Weighted-random fallback** — if the resolved box is unoccupied, or the play type is not in the RN table, the engine uses the `_TACKLE_WEIGHTS` weighted-random draw.  If a tackler was already identified for this play, their box weight is doubled (they're already in contact with the ball).
+
+### Design rationale
+
+Using the same RN table for both tackle credit and fumble recovery is intentional.  The position that was most likely to make the tackle is also the most likely position to be near a loose ball.  The two draws are always independent (separate card draws from the deck) so neither result is correlated with the play's yardage outcome.
+
+
+
+**Primary table (RN-based):** edit `PlayResolver._RN_TACKLE_TABLE` in `engine/play_resolver.py`.  Each inner list has 12 entries (index 0 = RN 1, index 11 = RN 12).  Change a single box letter, swap two-box entries for single-box entries, or add "DEF" to alter who typically makes the tackle for each RN value.
+
+**Fallback table (weighted-random):** edit `PlayResolver._TACKLE_WEIGHTS`.  This is only used when no RN is available (Z-card draws, special teams, etc.).  Increase a box's weight to make that position more likely; decrease (or set to 0) to make them less likely.
+
+**Example — swapping Inside RN 1 from E (DE) to H (MLB):**
+Change `_RN_TACKLE_TABLE["INSIDE_RUN"][0]` from `'E'` to `'H'`.
