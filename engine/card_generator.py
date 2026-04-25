@@ -1239,7 +1239,7 @@ _AH_DL_TACKLE_TABLE: List[tuple] = [
     (155, [-1,  0,  0,  1,  1,  2]),
     (165, [ 0,  0,  1,  1,  2,  2]),
     (180, [ 0,  1,  1,  2,  2,  2]),
-    (999, [ 1,  1,  2, -3,  2,  2]),  # 180+ yards (very poor run defense)
+    (999, [ 1,  1,  2,  2,  2,  3]),  # 180+ yards (very poor run defense)
 ]
 
 # Team defensive rush yards/game → LB tackle distribution (8 LB slots, best→worst).

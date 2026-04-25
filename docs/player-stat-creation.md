@@ -217,7 +217,7 @@ The AH methodology intentionally distributes tackles across position groups. The
 | 146–155 | -1, 0, 0, 1, 1, 2 |
 | 156–165 | 0, 0, 1, 1, 2, 2 |
 | 166–180 | 0, 1, 1, 2, 2, 2 |
-| 180+ | 1, 1, 2, -3, 2, 2 |
+| 180+ | 1, 1, 2, 2, 2, 3 |
 
 **Pass Rush rating (individual sacks):**
 
