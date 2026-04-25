@@ -43,20 +43,14 @@ cd ..
 from engine.team import Team
 from engine.game import Game
 
-# Load two teams (primary: 5th-edition format)
+# Load two teams (5th-edition format)
 home = Team.load("KC", "2025_5e")   # Kansas City Chiefs
 away = Team.load("BUF", "2025_5e")  # Buffalo Bills
 
-# 5th Edition mode (109-card FAC deck) — default and recommended
+# 5th Edition mode (109-card FAC deck)
 game = Game(home, away, use_5e=True, seed=42)
 state = game.simulate_game()
 print(f"Final Score: {state.away_team} {state.score.away} - {state.home_team} {state.score.home}")
-
-# Legacy mode (d8×d8 dice) — also supported
-home_legacy = Team.load("KC", "2025")
-away_legacy = Team.load("BUF", "2025")
-game = Game(home_legacy, away_legacy, use_5e=False)
-state = game.simulate_game()
 ```
 
 ### Run the API Server
@@ -379,6 +373,7 @@ Statis-Pro-Football/
 - **[Getting Started](docs/getting-started.md)** — Detailed installation, all run options, troubleshooting
 - **[Game Mechanics](docs/game-mechanics.md)** — Full explanation of 5E rules, FAC deck, clock, scoring
 - **[Player Cards](docs/player-cards.md)** — Understanding player card formats with examples
+- **[Player Stat Creation](docs/player-stat-creation.md)** — Position-by-position guide: data sources, Avalon Hill formulae, era normalization
 - **[Creating Custom Players](docs/creating-custom-players.md)** — How to create your own player cards
 - **[API Reference](docs/api-reference.md)** — REST API endpoint documentation
 

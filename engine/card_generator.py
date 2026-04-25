@@ -1068,3 +1068,275 @@ def _legacy_to_5e_pass_block(legacy: int) -> int:
     if legacy >= 55:
         return 1
     return 0
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  ERA NORMALIZATION
+#
+#  The original Avalon Hill player-card tables were calibrated for late-
+#  1980s NFL football.  When generating cards for other eras the raw
+#  team-level stats (defensive YPA, rush yards/game) need to be shifted
+#  so that each era's *league average* maps to the 1980s calibration
+#  point before the AH table is looked up.
+#
+#  Usage:
+#    from engine.card_generator import (
+#        ERA_BASELINES,
+#        era_normalized_pass_ypa,
+#        era_normalized_rush_ypg,
+#        compute_db_pass_defense_ratings,
+#        compute_dl_tackle_ratings,
+#        compute_lb_tackle_ratings,
+#    )
+# ═══════════════════════════════════════════════════════════════════════
+
+ERA_BASELINES: Dict[str, Dict[str, float]] = {
+    # era_key: league-average stats for that decade.
+    # pass_ypa_allowed  – avg defensive pass yards per attempt allowed
+    # rush_ypg_allowed  – avg defensive rush yards per game allowed
+    # off_rush_ypg      – avg offensive rush yards per game
+    # off_total_ypg     – avg offensive total yards per game
+    # sacks_per_game    – avg sacks taken per team per game
+    "1970s": {
+        "pass_ypa_allowed": 5.8,
+        "rush_ypg_allowed": 150.0,
+        "off_rush_ypg":     148.0,
+        "off_total_ypg":    310.0,
+        "sacks_per_game":   4.0,
+    },
+    "1980s": {
+        # The Avalon Hill calibration era (~1988 NFL)
+        "pass_ypa_allowed": 6.7,
+        "rush_ypg_allowed": 128.0,
+        "off_rush_ypg":     125.0,
+        "off_total_ypg":    330.0,
+        "sacks_per_game":   3.8,
+    },
+    "1990s": {
+        "pass_ypa_allowed": 6.9,
+        "rush_ypg_allowed": 118.0,
+        "off_rush_ypg":     115.0,
+        "off_total_ypg":    338.0,
+        "sacks_per_game":   3.5,
+    },
+    "2000s": {
+        "pass_ypa_allowed": 6.8,
+        "rush_ypg_allowed": 115.0,
+        "off_rush_ypg":     113.0,
+        "off_total_ypg":    338.0,
+        "sacks_per_game":   3.4,
+    },
+    "2010s": {
+        "pass_ypa_allowed": 7.0,
+        "rush_ypg_allowed": 111.0,
+        "off_rush_ypg":     110.0,
+        "off_total_ypg":    350.0,
+        "sacks_per_game":   3.2,
+    },
+    "2020s": {
+        # Modern NFL (2020–present)
+        "pass_ypa_allowed": 7.1,
+        "rush_ypg_allowed": 112.0,
+        "off_rush_ypg":     110.0,
+        "off_total_ypg":    358.0,
+        "sacks_per_game":   3.1,
+    },
+}
+
+# The era this project's AH tables are calibrated for.
+_AH_CALIBRATION_ERA = "1980s"
+
+
+def era_normalized_pass_ypa(raw_ypa: float, era: str = "2020s") -> float:
+    """Shift a team's defensive pass YPA to the 1980s AH calibration baseline.
+
+    The AH pass-defense table treats ~6.7 YPA as "average" (0 points).  A
+    modern team allowing 7.1 YPA is also average for 2020s football, so its
+    normalised YPA becomes 6.7 before table lookup.
+
+    Args:
+        raw_ypa: Actual defensive pass yards per attempt allowed.
+        era:     Era key from ERA_BASELINES (e.g. "2020s", "1970s").
+
+    Returns:
+        Normalised YPA suitable for the AH pass-defense table.
+    """
+    era_avg = ERA_BASELINES.get(era, ERA_BASELINES["2020s"])["pass_ypa_allowed"]
+    cal_avg = ERA_BASELINES[_AH_CALIBRATION_ERA]["pass_ypa_allowed"]
+    return raw_ypa + (cal_avg - era_avg)
+
+
+def era_normalized_rush_ypg(raw_ypg: float, era: str = "2020s") -> float:
+    """Shift a team's defensive rush yards/game to the 1980s AH calibration baseline.
+
+    Args:
+        raw_ypg: Actual defensive rush yards allowed per game.
+        era:     Era key from ERA_BASELINES.
+
+    Returns:
+        Normalised rush ypg suitable for the AH tackle tables.
+    """
+    era_avg = ERA_BASELINES.get(era, ERA_BASELINES["2020s"])["rush_ypg_allowed"]
+    cal_avg = ERA_BASELINES[_AH_CALIBRATION_ERA]["rush_ypg_allowed"]
+    return raw_ypg + (cal_avg - era_avg)
+
+
+def era_normalized_off_rush_ypg(raw_ypg: float, era: str = "2020s") -> float:
+    """Shift a team's offensive rush yards/game to the 1980s AH calibration baseline.
+
+    Used when computing OL run-block ratings from team offensive stats.
+
+    Args:
+        raw_ypg: Actual offensive rush yards per game.
+        era:     Era key from ERA_BASELINES.
+
+    Returns:
+        Normalised offensive rush ypg suitable for the AH OL run-block table.
+    """
+    era_avg = ERA_BASELINES.get(era, ERA_BASELINES["2020s"])["off_rush_ypg"]
+    cal_avg = ERA_BASELINES[_AH_CALIBRATION_ERA]["off_rush_ypg"]
+    return raw_ypg + (cal_avg - era_avg)
+
+
+# ── Avalon Hill pass-defense point table (team defensive YPA → total points) ──
+# Negative = good pass defense (fewer yards allowed).
+_AH_PASS_DEFENSE_POINTS: List[tuple] = [
+    (5.2, -10), (5.4, -9), (5.6, -8), (5.8, -7), (6.0, -6),
+    (6.2, -5),  (6.4, -4), (6.6, -3), (6.8, -2), (7.0, -1),
+    (7.2,  0),  (7.4,  1), (7.6,  2), (7.8,  3), (8.0,  4),
+]
+
+# Pre-set distributions for 4 starting DBs keyed by team total points.
+_AH_DB_DISTRIBUTIONS: Dict[int, List[int]] = {
+    -10: [-4, -3, -2, -1],
+    -9:  [-4, -3, -1, -1],
+    -8:  [-4, -2, -1, -1],
+    -7:  [-3, -2, -1, -1],
+    -6:  [-3, -2, -1,  0],
+    -5:  [-3, -1, -1,  0],
+    -4:  [-3, -1,  0,  0],
+    -3:  [-2, -1,  0,  0],
+    -2:  [-2,  0,  0,  0],
+    -1:  [-1,  0,  0,  0],
+     0:  [ 0,  0,  0,  0],
+     1:  [ 1,  0,  0,  0],
+     2:  [ 1,  1,  0,  0],
+     3:  [ 2,  1,  0,  0],
+     4:  [ 2,  1,  1,  0],
+     5:  [ 2,  2,  1,  0],
+}
+
+# Team defensive rush yards/game → DL tackle distribution (6 DL slots, best→worst).
+# Sorted from tightest defense (≤85) to loosest (180+).
+_AH_DL_TACKLE_TABLE: List[tuple] = [
+    ( 85, [-3, -3, -4, -2, -2, -2]),
+    ( 95, [-3, -2, -3, -2, -2, -1]),
+    (105, [-3, -2, -2, -2, -1, -1]),
+    (115, [-2, -2, -2, -1, -1,  0]),
+    (125, [-2, -2, -1, -1,  0,  0]),
+    (135, [-2, -1, -1,  0,  0,  1]),
+    (145, [-1, -1,  0,  0,  1,  1]),
+    (155, [-1,  0,  0,  1,  1,  2]),
+    (165, [ 0,  0,  1,  1,  2,  2]),
+    (180, [ 0,  1,  1,  2,  2,  2]),
+    (999, [ 1,  1,  2, -3,  2,  2]),  # 180+ yards (very poor run defense)
+]
+
+# Team defensive rush yards/game → LB tackle distribution (8 LB slots, best→worst).
+_AH_LB_TACKLE_TABLE: List[tuple] = [
+    ( 85, [-5, -4, -3, -2, -1,  0,  1,  2]),
+    ( 95, [-5, -3, -3, -2, -1,  0,  1,  2]),
+    (105, [-4, -3, -2, -2, -1,  0,  1,  1]),
+    (115, [-4, -3, -2, -1,  0,  0,  1,  1]),
+    (125, [-3, -2, -2, -1,  0,  0,  1,  1]),
+    (135, [-3, -2, -1,  0,  0,  1,  1,  2]),
+    (145, [-2, -2, -1,  0,  0,  1,  2,  2]),
+    (155, [-2, -1, -1,  0,  1,  1,  2,  3]),
+    (165, [-1, -1,  0,  1,  1,  2,  3,  4]),
+    (999, [ 0,  0,  1,  2,  2,  3,  4,  4]),  # 165+ yards
+]
+
+
+def _ah_team_pass_points(team_ypa: float) -> int:
+    """Return the AH team pass-defense total from the YPA lookup table."""
+    for ceiling, points in _AH_PASS_DEFENSE_POINTS:
+        if team_ypa <= ceiling:
+            return points
+    return 5  # 8.0+ YPA: worst rating
+
+
+def compute_db_pass_defense_ratings(
+    team_ypa: float,
+    era: str = "2020s",
+    n_starters: int = 4,
+) -> List[int]:
+    """Compute individual DB pass-defense ratings using AH methodology + era normalisation.
+
+    Returns a list of ``n_starters + 3`` ratings: the first ``n_starters``
+    are starter-quality (sorted best to worst); the remaining three are
+    reserve-quality (equal to or worse than the worst starter).
+
+    Args:
+        team_ypa:   Actual defensive pass yards per attempt allowed.
+        era:        Era key from ERA_BASELINES (e.g. "2020s").
+        n_starters: Number of starting DBs to rate (default 4).
+
+    Returns:
+        List of pass-defense ratings (authentic 5E scale, -4 to +4).
+    """
+    normalised_ypa = era_normalized_pass_ypa(team_ypa, era)
+    total_points = _ah_team_pass_points(normalised_ypa)
+    clamped = max(-10, min(5, total_points))
+    starter_ratings = list(_AH_DB_DISTRIBUTIONS.get(clamped, [0, 0, 0, 0]))
+    # Pad to n_starters if needed
+    while len(starter_ratings) < n_starters:
+        starter_ratings.append(starter_ratings[-1] if starter_ratings else 0)
+    starter_ratings = starter_ratings[:n_starters]
+    # Reserves get the worst starter rating (or one worse for very poor defenses)
+    reserve_rating = starter_ratings[-1]
+    return starter_ratings + [reserve_rating] * 3
+
+
+def compute_dl_tackle_ratings(
+    team_rush_ypg: float,
+    era: str = "2020s",
+) -> List[int]:
+    """Compute DL tackle ratings using AH methodology + era normalisation.
+
+    Returns 6 tackle ratings (sorted best to worst) based on the team's
+    defensive rush yards per game, normalised for the era.
+
+    Args:
+        team_rush_ypg: Team defensive rush yards allowed per game.
+        era:           Era key from ERA_BASELINES.
+
+    Returns:
+        List of 6 DL tackle ratings (authentic 5E scale, -4 to +2).
+    """
+    normalised_ypg = era_normalized_rush_ypg(team_rush_ypg, era)
+    for ceiling, ratings in _AH_DL_TACKLE_TABLE:
+        if normalised_ypg <= ceiling:
+            return list(ratings)
+    return [1, 1, 2, -3, 2, 2]
+
+
+def compute_lb_tackle_ratings(
+    team_rush_ypg: float,
+    era: str = "2020s",
+) -> List[int]:
+    """Compute LB tackle ratings using AH methodology + era normalisation.
+
+    Returns 8 tackle ratings (sorted best to worst).
+
+    Args:
+        team_rush_ypg: Team defensive rush yards allowed per game.
+        era:           Era key from ERA_BASELINES.
+
+    Returns:
+        List of 8 LB tackle ratings (authentic 5E scale, -5 to +4).
+    """
+    normalised_ypg = era_normalized_rush_ypg(team_rush_ypg, era)
+    for ceiling, ratings in _AH_LB_TACKLE_TABLE:
+        if normalised_ypg <= ceiling:
+            return list(ratings)
+    return [0, 0, 1, 2, 2, 3, 4, 4]
