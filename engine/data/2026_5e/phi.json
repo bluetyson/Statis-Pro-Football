@@ -1,0 +1,2202 @@
+{
+  "season": 2026,
+  "abbreviation": "PHI",
+  "city": "Philadelphia",
+  "name": "Eagles",
+  "conference": "NFC",
+  "division": "East",
+  "offense_rating": 77,
+  "defense_rating": 86,
+  "players": [
+    {
+      "name": "Jalen Hurts",
+      "position": "QB",
+      "number": 1,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": {
+        "com_max": 33,
+        "inc_max": 48
+      },
+      "passing_short": {
+        "com_max": 31,
+        "inc_max": 47
+      },
+      "passing_long": {
+        "com_max": 27,
+        "inc_max": 47
+      },
+      "pass_rush": {
+        "sack_max": 8,
+        "runs_max": 30,
+        "com_max": 37
+      },
+      "long_pass_com_adj": 0,
+      "qb_endurance": "A",
+      "rushing": [
+        [
+          "Sg",
+          8,
+          15
+        ],
+        [
+          6,
+          6,
+          10
+        ],
+        [
+          5,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          3,
+          6,
+          10
+        ],
+        [
+          2,
+          6,
+          10
+        ],
+        [
+          2,
+          6,
+          10
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          0,
+          6,
+          10
+        ]
+      ],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "comp_pct": 0.648,
+        "ypa": 7.1,
+        "int_rate": 0.013,
+        "sack_rate": 0.07,
+        "rush_ypc": 3.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Saquon Barkley",
+      "position": "RB",
+      "number": 26,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "A",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        [
+          "Sg",
+          16,
+          36
+        ],
+        [
+          12,
+          14,
+          30
+        ],
+        [
+          11,
+          14,
+          28
+        ],
+        [
+          10,
+          13,
+          27
+        ],
+        [
+          8,
+          13,
+          26
+        ],
+        [
+          7,
+          12,
+          25
+        ],
+        [
+          6,
+          12,
+          24
+        ],
+        [
+          4,
+          12,
+          22
+        ],
+        [
+          3,
+          11,
+          21
+        ],
+        [
+          2,
+          11,
+          20
+        ],
+        [
+          0,
+          10,
+          19
+        ],
+        [
+          -1,
+          10,
+          18
+        ]
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          7,
+          9,
+          20
+        ],
+        [
+          6,
+          9,
+          20
+        ],
+        [
+          6,
+          8,
+          20
+        ],
+        [
+          5,
+          8,
+          20
+        ],
+        [
+          5,
+          7,
+          20
+        ],
+        [
+          4,
+          7,
+          20
+        ],
+        [
+          3,
+          6,
+          20
+        ],
+        [
+          3,
+          6,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          1,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ]
+      ],
+      "endurance_pass": 2,
+      "blocks": 1,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "ypc": 5.37,
+        "fumble_rate": 0.007,
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Kenneth Gainwell",
+      "position": "RB",
+      "number": 14,
+      "team": "PHI",
+      "overall_grade": "C",
+      "receiver_letter": "B",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        [
+          "Sg",
+          13,
+          27
+        ],
+        [
+          9,
+          11,
+          21
+        ],
+        [
+          7,
+          10,
+          20
+        ],
+        [
+          6,
+          10,
+          18
+        ],
+        [
+          5,
+          9,
+          17
+        ],
+        [
+          4,
+          9,
+          16
+        ],
+        [
+          3,
+          9,
+          15
+        ],
+        [
+          2,
+          8,
+          14
+        ],
+        [
+          1,
+          8,
+          12
+        ],
+        [
+          0,
+          7,
+          11
+        ],
+        [
+          -1,
+          7,
+          10
+        ],
+        [
+          -2,
+          7,
+          10
+        ]
+      ],
+      "endurance_rushing": 1,
+      "pass_gain": [
+        [
+          4,
+          6,
+          20
+        ],
+        [
+          3,
+          5,
+          20
+        ],
+        [
+          3,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          1,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ],
+        [
+          -1,
+          5,
+          20
+        ],
+        [
+          -1,
+          5,
+          20
+        ],
+        [
+          -2,
+          5,
+          20
+        ],
+        [
+          -3,
+          5,
+          20
+        ]
+      ],
+      "endurance_pass": 2,
+      "blocks": 1,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "ypc": 4.41,
+        "fumble_rate": 0.013,
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "AJ Brown",
+      "position": "WR",
+      "number": 11,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "C",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          61
+        ],
+        [
+          13,
+          19,
+          41
+        ],
+        [
+          12,
+          18,
+          39
+        ],
+        [
+          12,
+          18,
+          38
+        ],
+        [
+          11,
+          17,
+          36
+        ],
+        [
+          10,
+          17,
+          35
+        ],
+        [
+          10,
+          16,
+          33
+        ],
+        [
+          9,
+          16,
+          32
+        ],
+        [
+          9,
+          15,
+          30
+        ],
+        [
+          8,
+          15,
+          29
+        ],
+        [
+          7,
+          14,
+          27
+        ],
+        [
+          7,
+          14,
+          26
+        ]
+      ],
+      "endurance_pass": 0,
+      "blocks": -2,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "catch_rate": 0.645,
+        "avg_yards": 12.9
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "DeVonta Smith",
+      "position": "WR",
+      "number": 6,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "D",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          61
+        ],
+        [
+          13,
+          19,
+          41
+        ],
+        [
+          12,
+          18,
+          40
+        ],
+        [
+          12,
+          18,
+          38
+        ],
+        [
+          11,
+          17,
+          37
+        ],
+        [
+          10,
+          17,
+          35
+        ],
+        [
+          10,
+          16,
+          34
+        ],
+        [
+          9,
+          16,
+          32
+        ],
+        [
+          9,
+          15,
+          31
+        ],
+        [
+          8,
+          15,
+          29
+        ],
+        [
+          7,
+          14,
+          28
+        ],
+        [
+          7,
+          14,
+          26
+        ]
+      ],
+      "endurance_pass": 0,
+      "blocks": -2,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "catch_rate": 0.681,
+        "avg_yards": 13.1
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Jahan Dotson",
+      "position": "WR",
+      "number": 10,
+      "team": "PHI",
+      "overall_grade": "B",
+      "receiver_letter": "E",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          53
+        ],
+        [
+          10,
+          16,
+          36
+        ],
+        [
+          10,
+          15,
+          34
+        ],
+        [
+          9,
+          15,
+          32
+        ],
+        [
+          9,
+          14,
+          31
+        ],
+        [
+          8,
+          14,
+          30
+        ],
+        [
+          7,
+          13,
+          28
+        ],
+        [
+          7,
+          13,
+          26
+        ],
+        [
+          6,
+          12,
+          25
+        ],
+        [
+          6,
+          12,
+          24
+        ],
+        [
+          5,
+          11,
+          22
+        ],
+        [
+          4,
+          11,
+          20
+        ]
+      ],
+      "endurance_pass": 1,
+      "blocks": -2,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "catch_rate": 0.64,
+        "avg_yards": 12.5
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Dallas Goedert",
+      "position": "TE",
+      "number": 88,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "E",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          49
+        ],
+        [
+          10,
+          15,
+          32
+        ],
+        [
+          10,
+          14,
+          31
+        ],
+        [
+          9,
+          14,
+          29
+        ],
+        [
+          9,
+          13,
+          28
+        ],
+        [
+          8,
+          13,
+          26
+        ],
+        [
+          7,
+          12,
+          25
+        ],
+        [
+          7,
+          12,
+          23
+        ],
+        [
+          6,
+          11,
+          22
+        ],
+        [
+          6,
+          11,
+          20
+        ],
+        [
+          5,
+          10,
+          20
+        ],
+        [
+          4,
+          10,
+          20
+        ]
+      ],
+      "endurance_pass": 0,
+      "blocks": 3,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "catch_rate": 0.732,
+        "avg_yards": 9.9
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Jake Elliott",
+      "position": "K",
+      "number": 4,
+      "team": "PHI",
+      "overall_grade": "C",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {
+        "0-19": 0.891,
+        "20-29": 0.841,
+        "30-39": 0.791,
+        "40-49": 0.741,
+        "50-59": 0.591,
+        "60+": 0.441
+      },
+      "xp_rate": 0.976,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "accuracy": 0.741,
+        "xp_rate": 0.976
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Braden Mann",
+      "position": "P",
+      "number": 6,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 49.9,
+      "inside_20_rate": 0.278,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "avg_distance": 49.9,
+        "inside_20_rate": 0.278
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {
+        "11": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "12": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "13": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "14": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "15": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "16": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "17": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "18": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "21": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "22": {
+          "result": "NORMAL",
+          "yards": 52,
+          "td": false
+        },
+        "23": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "24": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "25": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "26": {
+          "result": "NORMAL",
+          "yards": 52,
+          "td": false
+        },
+        "27": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "28": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "31": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "32": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "33": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "34": {
+          "result": "NORMAL",
+          "yards": 60,
+          "td": false
+        },
+        "35": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "36": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "37": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "38": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "41": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "42": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "43": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "44": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "45": {
+          "result": "NORMAL",
+          "yards": 55,
+          "td": false
+        },
+        "46": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "47": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "48": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "51": {
+          "result": "NORMAL",
+          "yards": 60,
+          "td": false
+        },
+        "52": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "53": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "54": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "55": {
+          "result": "NORMAL",
+          "yards": 52,
+          "td": false
+        },
+        "56": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "57": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "58": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "61": {
+          "result": "NORMAL",
+          "yards": 58,
+          "td": false
+        },
+        "62": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "63": {
+          "result": "NORMAL",
+          "yards": 58,
+          "td": false
+        },
+        "64": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "65": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "66": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "67": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "68": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "71": {
+          "result": "NORMAL",
+          "yards": 58,
+          "td": false
+        },
+        "72": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "73": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "74": {
+          "result": "NORMAL",
+          "yards": 60,
+          "td": false
+        },
+        "75": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "76": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "77": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "78": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "81": {
+          "result": "NORMAL",
+          "yards": 50,
+          "td": false
+        },
+        "82": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "83": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "84": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "85": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "86": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "87": {
+          "result": "NORMAL",
+          "yards": 52,
+          "td": false
+        },
+        "88": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        }
+      }
+    },
+    {
+      "name": "Jordan Mailata",
+      "position": "LT",
+      "number": 68,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 3,
+      "pass_block_rating": 3,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 3,
+        "pass_block_rating": 3
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Landon Dickerson",
+      "position": "LG",
+      "number": 69,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 3,
+      "pass_block_rating": 2,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 3,
+        "pass_block_rating": 2
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Cam Jurgens",
+      "position": "C",
+      "number": 61,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 3,
+      "pass_block_rating": 2,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 3,
+        "pass_block_rating": 2
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Mekhi Becton",
+      "position": "RG",
+      "number": 77,
+      "team": "PHI",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 3,
+      "pass_block_rating": 2,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 3,
+        "pass_block_rating": 2
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Lane Johnson",
+      "position": "RT",
+      "number": 65,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 3,
+      "pass_block_rating": 3,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 3,
+        "pass_block_rating": 3
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Nolan Smith",
+      "position": "DE",
+      "number": 3,
+      "team": "PHI",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 2,
+      "coverage_rating": -1,
+      "run_stop_rating": -1,
+      "tackle_rating": -1,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "A",
+      "stats_summary": {
+        "pass_rush_rating": 2,
+        "coverage_rating": -1,
+        "run_stop_rating": -1,
+        "tackle_rating": -1,
+        "pass_defense_rating": 0,
+        "intercept_range": 0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Jalen Carter",
+      "position": "DT",
+      "number": 98,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 3,
+      "coverage_rating": -1,
+      "run_stop_rating": 1,
+      "tackle_rating": 1,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "B",
+      "stats_summary": {
+        "pass_rush_rating": 3,
+        "coverage_rating": -1,
+        "run_stop_rating": 1,
+        "tackle_rating": 1,
+        "pass_defense_rating": 0,
+        "intercept_range": 0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Josh Sweat",
+      "position": "DE",
+      "number": 94,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 2,
+      "coverage_rating": -1,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "C",
+      "stats_summary": {
+        "pass_rush_rating": 2,
+        "coverage_rating": -1,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 0,
+        "intercept_range": 0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Fletcher Cox",
+      "position": "DT",
+      "number": 91,
+      "team": "PHI",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 2,
+      "coverage_rating": -1,
+      "run_stop_rating": 1,
+      "tackle_rating": 1,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "D",
+      "stats_summary": {
+        "pass_rush_rating": 2,
+        "coverage_rating": -1,
+        "run_stop_rating": 1,
+        "tackle_rating": 1,
+        "pass_defense_rating": 0,
+        "intercept_range": 0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Nakobe Dean",
+      "position": "LB",
+      "number": 17,
+      "team": "PHI",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 1,
+      "coverage_rating": 2,
+      "run_stop_rating": 2,
+      "tackle_rating": 2,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "E",
+      "stats_summary": {
+        "pass_rush_rating": 1,
+        "coverage_rating": 2,
+        "run_stop_rating": 2,
+        "tackle_rating": 2,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Zack Baun",
+      "position": "LB",
+      "number": 53,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 1,
+      "coverage_rating": 2,
+      "run_stop_rating": 2,
+      "tackle_rating": 2,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "F",
+      "stats_summary": {
+        "pass_rush_rating": 1,
+        "coverage_rating": 2,
+        "run_stop_rating": 2,
+        "tackle_rating": 2,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Darius Slay",
+      "position": "CB",
+      "number": 2,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 0,
+      "coverage_rating": 3,
+      "run_stop_rating": 1,
+      "tackle_rating": 0,
+      "pass_defense_rating": 3,
+      "intercept_range": 48,
+      "defender_letter": "G",
+      "stats_summary": {
+        "pass_rush_rating": 0,
+        "coverage_rating": 3,
+        "run_stop_rating": 1,
+        "tackle_rating": 0,
+        "pass_defense_rating": 3,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "James Bradberry",
+      "position": "CB",
+      "number": 29,
+      "team": "PHI",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "H",
+      "stats_summary": {
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "C.J. Gardner-Johnson",
+      "position": "S",
+      "number": 23,
+      "team": "PHI",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 1,
+      "coverage_rating": 3,
+      "run_stop_rating": 1,
+      "tackle_rating": 0,
+      "pass_defense_rating": 3,
+      "intercept_range": 48,
+      "defender_letter": "I",
+      "stats_summary": {
+        "pass_rush_rating": 1,
+        "coverage_rating": 3,
+        "run_stop_rating": 1,
+        "tackle_rating": 0,
+        "pass_defense_rating": 3,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Reed Blankenship",
+      "position": "S",
+      "number": 32,
+      "team": "PHI",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 1,
+      "tackle_rating": 0,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "J",
+      "stats_summary": {
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 1,
+        "tackle_rating": 0,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    }
+  ],
+  "edition": "5e"
+}

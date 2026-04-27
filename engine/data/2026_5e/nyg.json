@@ -1,0 +1,2202 @@
+{
+  "season": 2026,
+  "abbreviation": "NYG",
+  "city": "New York",
+  "name": "Giants",
+  "conference": "NFC",
+  "division": "East",
+  "offense_rating": 76,
+  "defense_rating": 70,
+  "players": [
+    {
+      "name": "Jaxson Dart",
+      "position": "QB",
+      "number": 14,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": {
+        "com_max": 32,
+        "inc_max": 48
+      },
+      "passing_short": {
+        "com_max": 31,
+        "inc_max": 47
+      },
+      "passing_long": {
+        "com_max": 27,
+        "inc_max": 47
+      },
+      "pass_rush": {
+        "sack_max": 12,
+        "runs_max": 30,
+        "com_max": 37
+      },
+      "long_pass_com_adj": 0,
+      "qb_endurance": "A",
+      "rushing": [
+        [
+          "Sg",
+          8,
+          13
+        ],
+        [
+          5,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          4,
+          6,
+          10
+        ],
+        [
+          3,
+          6,
+          10
+        ],
+        [
+          2,
+          6,
+          10
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          1,
+          6,
+          10
+        ],
+        [
+          0,
+          6,
+          10
+        ],
+        [
+          -1,
+          6,
+          10
+        ]
+      ],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "comp_pct": 0.637,
+        "ypa": 6.7,
+        "int_rate": 0.015,
+        "sack_rate": 0.103,
+        "rush_ypc": 3.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Devin Singletary",
+      "position": "RB",
+      "number": 26,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "A",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        [
+          "Sg",
+          14,
+          30
+        ],
+        [
+          10,
+          12,
+          24
+        ],
+        [
+          9,
+          11,
+          23
+        ],
+        [
+          8,
+          11,
+          21
+        ],
+        [
+          7,
+          10,
+          20
+        ],
+        [
+          5,
+          10,
+          19
+        ],
+        [
+          4,
+          10,
+          18
+        ],
+        [
+          3,
+          9,
+          17
+        ],
+        [
+          2,
+          9,
+          15
+        ],
+        [
+          1,
+          8,
+          14
+        ],
+        [
+          0,
+          8,
+          13
+        ],
+        [
+          -2,
+          8,
+          12
+        ]
+      ],
+      "endurance_rushing": 1,
+      "pass_gain": [
+        [
+          5,
+          7,
+          20
+        ],
+        [
+          4,
+          7,
+          20
+        ],
+        [
+          4,
+          6,
+          20
+        ],
+        [
+          3,
+          6,
+          20
+        ],
+        [
+          3,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          1,
+          5,
+          20
+        ],
+        [
+          1,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ],
+        [
+          -1,
+          5,
+          20
+        ],
+        [
+          -2,
+          5,
+          20
+        ]
+      ],
+      "endurance_pass": 2,
+      "blocks": 1,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "ypc": 4.59,
+        "fumble_rate": 0.01,
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Tyrone Tracy",
+      "position": "RB",
+      "number": 29,
+      "team": "NYG",
+      "overall_grade": "C",
+      "receiver_letter": "B",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        [
+          "Sg",
+          14,
+          29
+        ],
+        [
+          9,
+          11,
+          22
+        ],
+        [
+          8,
+          11,
+          21
+        ],
+        [
+          7,
+          11,
+          20
+        ],
+        [
+          6,
+          10,
+          19
+        ],
+        [
+          4,
+          10,
+          18
+        ],
+        [
+          3,
+          9,
+          16
+        ],
+        [
+          2,
+          9,
+          15
+        ],
+        [
+          1,
+          9,
+          14
+        ],
+        [
+          0,
+          8,
+          13
+        ],
+        [
+          -1,
+          8,
+          12
+        ],
+        [
+          -3,
+          7,
+          10
+        ]
+      ],
+      "endurance_rushing": 1,
+      "pass_gain": [
+        [
+          4,
+          6,
+          20
+        ],
+        [
+          3,
+          5,
+          20
+        ],
+        [
+          3,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          2,
+          5,
+          20
+        ],
+        [
+          1,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ],
+        [
+          0,
+          5,
+          20
+        ],
+        [
+          -1,
+          5,
+          20
+        ],
+        [
+          -1,
+          5,
+          20
+        ],
+        [
+          -2,
+          5,
+          20
+        ],
+        [
+          -3,
+          5,
+          20
+        ]
+      ],
+      "endurance_pass": 2,
+      "blocks": 1,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "ypc": 4.72,
+        "fumble_rate": 0.013,
+        "catch_rate": 0.3,
+        "avg_rec_yards": 7.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Wan'Dale Robinson",
+      "position": "WR",
+      "number": 17,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "C",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          47
+        ],
+        [
+          9,
+          14,
+          31
+        ],
+        [
+          9,
+          13,
+          30
+        ],
+        [
+          8,
+          13,
+          28
+        ],
+        [
+          7,
+          12,
+          27
+        ],
+        [
+          7,
+          12,
+          25
+        ],
+        [
+          6,
+          11,
+          24
+        ],
+        [
+          6,
+          11,
+          22
+        ],
+        [
+          5,
+          10,
+          21
+        ],
+        [
+          4,
+          10,
+          20
+        ],
+        [
+          4,
+          9,
+          20
+        ],
+        [
+          3,
+          9,
+          20
+        ]
+      ],
+      "endurance_pass": 1,
+      "blocks": -2,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "catch_rate": 0.657,
+        "avg_yards": 11.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Darius Slayton",
+      "position": "WR",
+      "number": 86,
+      "team": "NYG",
+      "overall_grade": "C",
+      "receiver_letter": "D",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          56
+        ],
+        [
+          11,
+          16,
+          38
+        ],
+        [
+          10,
+          16,
+          36
+        ],
+        [
+          9,
+          15,
+          35
+        ],
+        [
+          9,
+          15,
+          33
+        ],
+        [
+          8,
+          14,
+          32
+        ],
+        [
+          8,
+          14,
+          30
+        ],
+        [
+          7,
+          13,
+          29
+        ],
+        [
+          6,
+          13,
+          27
+        ],
+        [
+          6,
+          12,
+          26
+        ],
+        [
+          5,
+          12,
+          24
+        ],
+        [
+          5,
+          11,
+          23
+        ]
+      ],
+      "endurance_pass": 1,
+      "blocks": -2,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "catch_rate": 0.62,
+        "avg_yards": 14.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Bryce Ford-Wheaton",
+      "position": "WR",
+      "number": 14,
+      "team": "NYG",
+      "overall_grade": "C",
+      "receiver_letter": "E",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          54
+        ],
+        [
+          10,
+          16,
+          36
+        ],
+        [
+          10,
+          15,
+          35
+        ],
+        [
+          9,
+          15,
+          33
+        ],
+        [
+          8,
+          14,
+          32
+        ],
+        [
+          8,
+          14,
+          30
+        ],
+        [
+          7,
+          13,
+          29
+        ],
+        [
+          7,
+          13,
+          27
+        ],
+        [
+          6,
+          12,
+          26
+        ],
+        [
+          5,
+          12,
+          24
+        ],
+        [
+          5,
+          11,
+          23
+        ],
+        [
+          4,
+          11,
+          21
+        ]
+      ],
+      "endurance_pass": 1,
+      "blocks": -2,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "catch_rate": 0.59,
+        "avg_yards": 13.5
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Theo Johnson",
+      "position": "TE",
+      "number": 89,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "E",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "endurance_rushing": 0,
+      "pass_gain": [
+        [
+          "Lg",
+          "Lg",
+          50
+        ],
+        [
+          10,
+          15,
+          33
+        ],
+        [
+          9,
+          14,
+          32
+        ],
+        [
+          9,
+          14,
+          30
+        ],
+        [
+          8,
+          13,
+          29
+        ],
+        [
+          7,
+          13,
+          27
+        ],
+        [
+          7,
+          12,
+          26
+        ],
+        [
+          6,
+          12,
+          24
+        ],
+        [
+          6,
+          11,
+          23
+        ],
+        [
+          5,
+          11,
+          21
+        ],
+        [
+          4,
+          10,
+          20
+        ],
+        [
+          4,
+          10,
+          20
+        ]
+      ],
+      "endurance_pass": 2,
+      "blocks": 3,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "catch_rate": 0.608,
+        "avg_yards": 11.7
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Ben Sauls",
+      "position": "K",
+      "number": 5,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {
+        "0-19": 1.0,
+        "20-29": 1.0,
+        "30-39": 1.0,
+        "40-49": 1.0,
+        "50-59": 0.85,
+        "60+": 0.7
+      },
+      "xp_rate": 1.0,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "accuracy": 1.0,
+        "xp_rate": 1.0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Jamie Gillan",
+      "position": "P",
+      "number": 3,
+      "team": "NYG",
+      "overall_grade": "C",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.5,
+      "inside_20_rate": 0.309,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "avg_distance": 44.5,
+        "inside_20_rate": 0.309
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {
+        "11": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "12": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "13": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "14": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "15": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "16": {
+          "result": "NORMAL",
+          "yards": 38,
+          "td": false
+        },
+        "17": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "18": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "21": {
+          "result": "NORMAL",
+          "yards": 38,
+          "td": false
+        },
+        "22": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "23": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "24": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "25": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "26": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "27": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "28": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "31": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "32": {
+          "result": "NORMAL",
+          "yards": 40,
+          "td": false
+        },
+        "33": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "34": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "35": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "36": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "37": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "38": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "41": {
+          "result": "NORMAL",
+          "yards": 40,
+          "td": false
+        },
+        "42": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "43": {
+          "result": "NORMAL",
+          "yards": 40,
+          "td": false
+        },
+        "44": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "45": {
+          "result": "NORMAL",
+          "yards": 48,
+          "td": false
+        },
+        "46": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "47": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "48": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "51": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "52": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "53": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "54": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "55": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "56": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "57": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "58": {
+          "result": "NORMAL",
+          "yards": 40,
+          "td": false
+        },
+        "61": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "62": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "63": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "64": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "65": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "66": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "67": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "68": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "71": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "72": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        },
+        "73": {
+          "result": "NORMAL",
+          "yards": 38,
+          "td": false
+        },
+        "74": {
+          "result": "NORMAL",
+          "yards": 40,
+          "td": false
+        },
+        "75": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "76": {
+          "result": "TOUCHBACK",
+          "yards": 0,
+          "td": false
+        },
+        "77": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "78": {
+          "result": "NORMAL",
+          "yards": 40,
+          "td": false
+        },
+        "81": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "82": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "83": {
+          "result": "NORMAL",
+          "yards": 44,
+          "td": false
+        },
+        "84": {
+          "result": "NORMAL",
+          "yards": 36,
+          "td": false
+        },
+        "85": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "86": {
+          "result": "INSIDE_20",
+          "yards": 0,
+          "td": false
+        },
+        "87": {
+          "result": "NORMAL",
+          "yards": 46,
+          "td": false
+        },
+        "88": {
+          "result": "NORMAL",
+          "yards": 42,
+          "td": false
+        }
+      }
+    },
+    {
+      "name": "Andrew Thomas",
+      "position": "LT",
+      "number": 78,
+      "team": "NYG",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 3,
+      "pass_block_rating": 3,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 3,
+        "pass_block_rating": 3
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Jon Runyan",
+      "position": "LG",
+      "number": 75,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 2,
+      "pass_block_rating": 2,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 2,
+        "pass_block_rating": 2
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "John Michael Schmitz",
+      "position": "C",
+      "number": 60,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 2,
+      "pass_block_rating": 2,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 2,
+        "pass_block_rating": 2
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Marcus McKethan",
+      "position": "RG",
+      "number": 66,
+      "team": "NYG",
+      "overall_grade": "C",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 2,
+      "pass_block_rating": 1,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 2,
+        "pass_block_rating": 1
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Evan Neal",
+      "position": "RT",
+      "number": 73,
+      "team": "NYG",
+      "overall_grade": "C",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 2,
+      "pass_block_rating": 1,
+      "pass_rush_rating": 50,
+      "coverage_rating": 50,
+      "run_stop_rating": 50,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "",
+      "stats_summary": {
+        "run_block_rating": 2,
+        "pass_block_rating": 1
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Kayvon Thibodeaux",
+      "position": "DE",
+      "number": 5,
+      "team": "NYG",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 2,
+      "coverage_rating": -1,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "A",
+      "stats_summary": {
+        "pass_rush_rating": 2,
+        "coverage_rating": -1,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 0,
+        "intercept_range": 0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Dexter Lawrence",
+      "position": "DT",
+      "number": 97,
+      "team": "NYG",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 2,
+      "coverage_rating": -1,
+      "run_stop_rating": 1,
+      "tackle_rating": 1,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "B",
+      "stats_summary": {
+        "pass_rush_rating": 2,
+        "coverage_rating": -1,
+        "run_stop_rating": 1,
+        "tackle_rating": 1,
+        "pass_defense_rating": 0,
+        "intercept_range": 0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Brian Burns",
+      "position": "DE",
+      "number": 0,
+      "team": "NYG",
+      "overall_grade": "A",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 3,
+      "coverage_rating": -1,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "C",
+      "stats_summary": {
+        "pass_rush_rating": 3,
+        "coverage_rating": -1,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 0,
+        "intercept_range": 0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Rakeem Nunez-Roches",
+      "position": "DT",
+      "number": 93,
+      "team": "NYG",
+      "overall_grade": "C",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 1,
+      "coverage_rating": -2,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 0,
+      "intercept_range": 0,
+      "defender_letter": "D",
+      "stats_summary": {
+        "pass_rush_rating": 1,
+        "coverage_rating": -2,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 0,
+        "intercept_range": 0
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Bobby Okereke",
+      "position": "LB",
+      "number": 58,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 1,
+      "coverage_rating": 2,
+      "run_stop_rating": 2,
+      "tackle_rating": 2,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "E",
+      "stats_summary": {
+        "pass_rush_rating": 1,
+        "coverage_rating": 2,
+        "run_stop_rating": 2,
+        "tackle_rating": 2,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Micah McFadden",
+      "position": "LB",
+      "number": 41,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 1,
+      "coverage_rating": 1,
+      "run_stop_rating": 1,
+      "tackle_rating": 1,
+      "pass_defense_rating": 1,
+      "intercept_range": 48,
+      "defender_letter": "F",
+      "stats_summary": {
+        "pass_rush_rating": 1,
+        "coverage_rating": 1,
+        "run_stop_rating": 1,
+        "tackle_rating": 1,
+        "pass_defense_rating": 1,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Adoree' Jackson",
+      "position": "CB",
+      "number": 22,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "G",
+      "stats_summary": {
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Tre Hawkins",
+      "position": "CB",
+      "number": 28,
+      "team": "NYG",
+      "overall_grade": "C",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "H",
+      "stats_summary": {
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Dane Belton",
+      "position": "S",
+      "number": 24,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 1,
+      "tackle_rating": 0,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "I",
+      "stats_summary": {
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 1,
+        "tackle_rating": 0,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    },
+    {
+      "name": "Tyler Nubin",
+      "position": "S",
+      "number": 31,
+      "team": "NYG",
+      "overall_grade": "B",
+      "receiver_letter": "",
+      "passing_quick": null,
+      "passing_short": null,
+      "passing_long": null,
+      "pass_rush": null,
+      "long_pass_com_adj": 0,
+      "qb_endurance": "C",
+      "rushing": [],
+      "endurance_rushing": 3,
+      "pass_gain": [],
+      "endurance_pass": 0,
+      "blocks": 0,
+      "fg_chart": {},
+      "xp_rate": 0.95,
+      "avg_distance": 44.0,
+      "inside_20_rate": 0.35,
+      "blocked_punt_number": 0,
+      "punt_return_pct": 0.6,
+      "longest_kick": 50,
+      "run_block_rating": 0,
+      "pass_block_rating": 0,
+      "pass_rush_rating": 0,
+      "coverage_rating": 2,
+      "run_stop_rating": 0,
+      "tackle_rating": 0,
+      "pass_defense_rating": 2,
+      "intercept_range": 48,
+      "defender_letter": "J",
+      "stats_summary": {
+        "pass_rush_rating": 0,
+        "coverage_rating": 2,
+        "run_stop_rating": 0,
+        "tackle_rating": 0,
+        "pass_defense_rating": 2,
+        "intercept_range": 48
+      },
+      "short_pass": {},
+      "long_pass": {},
+      "quick_pass": {},
+      "screen_pass": {},
+      "qb_rush": {},
+      "inside_run": {},
+      "outside_run": {},
+      "sweep": {},
+      "short_reception": {},
+      "long_reception": {},
+      "punt_column": {}
+    }
+  ],
+  "edition": "5e"
+}
