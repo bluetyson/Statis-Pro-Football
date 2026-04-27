@@ -79,11 +79,8 @@ def _player_brief(p, unavailable_names: Optional[set[str]] = None):
         # Offensive Line ratings
         "run_block_rating": getattr(p, "run_block_rating", 0),
         "pass_block_rating": getattr(p, "pass_block_rating", 0),
-        # Defensive ratings (legacy)
+        # Authentic Avalon Hill defensive ratings
         "pass_rush_rating": getattr(p, "pass_rush_rating", 0),
-        "coverage_rating": getattr(p, "coverage_rating", 0),
-        "run_stop_rating": getattr(p, "run_stop_rating", 0),
-        # Authentic 5E defensive ratings
         "tackle_rating": getattr(p, "tackle_rating", 0),
         "pass_defense_rating": getattr(p, "pass_defense_rating", 0),
         "intercept_range": getattr(p, "intercept_range", 0),

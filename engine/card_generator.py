@@ -451,13 +451,10 @@ class CardGenerator:
             card.tackle_rating = 0  # DBs have no tackle rating in 5E
 
         # Legacy compat fields (kept on small scale now)
-        card.coverage_rating = coverage
-        card.run_stop_rating = run_stop
+        card.pass_rush_rating = pass_rush  # AH 0-4 scale
 
         card.stats_summary = {
             "pass_rush_rating": card.pass_rush_rating,
-            "coverage_rating": coverage,
-            "run_stop_rating": run_stop,
             "tackle_rating": card.tackle_rating,
             "pass_defense_rating": card.pass_defense_rating,
             "intercept_range": card.intercept_range,

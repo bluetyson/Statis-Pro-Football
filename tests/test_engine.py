@@ -46,7 +46,7 @@ class TestPlayerCard:
         card = PlayerCard("Default", "TST", "QB", 0)
         assert card.overall_grade == "C"
         assert card.xp_rate == 0.95
-        assert card.pass_rush_rating == 50
+        assert card.pass_rush_rating == 0
 
 
 # ─── CardGenerator ───────────────────────────────────────────────────────────

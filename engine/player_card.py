@@ -253,9 +253,9 @@ class PlayerCard:
 
     # ── Defense ───────────────────────────────────────────────────────
     # Legacy generic ratings (kept for backward compat; use 5E fields below)
-    pass_rush_rating: int = 50
-    coverage_rating: int = 50
-    run_stop_rating: int = 50
+    pass_rush_rating: int = 0
+    coverage_rating: int = 0
+    run_stop_rating: int = 0
     # Authentic 5E defensive ratings (position-specific):
     #   DL:  tackle_rating, pass_rush_rating
     #   LB:  pass_defense_rating, tackle_rating, pass_rush_rating, intercept_range
@@ -363,8 +363,6 @@ class PlayerCard:
             "pass_block_rating": self.pass_block_rating,
             # Defense
             "pass_rush_rating": self.pass_rush_rating,
-            "coverage_rating": self.coverage_rating,
-            "run_stop_rating": self.run_stop_rating,
             "tackle_rating": self.tackle_rating,
             "pass_defense_rating": self.pass_defense_rating,
             "intercept_range": self.intercept_range,
@@ -438,9 +436,9 @@ class PlayerCard:
         card.pass_block_rating = data.get("pass_block_rating", 0)
 
         # Defense
-        card.pass_rush_rating = data.get("pass_rush_rating", 50)
-        card.coverage_rating = data.get("coverage_rating", 50)
-        card.run_stop_rating = data.get("run_stop_rating", 50)
+        card.pass_rush_rating = data.get("pass_rush_rating", 0)
+        card.coverage_rating = data.get("coverage_rating", 0)
+        card.run_stop_rating = data.get("run_stop_rating", 0)
         card.tackle_rating = data.get("tackle_rating", 0)
         card.pass_defense_rating = data.get("pass_defense_rating", 0)
         card.intercept_range = data.get("intercept_range", 0)
