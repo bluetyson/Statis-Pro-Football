@@ -1,4 +1,4 @@
-"""Regenerate 2025 team data using authentic card formats.
+"""Regenerate 2025 team data using authentic Avalon Hill card formats.
 
 This script reads the existing team data (from generate_2025_data.py) and
 re-generates the player cards using authentic Statis Pro Football card layout:
@@ -9,8 +9,7 @@ re-generates the player cards using authentic Statis Pro Football card layout:
   * TE: 12-row pass gain (Q/S/L), blank rushing + higher blocks
   * DEF: defender letters (A-M) for FAC blocking-matchup resolution
 
-The output overwrites existing files in engine/data/2025_5e/. Legacy data
-files in engine/data/2025/ are left untouched.
+The output overwrites existing files in engine/data/2025_5e/.
 """
 import sys
 import os

@@ -2,7 +2,7 @@
 
 A digital implementation of the classic Statis Pro Football tabletop game, featuring a Python game engine with AI play calling, a React/TypeScript web GUI, and complete player cards for all 32 NFL teams.
 
-The primary mode is **5th Edition (5E)**, which uses a 109-card FAC deck faithfully reproducing the Statis Pro Football 5th Edition mechanics. A legacy d8×d8 dice mode is also included for backward compatibility.
+The primary mode is **5th Edition (5E)**, which uses a 109-card FAC deck faithfully reproducing the Statis Pro Football 5th Edition mechanics with Avalon Hill formulae.
 
 ## Features
 
@@ -47,16 +47,10 @@ from engine.game import Game
 home = Team.load("KC", "2025_5e")   # Kansas City Chiefs
 away = Team.load("BUF", "2025_5e")  # Buffalo Bills
 
-# 5th Edition mode (109-card FAC deck) — default and recommended
-game = Game(home, away, use_5e=True, seed=42)
+# Simulate a complete game (5th Edition FAC deck)
+game = Game(home, away, seed=42)
 state = game.simulate_game()
 print(f"Final Score: {state.away_team} {state.score.away} - {state.home_team} {state.score.home}")
-
-# Legacy mode (d8×d8 dice) — also supported
-home_legacy = Team.load("KC", "2025")
-away_legacy = Team.load("BUF", "2025")
-game = Game(home_legacy, away_legacy, use_5e=False)
-state = game.simulate_game()
 ```
 
 ### Run the API Server
@@ -84,9 +78,6 @@ npm run dev
 ```bash
 # Generate 2025 season cards (5th-edition 48/12-slot format) — primary
 python engine/data/generate_2025_5e_data.py
-
-# Generate 2025 season cards (legacy 64-slot format)
-python engine/data/generate_2025_data.py
 ```
 
 ### Simulate a Full Season
@@ -363,8 +354,7 @@ Statis-Pro-Football/
 │   ├── team.py          # Team and roster management
 │   └── data/
 │       ├── 2025_5e/     # 2025 season (5th-ed, 32 teams) ← primary
-│       ├── 2025/        # 2025 season (legacy, 32 teams)
-│       └── 2024/        # 2024 season (legacy, 32 teams)
+│       └── 2026_5e/     # 2026 season (5th-ed, 32 teams)
 ├── gui/                 # React/TypeScript web frontend
 │   └── src/
 │       └── components/  # HumanPlayCaller, DefensivePlayCaller, DisplayBoxes, …

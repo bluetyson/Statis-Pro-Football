@@ -22,8 +22,6 @@ Authentic card structure (matches original Avalon Hill / SI game):
     - *Endurance*: A number (0-4) controlling consecutive-play limits.
 
   * K, P, and DEF cards are unchanged from earlier implementations.
-
-Legacy 64-slot (11-88) columns are preserved for backward compatibility.
 """
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Any, List
@@ -60,11 +58,10 @@ RUN_NUMBER_MAX = 12
 RUN_SLOTS = [str(n) for n in range(1, RUN_NUMBER_MAX + 1)]
 RUN_SLOT_COUNT = 12
 
-# Legacy constants kept for backward compatibility
+# Slot lists used by card generators
 PASS_SLOTS = [str(n) for n in range(1, 49)]
 PASS_SLOT_COUNT = 48
 ALL_SLOTS = [f"{t}{o}" for t in range(1, 9) for o in range(1, 9)]
-LEGACY_SLOT_COUNT = 64
 
 # Receiver letters used on QB cards
 RECEIVER_LETTERS = ["A", "B", "C", "D", "E"]
@@ -252,22 +249,21 @@ class PlayerCard:
     pass_block_rating: int = 0  # OL pass-blocking grade (0-99)
 
     # ── Defense ───────────────────────────────────────────────────────
-    # Legacy generic ratings (kept for backward compat; use 5E fields below)
-    pass_rush_rating: int = 0
-    coverage_rating: int = 0
-    run_stop_rating: int = 0
-    # Authentic 5E defensive ratings (position-specific):
+    # Avalon Hill 5E defensive ratings (position-specific):
     #   DL:  tackle_rating, pass_rush_rating
     #   LB:  pass_defense_rating, tackle_rating, pass_rush_rating, intercept_range
     #   DB:  pass_defense_rating, pass_rush_rating, intercept_range (no tackle)
+    pass_rush_rating: int = 0    # Pass rush effectiveness (0–3)
+    coverage_rating: int = 0     # Coverage modifier (stored for stats summary)
+    run_stop_rating: int = 0     # Run stop modifier (stored for stats summary)
     tackle_rating: int = 0
     pass_defense_rating: int = 0
     intercept_range: int = 0  # 0 = no intercept ability
-    defender_letter: str = ""  # A-M defensive player letter for FAC matchups
+    defender_letter: str = ""  # A-O defensive player letter for FAC matchups
 
     stats_summary: Dict[str, Any] = field(default_factory=dict)
 
-    # ── Legacy columns (backward compatibility with old data) ────────
+    # ── Slot-based card columns (used by card generators) ────────────
     short_pass: CardColumn = field(default_factory=dict)
     long_pass: CardColumn = field(default_factory=dict)
     quick_pass: CardColumn = field(default_factory=dict)
