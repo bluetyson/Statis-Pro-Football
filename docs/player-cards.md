@@ -1,6 +1,6 @@
 # Player Cards
 
-Player cards are the core of Statis Pro Football. In **5th Edition (5E)** mode, QB cards have 48 pass rows and RB cards have 12 run rows. The legacy mode uses 64-slot (dice-indexed) cards.
+Player cards are the core of Statis Pro Football. QB cards have 48 pass rows and RB cards have 12 run rows, following the authentic Avalon Hill Statis Pro Football formulae.
 
 ---
 
@@ -12,7 +12,7 @@ In 5E, every play uses:
 - A **PASS# (1–48)** drawn from the FAC deck to index QB and receiver cards
 - A **RUN# (1–12)** drawn from the FAC deck to index RB run cards
 
-Cards do not use the 11–88 dice range from legacy mode.
+Cards use a PASS# (1–48) from the FAC deck to index QB and receiver cards, and a RUN# (1–12) for rushing.
 
 ---
 
@@ -199,7 +199,7 @@ Punters have two attributes:
 
 ### Defenders (DEF)
 
-5E uses **authentic 5E defensive ratings** on a different scale than legacy:
+Defenders use **Avalon Hill 5E defensive ratings**:
 
 | Rating | Description | Range |
 |--------|-------------|-------|
@@ -208,9 +208,6 @@ Punters have two attributes:
 | **Tackle** | Run stop / tackle modifier | -5 to +4 |
 | **Intercept Range** | Interception chance threshold | 0–99 |
 | **defender_letter** | A–O — box assignment on the defensive display | A–O |
-
-Additionally, legacy ratings are retained for backward compatibility:
-- `pass_rush_rating` (0–99), `coverage_rating` (0–99), `run_stop_rating` (0–99)
 
 **Example: Chris Jones (A grade)**
 
@@ -282,16 +279,3 @@ Grades affect:
 
 ---
 
-## Legacy Card System (64-Slot)
-
-The legacy format uses slots 11–88 (64 outcomes from d8×d8 dice):
-
-| Position | Columns | Slot Contents |
-|----------|---------|---------------|
-| QB | Short Pass, Long Pass, Screen Pass | COMPLETE/INCOMPLETE/INT/SACK + yards |
-| RB | Inside Run, Outside Run | GAIN/FUMBLE + yards |
-| WR/TE | Short Reception, Long Reception | CATCH/INCOMPLETE + yards |
-| K | FG Chart (by distance), XP Rate | Success probability |
-| P | Avg Distance, Inside-20 Rate | Distance/placement |
-
-Legacy teams are stored in `engine/data/2025/` and `engine/data/2024/`.

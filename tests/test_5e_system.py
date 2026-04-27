@@ -500,9 +500,9 @@ class TestFifthEdGameIntegration:
     def _load_teams(self):
         """Load two teams for testing."""
         import json
-        data_dir = os.path.join(os.path.dirname(__file__), "..", "engine", "data", "2025")
+        data_dir = os.path.join(os.path.dirname(__file__), "..", "engine", "data", "2025_5e")
         if not os.path.exists(data_dir):
-            data_dir = os.path.join(os.path.dirname(__file__), "..", "engine", "data", "2024")
+            data_dir = os.path.join(os.path.dirname(__file__), "..", "engine", "data", "2026_5e")
         if not os.path.exists(data_dir):
             pytest.skip("No team data available")
         teams = sorted(os.listdir(data_dir))
@@ -1023,9 +1023,9 @@ class TestBoxscoreOutput:
     def _load_teams(self):
         """Load two teams for testing."""
         import json
-        data_dir = os.path.join(os.path.dirname(__file__), "..", "engine", "data", "2025")
+        data_dir = os.path.join(os.path.dirname(__file__), "..", "engine", "data", "2025_5e")
         if not os.path.exists(data_dir):
-            data_dir = os.path.join(os.path.dirname(__file__), "..", "engine", "data", "2024")
+            data_dir = os.path.join(os.path.dirname(__file__), "..", "engine", "data", "2026_5e")
         if not os.path.exists(data_dir):
             pytest.skip("No team data available")
         teams = sorted(os.listdir(data_dir))

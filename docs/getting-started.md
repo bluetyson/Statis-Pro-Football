@@ -56,8 +56,8 @@ from engine.game import Game
 home = Team.load("KC", "2025_5e")   # Kansas City Chiefs
 away = Team.load("SF", "2025_5e")   # San Francisco 49ers
 
-# Simulate a complete game (5E mode is default)
-game = Game(home, away, use_5e=True, seed=42)
+# Simulate a complete game (5th Edition FAC deck, default)
+game = Game(home, away, seed=42)
 state = game.simulate_game()
 
 # Print results
@@ -77,7 +77,7 @@ from engine.game import Game
 
 home = Team.load("DAL", "2025_5e")
 away = Team.load("PHI", "2025_5e")
-game = Game(home, away, use_5e=True)
+game = Game(home, away)
 
 # Execute plays one at a time
 for i in range(10):
@@ -100,7 +100,7 @@ from engine.game import Game
 
 home = Team.load("BUF", "2025_5e")
 away = Team.load("MIA", "2025_5e")
-game = Game(home, away, use_5e=True)
+game = Game(home, away)
 
 # Simulate drives until the game ends
 while not game.state.is_over:
@@ -165,10 +165,9 @@ curl -X POST http://localhost:8000/games/GAME_ID/simulate
 | Season Key | Based On | Format | Teams |
 |------------|----------|--------|-------|
 | `2025_5e` | 2024 NFL regular season stats | 5th Edition (48/12-slot) | All 32 NFL teams |
-| `2025` | 2024 NFL regular season stats | Legacy (64-slot) | All 32 NFL teams |
-| `2024` | 2023 NFL regular season stats | Legacy (64-slot) | All 32 NFL teams |
+| `2026_5e` | 2025 NFL regular season stats | 5th Edition (48/12-slot) | All 32 NFL teams |
 
-> **Recommended**: Use `2025_5e` for the most accurate and fully-featured simulation.
+> **Recommended**: Use `2025_5e` or `2026_5e` for the fully-featured Avalon Hill formula simulation.
 
 ## Available Teams
 
@@ -193,14 +192,11 @@ All 32 NFL teams are available in all seasons:
 To regenerate player card data:
 
 ```bash
-# Regenerate 2025 5E cards (recommended)
+# Regenerate 2025 5E cards
 python engine/data/generate_2025_5e_data.py
 
-# Regenerate 2025 legacy cards
-python engine/data/generate_2025_data.py
-
-# Regenerate 2024 legacy cards
-python engine/data/generate_2024_data.py
+# Regenerate 2026 5E cards
+python engine/data/generate_2026_5e_data.py
 ```
 
 Card generation uses a fixed random seed (42) for reproducibility. The same seed always produces the same card distributions.
@@ -228,8 +224,6 @@ python3 -m pytest tests/ --cov=engine
 Make sure the team data JSON files exist:
 ```bash
 ls engine/data/2025_5e/  # Should show 32 .json files
-ls engine/data/2025/     # Should show 32 .json files
-ls engine/data/2024/     # Should show 32 .json files
 ```
 
 If missing, regenerate them:

@@ -1,6 +1,6 @@
 # Game Mechanics
 
-This document explains how Statis Pro Football simulates an NFL game. The primary mode is **5th Edition (5E)**, which uses the FAC deck system. The legacy dice-based system is also supported.
+This document explains how Statis Pro Football simulates an NFL game using the **5th Edition (5E) FAC deck system** with Avalon Hill formulae.
 
 ---
 
@@ -53,23 +53,6 @@ Each FAC card contains fields that drive all game mechanics:
 
 1. Look up **ER field** on FAC card on receiving player's rush column
 2. Only usable once per game per player
-
----
-
-## Legacy: The Fast Action Dice System
-
-The legacy mode uses two 8-sided dice (d8, values 1–8). Together they create a two-digit number from 11 to 88, giving 64 possible outcomes.
-
-| Component | Range | Purpose |
-|-----------|-------|---------|
-| Two-digit number | 11–88 | Indexes into player card columns |
-| Play Tendency | RUN/SHORT_PASS/LONG_PASS/BLITZ | Suggests the type of play |
-| Penalty Check | ~8% chance (5 specific combos) | Triggers penalty chart lookup |
-| Turnover Modifier | 1–8 | Additional random factor for turnovers |
-
-**Play Tendency Distribution:** RUN ~34%, SHORT_PASS ~28%, LONG_PASS ~25%, BLITZ ~13%.
-
-**Penalty Triggers**: (1,7), (3,7), (5,8), (7,1), (8,2).
 
 ---
 

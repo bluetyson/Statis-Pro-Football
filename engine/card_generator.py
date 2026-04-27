@@ -1,8 +1,8 @@
 """Card generator for Statis Pro Football player cards.
 
-Supports both authentic card formats (range-based QB passing, 12-row
-N/SG/LG rushing and Q/S/L pass gain shared by RB/WR/TE) and legacy
-64-slot cards.
+Supports the authentic Avalon Hill card format (range-based QB passing, 12-row
+N/SG/LG rushing and Q/S/L pass gain shared by RB/WR/TE) as well as slot-based
+generation helpers.
 
 Uses FAC distribution tables from ``fac_distributions`` to determine the
 fixed number of slots per outcome type, then fills yardage values from
