@@ -327,7 +327,7 @@ class Team:
         return team
 
     @classmethod
-    def load(cls, team_abbr: str, season: Any = "2025_5e") -> "Team":
+    def load(cls, team_abbr: str, season: Any = "2026_5e") -> "Team":
         """Load team from JSON data file."""
         data_dir = os.path.join(os.path.dirname(__file__), "data", str(season))
         filepath = os.path.join(data_dir, f"{team_abbr}.json")
@@ -337,7 +337,7 @@ class Team:
             data = json.load(f)
         return cls.from_dict(data)
 
-    def save(self, season: Any = "2025_5e") -> None:
+    def save(self, season: Any = "2026_5e") -> None:
         """Save team to JSON data file."""
         data_dir = os.path.join(os.path.dirname(__file__), "data", str(season))
         os.makedirs(data_dir, exist_ok=True)
@@ -346,7 +346,7 @@ class Team:
             json.dump(self.to_dict(), f, indent=2)
 
 
-def list_available_teams(season: Any = "2025_5e") -> List[str]:
+def list_available_teams(season: Any = "2026_5e") -> List[str]:
     """List all available team abbreviations."""
     data_dir = os.path.join(os.path.dirname(__file__), "data", str(season))
     if not os.path.exists(data_dir):
