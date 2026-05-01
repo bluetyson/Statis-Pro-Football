@@ -148,7 +148,7 @@ def _build_team_card(team: Team, unavailable_names: Optional[set[str]] = None) -
 class NewGameRequest(BaseModel):
     home_team: str
     away_team: str
-    season: str = "2025_5e"
+    season: str = "2026_5e"
     solitaire_home: bool = True
     solitaire_away: bool = True
     seed: Optional[int] = None  # Random seed for reproducible games
@@ -220,14 +220,14 @@ def root():
 
 
 @app.get("/teams")
-def get_teams(season: str = "2025_5e"):
+def get_teams(season: str = "2026_5e"):
     """List all available teams."""
     teams = list_available_teams(season)
     return {"teams": sorted(teams), "season": season}
 
 
 @app.get("/teams/{team_abbr}")
-def get_team(team_abbr: str, season: str = "2025_5e"):
+def get_team(team_abbr: str, season: str = "2026_5e"):
     """Get team data."""
     try:
         team = Team.load(team_abbr.upper(), season)
@@ -239,7 +239,7 @@ def get_team(team_abbr: str, season: str = "2025_5e"):
 
 
 @app.get("/teams/{team_abbr}/roster")
-def get_roster(team_abbr: str, season: str = "2025_5e"):
+def get_roster(team_abbr: str, season: str = "2026_5e"):
     """Get team roster."""
     try:
         team = Team.load(team_abbr.upper(), season)
@@ -468,7 +468,7 @@ def simulate_game(game_id: str):
 
 
 @app.get("/cards/{team_abbr}/{player_name}")
-def get_player_card(team_abbr: str, player_name: str, season: str = "2025_5e"):
+def get_player_card(team_abbr: str, player_name: str, season: str = "2026_5e"):
     """Get a player's card."""
     try:
         team = Team.load(team_abbr.upper(), season)
